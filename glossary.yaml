@@ -1,0 +1,324 @@
+mce:
+  short: MCE
+  long: Machine Check Exception
+  description: >
+    Erreur émise par le matériel qui est généralement fatale.
+
+rte:
+  short: RTE
+  long: RunTime Environment
+  description: >
+    todo
+
+ide:
+  short: IDE
+  long: Integrated Development Environment
+  description: >
+    Environnement de développement comprenant en général un éditeur de texte,
+    un débogueur et un support pour des logiciels de gestion de versions comme
+    git.
+
+tlb:
+  short: TLB
+  long: Translation Lookaside Buffer
+  description: >
+    Mémoire cache du processeur utilisée dans le but d'accélérer la traduction
+    des adresses virtuelles en adresses physiques.
+
+ipc:
+  short: IPC
+  long: Inter-Process Communication
+  description: >
+    todo
+
+spinlock:
+  short: spinlock
+  description: >
+    todo
+
+isr:
+  short: ISR
+  long: Interrupt Service Routine
+  description: >
+    Gestionnaire d'interruption exécutée lorsqu'une interruption matérielle
+    ou logicielle survient.
+
+bkl:
+  short: BKL
+  long: Big Kernel Lock
+  description: >
+    todo
+
+wcet:
+  short: WCET
+  long: Worst Case Execution Time
+  description: >
+    todo
+
+rtos:
+  short: RTOS
+  long: Real-Time Operating System
+  description: >
+    todo
+
+monolithic:
+  short: monolithique
+  description: >
+    todo
+
+gnu:
+  short: GNU
+  long: GNU is Not Unix
+  description: >
+    todo
+
+gc:
+  short: ramasse-miette
+  description: >
+    TODO
+
+gpos:
+  short: GPOS
+  long: General-Purpose Operating System
+  description: >
+    TODO
+
+rtos:
+  short: RTOS
+  long: Real-time Operating System
+  description: >
+    TODO
+
+hypercall:
+  short: hypercall
+  description: >
+    Mécanisme de communication entre un système d'exploitation invité ou
+    un programme baremetal et l'hyperviseur sur lequel il est exécuté.
+
+runtime:
+  short: runtime
+  description:
+    Environnement d'exécution. Dans le cas d'un langage de programmation managé,
+    cela inclut son garbage collector.
+
+dram:
+  short: DRAM
+  long: Dynamic Random Access Memory
+  description: >
+    Type de barette de mémoire utilisée massivement comme mémoire principale
+    sur les serveurs et ordinateurs personnels.
+
+ecc:
+  short: ECC
+  long: Error correction code
+  description: >
+    Code utilisé pour permettre la détection et la correction d'erreur dans
+    des données.
+
+soft_error:
+  short: soft error
+  description: >
+    Corruption de la mémoire due à un événement exceptionnel et transitoire.
+    Par exemple le rayonnement de fond peut produire un basculement de bits.
+
+hard_error:
+  short: hard error
+  description: >
+    Corruption de la mémoire due à un dysfonctionnement matériel au niveau
+    de la puce mémoire.
+
+scrubbing:
+  short: scrubbing
+  description: >
+    Méthode de correction de la mémoire qui consiste à balayer régulièrement
+    des plages mémoire afin d'y appliquer un code correctif.
+
+vm:
+  short: VM
+  long: Virtual Machine
+  description: >
+    todo
+
+paravirtualization:
+  short: paravirtualisation
+  description: >
+    todo
+
+hvm:
+  short: HVM
+  long: Hardware Virtual Machine
+  description: >
+    todo
+
+cots:
+  short: COTS
+  long: Commercial off-the-shelf
+  description: >
+    todo
+
+cc:
+  short: CC
+  long: Critères communs
+  description: >
+    Ensemble de normes internationales spécifiant des critères à suivre
+    pour évaluer la sécurité de systèmes d'information. Les certificats
+    suivant ces normes distinguent sept niveaux d'assurance de EAL1 à EAL7.
+
+baremetal:
+  short: bare-metal
+  description: >
+    Un environnement d'exécution bare-metal est un environnement dépourvu de
+    système d'exploitation. On parle également de logiciel bare-metal lorsqu'il
+    est possible de l'exécuter dans un tel environnement.
+
+tee:
+  short: TEE
+  long: Trusted execution environment
+  description: >
+    Un environnement d'exécution de confiance est une zone sécurisée
+    et isolée des autres environnements d'exécution. Cette zone est située
+    dans le processeur. Elle garantit la confidentialité des données qui y
+    sont stockées.
+
+tcb:
+  short: TCB
+  long: Trusted computing base
+  description: >
+    La base de calcul approuvé fait référence à l'ensemble des composants
+    matériels et logiciels d'un système informatique dont la compromission
+    conduit à celle du système entier. Plus cette base est petite et
+    à fait l'objet de vérification, plus la sécurité du système est élevée.
+
+ido:
+  short: IdO
+  long: internet des objets
+  description: >
+    Réseau d'objets embarqués et connectés au travers d'Internet.
+
+api:
+  short: API
+  long: Applicaton Programming Interface
+  description: >
+    Interface de programmation applicative.
+
+abi:
+  short: ABI
+  long: Application Binary Interface
+  description: >
+    interface binare-programme
+
+mpsoc:
+  short: MPSoC
+  long: Multiprocessor System on a chip
+  description: >
+    Système embarqué complet sur un seul circuit intégré comprenant
+    plusieurs processeurs généralement hétérogènes.
+
+pmu:
+  short: PMU
+  long: Performance Monitoring Unit
+  description: >
+    Registres matériels intégrés dans les microprocesseurs modernes afin de
+    compter des événements bas niveau dans un but de profilage.
+
+bootloader:
+  short: bootloader
+  description: >
+    Programme prenant le relais du BIOS afin d'initialiser le matériel, puis de
+    localiser et charger l'image d'un noyau. Il passe ensuite le relais au
+    système d'exploitation qu'il vient d'initialiser.
+
+initsystem:
+  short: init system
+  description: >
+    Premier programme exécuté sur un système d'exploitation de type _UNIX_.
+
+userspace:
+  short: espace utilisateur
+  article: l'
+  description: |
+    todo
+
+safety:
+  short: sûreté
+  article: la
+  description: |
+    Mesure prise pour veiller au bon fonctionnement d'un système et en cas de
+    défaillance pour limiter les dégât occasionné.
+
+security:
+  short: sécurité
+  article: la
+  description: |
+    Mesure prise pour prévenir les attaques d'une entité malveillante.
+
+qualification:
+  short: qualification
+  article: la
+  description: >
+    todo
+
+certification:
+  short: certification
+  article: la
+  description: >
+    todo
+
+bsp:
+  short: BSP
+  long: Board Support Package
+  description: >
+    todo
+
+esa:
+  short: ESA
+  long: European Space Agency
+  description: >
+    todo
+
+ecss:
+  short: ECSS
+  long: European Cooperation for Space Standardization
+  description: >
+    Ensembles de normes utilisées dans le spatial.
+
+amp:
+  short: AMP
+  long: Asymmetric multiprocessing
+  description: >
+    Architectures multiprocesseur dont chaque cœur exécute son propre
+    programme. Les ressources mémoires et périphériques sont statiquement
+    partagées entre les cœurs. Les cœurs peuvent être identiques (homogène)
+    ou différents (hétérogène). Ces architectures visent à garantir un
+    comportement déterministe et une bonne isolation des tâches.
+
+smp:
+  short: SMP
+  long: Symmetric multiprocessing
+  description: >
+    Architectures multiprocesseur dont les cœurs partagent les mêmes ressources
+    et sont gérés par un seul système d'exploitation. Ces architectures visent
+    à maximiser la charge de travail traitée.
+
+html:
+  short: HTML
+  article: an
+  long: Hypertext Markup Language
+  longarticle: a
+  description: A standard language for creating web pages
+  group: Web
+
+css:
+  short: CSS
+  long: Cascading Style Sheets
+  description: A stylesheet language used for describing the presentation of a document
+  group: Web
+
+tps:
+  short: TPS
+  long: test procedure specification
+  description: A formal document describing test steps and expected results
+  plural: TPSes
+  longplural: test procedure specifications
+
+WWW: World Wide Web
