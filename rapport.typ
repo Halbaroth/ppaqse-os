@@ -17,7 +17,33 @@
   text(weight: "bold")[#t]
 }
 
-= Introduction
+#show raw.where(block: true): code => {
+  show raw.line: line => {
+    text(fill: gray)[#line.number]
+    h(1em)
+    line.body
+  }
+  code
+}
+
+#let snippet(file, lang:none) = {
+  box(
+    stroke: 1pt + black,
+    fill: luma(250),
+    radius: 4pt,
+    pad(
+      left: 10pt,
+      right: 16pt,
+      top: 10pt,
+      bottom: 10pt,
+      raw(read(file), block:true, lang:lang),
+    )
+  )
+}
+
+#outline(depth: 1)
+
+= Introduction <introduction>
 
 Un #definition[système d'exploitation]#footnote[On parle d'_Operating System_
 en anglais, abrégé _OS_. On utilisera cette abréviation à notre convenance.]
@@ -31,7 +57,10 @@ gérées par un OS peuvent être, dans une autre configuration, déléguées à 
 couche logicielle, voire au matériel. Il est donc difficile de caractériser
 rigoureusement ce qu'est un système d'exploitation autrement que par le fait qu'il
 s'exécute en #definition[mode noyau]#footnote[Le mode noyau (_kernel mode_ en anglais) est
-un mode d'exécution privilégié donnant accès à l'ensemble de la mémoire et à l'exécution d'instructions habituellement interdites aux logiciels applicatifs. A contrario, les logiciels applicatifs s'exécute en mode utilisateur (_user mode_ en anglais).].
+un mode d'exécution privilégié donnant accès à l'ensemble de la mémoire et à
+l'exécution d'instructions habituellement interdites aux logiciels applicatifs.
+A contrario, les logiciels applicatifs s'exécute en mode utilisateur
+(_user mode_ en anglais).].
 Dans ce document, nous étudions trois grandes classes de systèmes d'exploitation:
 - #box[Les #definition[systèmes d'exploitation généralistes]#footnote[On parle parfois
 de _GPOS_ en anglais pour _General-Purpose Operating System_] constituent la
@@ -100,12 +129,26 @@ façon dynamique. C'est notamment le cas des pilotes.]
 
 === Hyperviseur
 
+Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
+raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
+et sûre, une première solution consiste
+à héberger chaque service sur une machine individuelle. On obtient ainsi une
+isolation totale des différents services. Cette solution présente
+toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
+maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
+besoins à moindre frais.
+
 Les _hyperviseurs_ se divisent généralement en deux catégories:
 - #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
-matérielle.]
+matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
 - #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
 intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
 OS dans ce document.]
+
+Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
+- #box[La _virtualisation total_: le comportement de la couche matérielle]
+- #box[La _virtualisation partielle_]
+- #box[La _paravirtualisation_]
 
 La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
 le comportement de la couche matérielle en exposant la même interface aux systèmes
@@ -119,6 +162,8 @@ présenter une interface logicielle similaire au matériel mais optimisée pour
 la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
 et du système d'exploitation invité. En contre partie, la paravirtualisation
 permet généralement d'obtenir de meilleures performances.
+
+=== Unikernel
 
 === Temps réel
 
@@ -252,7 +297,7 @@ Ce type de mémoire nécessite une prise en charge par le contrôleur mémoire, 
 et le BIOS. Si cette prise en charge est rare sur le matériel
 grand public, elle est en revanche commune sur celui dédié aux serveurs.
 
-=== Scrubbing
+=== Scrubbing <scrubbing>
 
 Les mémoires _ECC_ décrites en @ecc_memory permettent de corriger automatiquement
 les erreurs à la lecture. Toutefois certaines données
@@ -292,18 +337,39 @@ quelques unes d'entre elles ainsi que leurs caractéristiques clés.
   caption: [Interfaces de pilotage pour le _scrubbing_],
 ) <scrubbing_interfaces>
 
-== Watchdog
+== Watchdog <watchdog>
 
-Un chien de garde, en anglais _watchdog_, est un dispositif matériel ou logiciel
-permettant de détecter qu'un système informatique est bloqué de façon
-anormale et de réagir en conséquence (désactivation du système, redémarrage, ...).
-Qu'il s'agisse d'un dispositif matériel ou logiciel, le principe du watchdog consiste
-le plus souvent à demander au système surveillé de mettre à jour régulièrement un compteur.
-Le système surveillé dispose d'une fenêtre de temps pour cette action et s'il n'effectue
-pas la tâche dans le temps imparti, il est présumé dysfonctionnel. Le système peut alors
-tenter de remédier à la situation.
+Un chien de garde, ou _watchdog_ en anglais, est un dispositif matériel ou logiciel
+conçu pour détecter le blocage d'un système informatique, et de réagir de manière
+autonome pour ramener ce système dans un état normal. Qu'il s'agisse d'un
+dispositif matériel ou logiciel, le principe du watchdog consiste
+le plus souvent à demander au système surveillé d'envoyer régulièrement un signal à
+un système surveillant. Le système surveillé dispose d'une fenêtre de temps
+pour cette action. S'il n'effectue pas la tâche dans le temps imparti, il est
+présumé dysfonctionnel. Le système surveillant peut alors tenter de remédier
+à la situation. Le plus souvent cela consiste à redémarrer la machine.
 
-= Linux
+Les appareils embarqués et les serveurs à haute disponibilité ont souvent
+recours aux watchdogs pour améliorer leur fiabilité.
+
+== Profilage <profiling>
+
+Le profilage est une technique utilisée pour mesurer et analyser les performances
+d'un programme. Elle est souvent employée à des fins d'optimisation en
+permettant de localiser des points chauds, c'est-à-dire des sections de code
+particulièrement gourmandes en ressources (temps CPU, mémoire, ...). Toute mesure
+ayant un impact sur les caractéristiques de l'objet mesuré, il est crucial que
+cette instrumentation soit faite de la façon la moins intrusive possible.
+Autrement, on risque de mesurer les performances de son outil de profilage
+plutôt que ceux du programme étudié.
+
+À cette fin, certains outils utilie une approche statistique. Au lieu
+d'enregistrer tous les événements possibles lors de l'exécution du programme,
+on n'effectue un échantillonnage de ces mesures en espérant que les échantillons
+collectés seront représentatifs des caractéristiques de performances du programme
+étudié.
+
+= Linux <linux>
 
 Le noyau _Linux_ est un système d'exploitation généraliste de type UNIX développé par une
 communauté décentralisée de développeurs. Le projet est initié par Linus Torvalds
@@ -315,12 +381,13 @@ modulaire à partir de la version `1.1.85` publiée en 1995.
 En plus d'être un _GPOS_, _Linux_ intègre un hyperviseur et est depuis récemment
 un _RTOS_. Plus précisément:
 - #box[Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur baptisé
-_KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm. Il s'agit d'un hyperviseur de type 1
+_KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit d'un hyperviseur de type 1
 assisté par le matériel. Il offre également un support pour la paravirtualisation.]
 - #box[Depuis la version `v6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
 des fonctionnalités temps réel.]
 
-Ces deux aspects importants seront abordés respectivement dans les sections @kvm et @prempt_rt.
+Ces deux aspects importants seront abordés respectivement dans les sections
+@linux_kvm et @linux_prempt_rt.
 
 == Architectures supportées
 
@@ -336,37 +403,150 @@ il supporte certaines architectures _PowerPC_ comme _BookE_ et _Book3S_.
 
 == Partitionnement <linux_partitioning>
 
+Dans cette section, nous décrivons les principaux mécanismes d'isolation de
+partitionnement des ressources disponible sous _Linux_. Ces mécanismes sont aujourd'hui
+utilisés aussi bien pour la virtualisation via _KVM_ que pour les conteneurs
+des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
+
 === Les _control croups_
 
-Les _control groups_ (abrégé _cgroups_) sont un mécanisme permettant d'organiser
-les processus de manière hiérarchique et de répartir les ressources du système de façon
-contrôlée et configurable suivant cette hiérarchie. Notez qu'il existe deux versions
-de ce mécanisme dans le noyau actuel:
-- #box[La version `v1` qui a été introduite en 2008 dans le noyau _Linux 2.6.24_,]
-- #box[La version `v2` est une refonte complète de la première version introduite dans le noyau
-_Linux 4.5_ publié en 2016. C'est aujourd'hui la version recommandée.]
-Dans cette section, nous ne décrivons que le fonctionnement de la version `v2`. Le lecteur
-intéressé par la première version de l'API pourra se référer à documentation @linux_cgroups_v1.
+Les _cgroups_ (abréviation pour _cgroups_) sont un mécanisme du noyau _Linux_
+qui permet une gestion fine et configurable des ressources.
+Il existe deux versions de ce mécanisme dans le noyau actuel:
+- #box[La version `v1`, introduite en 2008 dans le noyau _Linux 2.6.24_,]
+- #box[La version `v2` est une refonte complète de la `v1`, introduite en 2016
+dans le noyau _Linux 4.5_. Elle est aujourd'hui la version recommandée.]
+Dans cette section, nous ne décrivons que le fonctionnement de la version `v2`.
+Le lecteur intéressé par la première version de l'API pourra se référer à sa
+documentation @linux_cgroups_v1.
 
-Les _cgroups_ forment une structure arborescente et chaque processus appartient à exactement
-un _cgroup_. Les _threads systèmes_ appartiennent toujours au _cgroup_ de leur processus.
-À leur création, les processus héritent du _cgroup_ de leur parent mais ils peuvent migrer
-vers un autre _cgroup_ s'ils ont les privilèges adéquates. Cette migration n'affecte pas leurs
-enfants mais seulement ceux qui seront créés après celle-ci.
+Les _cgroups_ forment une structure arborescente et chaque processus appartient
+à un unique _cgroup_. À leur création, les processus héritent du _cgroup_
+de leur parent. Par la suite, ils peuvent migrer vers un autre _cgroup_, s'ils ont les
+privilèges adéquates. Cette migration n'affecte pas leurs enfants déjà existants,
+mais seulement ceux créés par la suite. Quant aux _threads systèmes_,
+ils appartiennent généralement au _cgroup_ du processus mais il est possible de
+mettre en place une hiérarchie de _cgroup_ pour eux.
 
-Les principaux contrôleurs de _cgroups_ sont:
-- `cpu`: gère l'accès au temps de traitement du processeur.
-- `memory`: contrôle l'utilisation de la mémoire vive et de la mémoire d'échange.
-- `io`: gère les opérations d'entrée/sortie sur les périphériques de stockage.
-- `pids`: limite le nombre de processus et de threads.
-- `cpuset`: affecte un groupe de processus à des cœurs CPU spécifiques.
-- `hugetlb`: contrôle l'utilisation des "huge pages".
+La répartition des ressources se fait via des _contrôleurs_ spécialisés.
+Chaque contrôleur permet d'appliquer des restrictions sur un _cgroup_ et
+ses descendants. Une politique appliquée sur un enfant doit être au moins aussi
+restrictive que celle de son parent.
 
-Plus d'informations sur les _cgroups_ sont disponibles dans la documentation officielle @linux_cgroups_v2.
+Les principaux contrôleurs sont:
+- `cpu`: contrôle l'utilisation du CPU,
+- `memory`: contrôle l'utilisation de la mémoire vive et de la mémoire d'échange,
+- `io`: contrôle les opérations d'entrée/sortie sur les périphériques de stockage,
+- `pids`: limite le nombre de processus et de threads,
+- `cpuset`: affecte un groupe de processus à des cœurs CPU spécifiques,
+- `hugetlb`: contrôle l'utilisation des _huge pages_.
+
+Plus d'informations sur les _cgroups_ sont disponibles dans la documentation
+officielle @linux_cgroups_v2.
+
+==== Exemple d'utilisation
+
+La hiérarchie des _cgroups_ est accessible dans l'espace utilisateur via un
+pseudo système de fichiers de type `cgroup2`. Il est généralement monté dans le dossier
+`/sys/fs/cgroup`. La création et la suppression de _cgroups_ se fait alors grâce
+aux commandes habituelles pour la gestion de fichiers sous UNIX.
+
+Supposons que nous souhaitions limiter la consommation de mémoire d'un processus
+à 5 Mio. On commence par créer deux#footnote[Il n'est pas possible
+de le faire avec un seul _cgroup_ dû à une règle de l'API appelée
+«no internal processes».] _cgroups_ `foo` et `bar`:
+```sh
+sudo mkdir -p /sys/fs/cgroup/foo/bar
+echo "+memory" | sudo tee /sys/fs/cgroup/foo/cgroup.subtree_control
+echo "5 * 2^20" | bc | sudo tee /sys/fs/cgroup/foo/bar/memory.max
+```
+Désormais la mémoire totale occupée par les processus du _cgroup_ `bar` ne
+doit pas excéder les 5 Mio.
+#figure(
+  snippet("./linux/limited.c", lang:"c")),
+  caption:[`limited.c`]
+) <limited>
+
+À titre d'exemple, compilons et lançons le programme dont le code source
+est donné dans //@limited:
+```sh
+gcc -O0 limited.c -o limited
+./limited
+```
+et dans une autre console, on ajoute le processus au cgroup `bar`:
+```sh
+pgrep limited | sudo tee /sys/fs/cgroup/foo/bar/cgroup.procs
+```
+Finalement, on demande plus de mémoire que la limite autorisée et le processus
+est tué:
+```console
+How many bytes do you want to allocate? 6000000
+fish: Job 1, './limited' terminated by signal SIGKILL (Forced quit)
+```
+
+Notez que pour obtenir l'erreur escomptée, il faut prendre garde à deux aspects:
+- #box[Le message d'erreur `Cannot allocate` ne s'affiche pas car _Linux_ n'alloue la
+mémoire que lorsqu'elle est véritablement utilisée. C'est donc lorsque l'on remplit
+le tampon de zéros avec `memset` que la mémoire est réclamée.]
+- #box[Si certaines optimisations sont activées, le compilateur `gcc` supprime
+l'appel à la fonction `malloc` car il constate qu'on ne lit pas
+le buffer et donc son contenu est inutile. Il faut donc désactiver ces
+optimisations avec l'option `-O0`.]
+
+=== Chroot <linux_chroot>
+
+L'appel système `chroot` permet de changer le dossier racine de l'arborescence
+vue par le processus appelant. Cette fonction était parfois utilisée pour
+isoler le système de fichiers d'un démon et ainsi prévenir un accès frauduleux à
+des fichiers sensibles. De nos jours, cette méthode n'est plus recommandée
+car cette protection peut être contournée sous certaines conditions. Un exemple
+d'attaque est détaillé dans sa page de manuel @linux_manual_page_chroot.
+D'autre part cet appel n'offre pas le même degré d'isolation que les
+_namespaces_ abordés dans la section @linux_namespaces.
 
 === Les namespaces <linux_namespaces>
 
-== Corruption de la mémoire <linux_memory_corrupt>
+Les _namespaces_ sont des outils permettant d'isoler des ressources pour des processus.
+Cette isolation permet de créer des environnements sécurisés et indépendants.
+
+Les principaux namespaces sont:
+- `PID Namespace`: isole l'arborescence des processus.
+- #box[`Network Namespace`: isole la pile réseau, permettant à un conteneur d'avoir ses propres
+interfaces, tables de routage et règles de pare-feu.]
+- #box[`Mount Namespace`: isole l'arborescence des fichiers.]
+- `UTS Namespace` (_Unix Time-sharing System_): isole le nom d'hôte et le nom de domaine.
+- `User Namespace`: isole les identifiants utilisateurs et les groupes.
+
+==== Exemple d'utilisation avec `systemd`
+Le gestionnaire de services `systemd` intègre l'outil `systemd-nspawn` pour faciliter
+l'utilisation des _namespaces_. Il consistue une alternative à `chroot` plus sûre.
+En plus d'isoler l'aborescence des fichiers, cette commande isole celle des
+processus, le réseau et les utilisateurs. Par exemple, considérons le
+programme _C_ suivant:
+
+#figure(
+  snippet("./linux/alone.c", lang:"c"),
+  caption: [`alone.c`]
+)
+
+En le compilant puis le liant statiquement à la bibliothèque C, il est possible
+de le lancer dans un conteneur de _systemd_ ainsi:
+```console
+gcc -static ./foo/alone.c -o ./foo/alone
+sudo systemd-nspawn -D ./foo ./alone
+```
+On obtient alors la sortie suivante:
+```
+░ Spawning container foo on /foo.
+░ Press Ctrl-] three times within 1s to kill container.
+My pid: 1
+1
+Container foo exited successfully.
+```
+révélant que `alone` est le seul processus visible dans le conteneur `foo` et
+qu'il a le PID 1.
+
+== Corruption de la mémoire <linux_memory_corruption>
 
 Le noyau _Linux_ intègre un sous-système nommé _EDAC_ (_Error Detection and Correction_)
 @linux_edac qui permet la journalisation des erreurs mémoires. La journalisation s'effectue
@@ -382,9 +562,88 @@ des périphériques via des fichiers. Il est généralement monté dans le dossi
 pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interfaces,
 à l'exception de l'interface _ARS_ qui utilise son propre pilote.
 
-== KVM <kvm>
+== Perte du flux d'exécution
 
-== PREMPT_RT <prempt_rt>
+== Monitoring <linux_monitoring>
+
+== Profilage <linux_profiling>
+
+=== _perf_ <linux_perf>
+Depuis sa version 2.6.31, _Linux_ intègre un outil puissant de profilage
+dénommé _perf_ @perf_wiki. À l'origine _perf_ permettait de tracer l'activité
+du _CPU_ via des compteurs _PMU_
+#footnote[Les compteurs _PMU_ pour _Performance Monitoring Unit_
+sont des registres matériels intégrés dans les microprocesseurs modernes. Ils
+permettent de compter des événements bas niveau.].
+Depuis, ses fonctionnalités ont été considérablement
+étendues et il permet maintenant d'instrumenter aussi bien le noyau que
+les programmes exécutés dans l'espace utilisateur. Dans cette section, nous
+allons voir trois méthodes d'instrumentation: les _tracepoints_,
+les _kprobes_ et les _uprobes_.
+
+==== _Tracepoints_ <linux_perf_tracepoints>
+Les _tracepoints_ sont des points d'intérêts du noyau qui ont manuellement été
+instrumentés par ses développeurs. On peut ainsi récupérer des traces
+d'exécution de ces routines.
+
+==== _Kprobes_ <linux_perf_kprobes>
+Les _kprobes_ sont un mécanisme permettant d'injecter du code
+à une position arbitraire du noyau.
+
+==== _Uprobes_ <linux_perf_uprobes>
+Les _uprobes_ permettent d'instrumenter du code utilisateur.
+
+=== _oprofile_ <linux_oprofile>
+
+== KVM <linux_kvm>
+
+== PREMPT_RT <linux_prempt_rt>
+
+== Watchdog <linux_watchdog>
+
+Cette section décrit le support pour des _watchdogs_ matériels dans le noyau
+_Linux_ ainsi que le support pour des _watchdogs_ logiciels par _systemd_.
+
+=== API bas niveau <linux_watchdog_api>
+
+_Linux_ offre une _API_ unifiée pour interagir avec les _watchdogs_
+matériels directement dans l'espace utilisateur @linux_watchdog_driver_api.
+Cette communication se fait via un pseudo-périphérique `/dev/watchdog`.
+À l'ouverture ce périphérique, le _watchdog_ s'active et attend
+d'être réinitialisé dans un certain délai de réponse. Une façon simple de le
+réinitialiser est d'écrire des données quelconques dans le périphérique `/dev/watchdog`.
+Quant au délai de réponse, il est configurable via l'appel système `ioctl`.
+Lorsque le périphérique est fermé, le _watchdog_ est désactivé. La
+@linux_watchdog_example contient un exemple simple d'utilisation de _watchdog_.
+
+#figure(
+  snippet("./linux/watchdog.c", lang:"c"),
+  caption: [Exemple d'interaction avec un _watchdog_ sous _Linux_.]
+) <linux_watchdog_example>
+
+Toutefois, dans un usage réel, il est souhaitable que le _watchdog_ ne puisse pas
+être désactivé accidentellement. En effet, si par exemple l'appel système `write`
+échoue dans le code ci-dessus, le descripteur de fichier `fd` sera libéré, ce qui
+provoquera l'arrêt du watchdog. Pour cette raison, certains pilotes de _watchdogs_
+permettent de ne pas être désactivables ou seulement par l'écriture d'une séquence
+de caractères magique sur le périphérique `/dev/watchdog`.
+
+=== Support dans _systemd_
+
+Pour la plupart des distributions _GNU/Linux_ modernes, l'utilisation des
+watchdogs est simplifiée via le gestionnaire de services _systemd_. Ce dernier
+permet aussi d'utiliser des _watchdogs_ logiciels dans les services.
+Pour ce faire, il suffit de modifier le démon afin qu'il
+notifie régulièrement _systemd_ via l'appel `sd_notify("WATCHDOG=1")`. Le délai
+de réponse est quant à lui transmis par la variable d'environnement `WATCHDOG_USEC`.
+La @linux_systemd_watchdog_example contient un exemple d'un démon `/usr/bin/foo`
+ainsi modifié qui sera automatiquement relancé par _systemd_ s'il ne notifie
+pas ce dernier dans un délai de 30 secondes.
+
+#figure(
+  snippet("./linux/foo.ini", lang:"ini"),
+  caption: [Exemple de service _systemd_ avec _watchdog_.]
+) <linux_systemd_watchdog_example>
 
 == Licences & brevets
 
@@ -395,11 +654,11 @@ peut être distribué sous une licence qui n'est pas compatible avec la GPL,
 y compris une licence propriétaire. Plus d'informations sont disponibles dans
 le dossier `LICENSES` des sources du noyau `Linux`.
 
-= Xen
+= Xen <xen>
 
 _Xen_ est un hyperviseur de type 1 développé par le consortium d'entreprises
-#link("https://xenproject.org")[Xen Project]. Il s'agit à la fois d'un paravirtualisateur
-et d'un hyperviseur assisté par le matériel.
+#link("https://xenproject.org")[Xen Project]. Il offre à la fois des fonctionnalités
+de _paravirtualisation_ et de _HVM_.
 
 == Architectures supportées
 
@@ -410,6 +669,17 @@ Il existe également un projet pour supporter _Xen_ sur _PowerPC_ mais il n'est 
 activement maintenu.
 
 Il existe un projet pour le support de _RISC-V_.
+
+== Exemple d'installation
+
+#figure(
+  snippet("./xen/alpine.cfg", lang:"cfg"),
+  caption: [Configuration d'une VM Alpine]
+)
+
+```console
+sudo xl create alpine.cfg
+```
 
 == Partitionnement
 
@@ -424,14 +694,23 @@ une distribution _Linux_ modifiée (voir la section @xen_os).]
 OS invités. Il existe deux types de tels domaines. Les domaines de paravirtualisation
 et les domaines _HVM_.]
 
+=== Driver domain <xen_driver_domain>
+
+Un _driver domain_ est un domaine utilisateur de _Xen_ qui a pour responsabilité de
+gérer un périphérique. Il exécute un noyau minimal avec uniquement le pilote pour
+ce périphérique. Ainsi, si le pilote plante, les autres domaines et en particulier
+_dom0_ continuent de fonctionner tandis que le _driver domain_ peut être relancé.
+
 == OS supportés <xen_os>
 
 _Xen_ étant un paravirtualisateur, il nécessite un support
-spécifique des OS invités, que ce soit pour les _VM_ s'exécutant dans le domaine privilégié _dom0_
-ou les _VM_ s'exécutant dans les domaines _domU_. Pour le domaine _dom0_, il offre un support pour
-de nombreuses distributions _GNU/Linux_ (voir @xen_gnu_linux_supported) ainsi que quelques autres
-noyaux de type _UNIX_ (voir @xen_unix_supported). Plus d'informations sont disponibles @xen_os_supported. Pour le domaine _domU_, _Xen_ offre aussi un large support pour les OS invités
-@domU_support_for_xen.
+spécifique des OS invités, que ce soit pour les _VM_ s'exécutant dans le
+domaine privilégié _dom0_ ou les _VM_ s'exécutant dans les domaines _domU_.
+Pour le domaine _dom0_, il offre un support pour
+de nombreuses distributions _GNU/Linux_ (voir @xen_gnu_linux_supported)
+ainsi que quelques autres noyaux de type _UNIX_ (voir @xen_unix_supported).
+Plus d'informations sont disponibles @xen_os_supported. Pour le domaine _domU_,
+_Xen_ offre aussi un large support pour les OS invités @domU_support_for_xen.
 
 #figure(
   table(
@@ -472,21 +751,75 @@ noyaux de type _UNIX_ (voir @xen_unix_supported). Plus d'informations sont dispo
   caption: [Autres _UNIX_ supportés par _Xen_ pour _dom0_]
 ) <xen_unix_supported>
 
-== Corruption de la mémoire
+== Corruption de la mémoire <xen_memory_corruption>
 
 L'hyperviseur _Xen_ ne dispose pas d'un système de journalisation des erreurs mémoires.
 En revanche, il transmet ces erreurs au système d'exploitation exécuté dans le domaine
 privilégié _Dom0_. Il est alors possible d'utiliser les outils livrés avec ce système pour
 journaliser ces erreurs. Il est par exemple possible d'exécuter un noyau _Linux_
 dans le domaine _Dom0_ et d'utiliser ces fonctionnalités de pilotage de la mémoire _ECC_
-décrites en section @linux_memory_corrupt.
+décrites en section @linux_memory_corruption.
 
-== Licences & brevets
+== Profilage <xen_profiling>
+
+La couche logicielle introduite par la virtualisation peut introduire des
+régressions de performance dans les logiciels applicatifs par rapport à
+une exécution directement sur un OS _bare-metal_. Dans ce contexte, il est
+nécessaire d'utiliser des outils de profilage dédiés à l'hyperviseur. Dans cette
+section, on présente trois outils de profilage pour _Xen_: _Xenprof_,
+_XenTune_ et _xentrace_.
+
+=== _Xenoprof_ <xen_xenoprof>
+
+=== _XenTune_ <xen_xentune>
+
+=== Le traceur _xentrace_ <xentrace>
+
+Le logiciel _xentrace_ @xentrace_documentation est un outil distribué dans _Xen_.
+Il permet de tracer l'activité des CPU virtuels et ainsi de savoir ce que fait
+une  machine virtuelle sur un CPU donné.
+Ces données sont collectées grâce à des _tracepoints_ positionnés à des endroits
+clés du code de _Xen_. Ils sont activés via  _xentrace_ lorsqu'il est exécuté
+dans le domaine _dom0_. Ce dernier produit alors un fichier binaire qui peut
+ensuite être analysé par _xenanalyze_#footnote[Contrairement à _xentrace_, _xenanalyze_
+n'est pas distribué avec _Xen_.].
+
+== Watchdog <xen_watchdog>
+
+_Xen_ propose un service _xenwatchdogd_ pour gérer les _watchdogs_ matériels
+@xen_watchdog_man_page.
+
+_Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
+implèmente l'API décrit dans la section @linux_watchdog_api.
+
+== Licences & brevets <xen_licenses>
 
 L'hyperviseur `Xen` est un logiciel libre distribué principalement sous licence
 `GPL-2.0`. Certaines parties du projet sont distribués sous des licences libres
 plus permissives afin de pas contraindre les licences des logiciels
 utilisateurs @xen_licensing.
+
+= RTEMS
+
+== Architectures supportées <rtems_architectures>
+
+_RTEMS_ supporte les architectures suivantes @rtems_licenses_website:
+_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
+
+== Watchdog <rtems_watchdog>
+
+_RTEMS_ ne fournit pas d'API unifié pour gérer les _watchdogs_ matériels.
+Le support est implémenté au niveau du _BSP_ (_Board Support Package_).
+
+Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
+Plus précisément, on peut mettre en place un timer avec la fonction
+`rtems_timer_fire_after`.
+
+== Licences & brevets <rtems_licenses>
+
+`RTEMS` est un logiciel libre distribué sous une multitude de licences libres
+et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
+n'importe quelle licence @rtems_licenses_website.
 
 = OS généralistes
 
@@ -702,10 +1035,6 @@ Normes:
 
 == RTEMS
 
-`RTEMS` est un logiciel libre distribué sous une multitude de licences libres
-et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
-n'importe quelle licence @rtems_licenses.
-
 == seL4
 
 Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
@@ -818,14 +1147,6 @@ les interruptions matérielles sont capturées par un système d'exploitation in
 tournant dans le domaine privilégié _Dom0_ et transmises aux domaines concernés via
 un méchanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
-
-==== XtratuM
-
-=== Watchdog
-
-==== Linux
-
-_Linux_ dispose d'un système de watchdog @linux_watchdog
 
 == Monitoring & profiling
 
