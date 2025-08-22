@@ -670,16 +670,39 @@ activement maintenu.
 
 Il existe un projet pour le support de _RISC-V_.
 
-== Exemple d'installation
+== Mise en place d'une machine virtuelle Alpine
 
+Afin de pouvoir illustrer certaines fonctionnalités de _Xen_, cette section
+explique comment mettre en place une machine virtuelle faisant tourner la
+distribution _GNU/Linux_ _Alpine_. Nous partons du principe que vous êtes parvenu
+à installer correctement _xen_ et _qemu_ sur votre machine. Le fichier ci-dessous
+donne un exemple de configuration d'une VM en paravirtualisation:
 #figure(
   snippet("./xen/alpine.cfg", lang:"cfg"),
   caption: [Configuration d'une VM Alpine]
 )
-
+Téléchargez l'image d'_Alpine_ sur son site officiel:
 ```console
-sudo xl create alpine.cfg
+wget https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-standard-3.22.1-x86_64.iso
 ```
+et extrayez les deux fichiers `/boot/vmlinuz-lts` et `/boot/initramfs-lts` de l'image iso:
+```console
+mkdir iso
+mount -t iso9660 -o ro ./alpine-standard-3.22.1-x86_64.iso ./iso
+cp ./iso/boot/vmlinuz-lts ./iso/initramfs-lts .
+umount iso
+rm iso
+```
+Il vous faut également créer un disque virtuel à l'aide de l'outil `qemu-img`:
+```console
+qemu-img create -f qcow2 ./alpine.qcow2 50G
+```
+Finalement vous pouvez lancer la VM avec la commande suivante:
+```console
+sudo xl create alpine.cfg -c
+```
+Le login par défaut est `root` sans mot de passe. Pour quitter la console de
+la VM, tapez `CTRL-]`.
 
 == Partitionnement
 
