@@ -30,6 +30,8 @@
           export FONTCONFIG_FILE="${fontsConf}"
         '';
       };
+
+      alpine = pkgs.callPackage ./xen/alpine/alpine.nix { inherit pkgs; };
     });
   };
 }

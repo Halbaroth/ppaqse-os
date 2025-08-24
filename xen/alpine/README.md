@@ -66,4 +66,3 @@ Finalement vous pouvez installer les outils _Xen_:
 ```console
 apk add xen
 ```
-
