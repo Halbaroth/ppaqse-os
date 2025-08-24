@@ -568,6 +568,19 @@ pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interf
 
 == Profilage <linux_profiling>
 
+Afin d'illustrer certains outils de profilage, nous allons utiliser le programme
+suivant qui parcourt des cases d'un tableau d'entiers soit dans de façon
+séquentielle, soit dans un ordre aléatoire.
+
+#figure(
+  snippet("./linux/miss.c", lang:"c"),
+  caption: [Parcours d'un tableau et _cache misses_]
+) <miss_source>
+
+Le mot clé `volatile` sur le tableau `arr` assure que `gcc` ne supprimera pas
+les accès en lecture sur ce dernier bien que son contenu soit prévisible
+et jamais utilisé. Vous pouvez le compiler avec la commande `gcc miss.c -o miss`.
+
 === _perf_ <linux_perf>
 Depuis sa version 2.6.31, _Linux_ intègre un outil puissant de profilage
 dénommé _perf_ @perf_wiki. À l'origine _perf_ permettait de tracer l'activité
@@ -580,6 +593,59 @@ Depuis, ses fonctionnalités ont été considérablement
 les programmes exécutés dans l'espace utilisateur. Dans cette section, nous
 allons voir trois méthodes d'instrumentation: les _tracepoints_,
 les _kprobes_ et les _uprobes_.
+
+==== PMU <linux_perf_pmu>
+
+Examinons les performances de notre programme @miss_source à l'aide de la
+sous-commande `perf stat`. Cette dernière retourne des statistiques issues
+des registres _PMU_ du processeur. En lançant `perf stat ./miss`, on obtient
+la sortie:
+```
+Performance counter stats for './miss':
+
+       116.46 msec task-clock:u                     #    0.991 CPUs utilized
+            0      context-switches:u               #    0.000 /sec
+            0      cpu-migrations:u                 #    0.000 /sec
+        1,028      page-faults:u                    #    8.827 K/sec
+  270,371,076      cycles:u                         #    2.322 GHz
+1,100,144,340      instructions:u                   #    4.07  insn per cycle
+  100,029,819      branches:u                       #  858.891 M/sec
+        2,352      branch-misses:u                  #    0.00% of all branches
+                   TopdownL1                 #     25.1 %  tma_backend_bound
+                                             #      1.2 %  tma_bad_speculation
+                                             #      0.2 %  tma_frontend_bound
+                                             #     73.6 %  tma_retiring
+
+  0.117552543 seconds time elapsed
+
+  0.113162000 seconds user
+  0.003969000 seconds sys
+```
+Tandis que parcourir le tableau `arr` dans un ordre aléatoire conduit à un
+résultat très différent en terme de performance. En effet la commande
+`perf stat ./miss random` donne la sortie:
+```
+Performance counter stats for './miss random':
+
+     1,974.28 msec task-clock:u                     #    0.999 CPUs utilized
+            0      context-switches:u               #    0.000 /sec
+            0      cpu-migrations:u                 #    0.000 /sec
+        2,003      page-faults:u                    #    1.015 K/sec
+5,945,316,708      cycles:u                         #    3.011 GHz
+7,896,922,743      instructions:u                   #    1.33  insn per cycle
+1,600,032,861      branches:u                       #  810.440 M/sec
+    3,229,770      branch-misses:u                  #    0.20% of all branches
+                   TopdownL1                 #     60.4 %  tma_backend_bound
+                                             #      2.7 %  tma_bad_speculation
+                                             #      2.8 %  tma_frontend_bound
+                                             #     34.1 %  tma_retiring
+
+  1.975546187 seconds time elapsed
+
+  1.968594000 seconds user
+  0.001981000 seconds sys
+```
+Le parcours est nettement plus lent et le nombre de `cache-misses` explose.
 
 ==== _Tracepoints_ <linux_perf_tracepoints>
 Les _tracepoints_ sont des points d'intérêts du noyau qui ont manuellement été
@@ -594,6 +660,18 @@ Les _kprobes_ sont un mécanisme permettant d'injecter du code
 Les _uprobes_ permettent d'instrumenter du code utilisateur.
 
 === _oprofile_ <linux_oprofile>
+
+Le logiciel _oprofile_ est un profileur de performance à l'échelle du système
+_Linux_ entier. Il utilise les compteurs _PMU_ du processeur pour collecter
+les événements.
+
+```console
+sudo opcontrol --start --event=CPU_CYCLES
+```
+
+```console
+sudo opcontrol --reset
+```
 
 == KVM <linux_kvm>
 
@@ -897,9 +975,15 @@ sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ gr�
 concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
 sur plusieurs cœurs en parallèle.]
 
+== Watchdog <mirageos_watchdog>
+
 == Licences & brevets <mirageos_licenses>
 
-Licence `ISC`
+Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
+sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
+`ISC` est nécessaire car en tant qu'_unikernel_, les bibliothèques de _MirageOS_
+doivent être liés statiquement avec le logiciel applicatif pour former l'image
+qui sera mise en production.
 
 = OS généralistes
 
