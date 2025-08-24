@@ -32,6 +32,7 @@
       };
 
       network = pkgs.callPackages ./vm/network.nix { inherit pkgs; };
+      alpine-setup = pkgs.callPackage ./vm/alpine/setup.nix { inherit pkgs; };
       alpine = pkgs.callPackage ./vm/alpine/default.nix { inherit pkgs; };
     });
   };
