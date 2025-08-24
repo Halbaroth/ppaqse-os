@@ -678,7 +678,7 @@ distribution _GNU/Linux_ _Alpine_. Nous partons du principe que vous êtes parve
 à installer correctement _xen_ et _qemu_ sur votre machine. Le fichier ci-dessous
 donne un exemple de configuration d'une VM en paravirtualisation:
 #figure(
-  snippet("./xen/alpine.cfg", lang:"cfg"),
+  snippet("./xen/alpine/alpine.cfg", lang:"cfg"),
   caption: [Configuration d'une VM Alpine]
 )
 Téléchargez l'image d'_Alpine_ sur son site officiel:
@@ -810,7 +810,8 @@ n'est pas distribué avec _Xen_.].
 == Watchdog <xen_watchdog>
 
 _Xen_ propose un service _xenwatchdogd_ pour gérer les _watchdogs_ matériels
-@xen_watchdog_man_page.
+@xen_watchdog_man_page. Le service doit être lancé dans le _dom0_ en précisant
+un _timeout_ et un _sleep_.
 
 _Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
 implèmente l'API décrit dans la section @linux_watchdog_api.
