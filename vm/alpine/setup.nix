@@ -10,8 +10,9 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
+    set -e
     BRIDGE="xenbr"
-    ISO="./vm/alpine/alpine-stardard-3.22.1-x86_64.iso"
+    ISO="./vm/alpine/alpine-standard-3.22.1-x86_64.iso"
 
     cleanup() {
       sudo xl destroy alpine-setup
@@ -19,16 +20,16 @@ pkgs.mkShell {
 
     trap cleanup EXIT
 
-    7z e "$ISO"/boot/vmlinuz-lts ./vm/alpine/vmlinuz-lts 
-    7z e "$ISO"/boot/initramfs-lts ./vm/alpine/initramfs-lts
+    7z x -aoa "$ISO" boot/vmlinuz-lts -o./vm/alpine/
+    7z x -aoa "$ISO" boot/initramfs-lts -o./vm/alpine/
 
     cat > ./vm/alpine/setup.cfg << EOF
     name='alpine-setup'
     memory='2048'
     vcpus=2
     type='pv'
-    kernel='./vm/alpine/vmlinuz-lts'
-    ramdisk='./vm/alpine/initramfs-lts'
+    kernel='./vm/alpine/boot/vmlinuz-lts'
+    ramdisk='./vm/alpine/boot/initramfs-lts'
     disk=[ 
       'file:$ISO,hdc:cdrom,r',  
       './vm/alpine/disk.qcow2,qcow2,hda,w' 
@@ -40,3 +41,4 @@ pkgs.mkShell {
 
     sudo xl create ./vm/alpine/setup.cfg -c
   '';
+}

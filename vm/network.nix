@@ -9,11 +9,10 @@ pkgs.mkShell {
   shellHook = ''
     BRIDGE="xenbr"
     IFACE=$(ip route | grep default | awk '{print $5}')
-    NETWORK="192.168.1.0"
-    IP="192.168.1.10"
+    NETWORK="192.168.10.0"
+    IP="192.168.10.1"
 
     cleanup() {
-      sudo xl destroy alpine
       sudo iptables -D FORWARD -i "$BRIDGE" -o "$IFACE" -j ACCEPT
       sudo iptables -D FORWARD -i "$IFACE" -o "$BRIDGE" -m state --state RELATED,ESTABLISHED -j ACCEPT
       sudo iptables -t nat -D POSTROUTING -s "$NETWORK"/24 -o "$IFACE" -j MASQUERADE

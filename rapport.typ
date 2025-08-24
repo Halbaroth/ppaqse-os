@@ -463,7 +463,7 @@ echo "5 * 2^20" | bc | sudo tee /sys/fs/cgroup/foo/bar/memory.max
 Désormais la mémoire totale occupée par les processus du _cgroup_ `bar` ne
 doit pas excéder les 5 Mio.
 #figure(
-  snippet("./linux/limited.c", lang:"c")),
+  snippet("./linux/limited.c", lang:"c"),
   caption:[`limited.c`]
 ) <limited>
 
@@ -670,6 +670,10 @@ activement maintenu.
 
 Il existe un projet pour le support de _RISC-V_.
 
+=== Support multi-cœur
+_Xen_ supporte les architectures multi-cœur. L'hyperviseur offre la possibilité
+d'allouer les cœurs à certains systèmes invités grâce au concept de _virtual CPU_.
+
 == Mise en place d'une machine virtuelle Alpine
 
 Afin de pouvoir illustrer certaines fonctionnalités de _Xen_, cette section
@@ -681,6 +685,8 @@ donne un exemple de configuration d'une VM en paravirtualisation:
   snippet("./xen/alpine/alpine.cfg", lang:"cfg"),
   caption: [Configuration d'une VM Alpine]
 )
+
+Plus d'options sont documentées dans la page de manuel `xl.cfg`.
 Téléchargez l'image d'_Alpine_ sur son site officiel:
 ```console
 wget https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-standard-3.22.1-x86_64.iso
@@ -804,14 +810,36 @@ une  machine virtuelle sur un CPU donné.
 Ces données sont collectées grâce à des _tracepoints_ positionnés à des endroits
 clés du code de _Xen_. Ils sont activés via  _xentrace_ lorsqu'il est exécuté
 dans le domaine _dom0_. Ce dernier produit alors un fichier binaire qui peut
-ensuite être analysé par _xenanalyze_#footnote[Contrairement à _xentrace_, _xenanalyze_
-n'est pas distribué avec _Xen_.].
+ensuite être analysé par _xenanalyze_#footnote[Contrairement à _xentrace_,
+_xenanalyze_ n'est pas distribué avec _Xen_.].
 
 == Watchdog <xen_watchdog>
 
-_Xen_ propose un service _xenwatchdogd_ pour gérer les _watchdogs_ matériels
-@xen_watchdog_man_page. Le service doit être lancé dans le _dom0_ en précisant
-un _timeout_ et un _sleep_.
+_Xen_ permet la mise en place d'un _watchdog_ dans _dom0_ ou dans des domaines
+utilisateurs. L'exemple ci-dessous met en place un _watchdog_ qui doit être
+réinitialisé d'en un laps de temps de 30 secondes:
+#figure(
+  snippet("./xen/watchdog.c", lang:"c"),
+  caption: [Exemple d'interaction avec un _watchdog_ sous _Xen_.]
+)
+
+Pour compiler et lancer programme dans le domaine utilisateur, tapez:
+```console
+gcc watchdog.c -o watchdog $(pkg-config --cflags --libs xencontrol)
+./watchdog
+```
+Il suffit alors de fermer ce programme avec `CTRL-C` pour cesser de réinitialiser
+le _watchdog_. Par défaut, _Xen_ terminera le domaine utilisateur. Ce
+comportement peut être changé avec l'option `on_watchdog` du fichier de
+configuration de `xl`. Par exemple, l'option `on_watchdog='reboot'` provoquera
+le redémarrage du domaine.
+
+_Xen_ distribue un service _xenwatchdogd_ pour lancer les _watchdogs_
+@xen_watchdog_man_page. Le service est lancé en précisant un _timeout_ et un
+_sleep_ ainsi:
+```console
+xenwatchdogd 30 15
+```
 
 _Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
 implèmente l'API décrit dans la section @linux_watchdog_api.
@@ -823,7 +851,7 @@ L'hyperviseur `Xen` est un logiciel libre distribué principalement sous licence
 plus permissives afin de pas contraindre les licences des logiciels
 utilisateurs @xen_licensing.
 
-= RTEMS
+= RTEMS <rtems>
 
 == Architectures supportées <rtems_architectures>
 
@@ -844,6 +872,34 @@ Plus précisément, on peut mettre en place un timer avec la fonction
 `RTEMS` est un logiciel libre distribué sous une multitude de licences libres
 et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
 n'importe quelle licence @rtems_licenses_website.
+
+= MirageOS <mirageos>
+
+Le projet MirageOS a commencé en 2009. Il est depuis activement développé et
+maintenu. La _Core Team_ et les contributeurs sont employés dans des
+laboratoires publics (notamment l'université de Cambridge) ou de R&D
+(notamment l'entreprise _Tarides_).
+
+== Architectures supportées <mirageos_architectures>
+
+De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
+(Intel, Google, Samsung, AMD, ...).
+Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
+- #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parrallélisme
+offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
+Lorsqu'on souhaite uniquement entrelacer des files d'exécution, on peut utiliser
+des threads coopératifs notamment avec la bibliothèque OCaml Lwt. Si le
+parallèlisme est nécessaire, une solution est d'exécuter plusieurs unikernels
+sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ grâce
+à des canaux de communication entre machines virtuelles appelés _Xen vchan_
+@vchan_low_latency.]
+- #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
+concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
+sur plusieurs cœurs en parallèle.]
+
+== Licences & brevets <mirageos_licenses>
+
+Licence `ISC`
 
 = OS généralistes
 
@@ -972,52 +1028,11 @@ on y trouve généralement deux types de cœurs:
   première catégorie mais consomment nettement moins d'énergie et dissipent moins
   de chaleur. On peut citer les cœurs _E-cores_ chez Intel et _LITTLE_ chez ARM).]
 
-=== Linux & KVM
-
-=== MirageOS
-
-Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
-- #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parrallélisme
-offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
-Lorsqu'on souhaite uniquement entrelacer des files d'exécution, on peut utiliser
-des threads coopératifs notamment avec la bibliothèque OCaml Lwt. Si le
-parallèlisme est nécessaire, une solution est d'exécuter plusieurs unikernels
-sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ grâce
-à des canaux de communication entre machines virtuelles appelés _Xen vchan_
-@vchan_low_latency.]
-- #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
-concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
-sur plusieurs cœurs en parallèle.]
-
-=== PikeOS
-
-=== ProvenVisor
-
-=== RTEMS
-
-=== seL4
-
-=== Xen
-
-_Xen_ supporte les architectures multi-cœur. L'hyperviseur offre la possibilité
-d'allouer les cœurs à certains systèmes invités grâce au concept de _virtual CPU_.
-
-=== XtratuM
-
 = Activité
 
 == Linux & KVM
 
-Le projet Linux a été initié en 1991 par Linus Torvalds. Il est depuis activement
-développé au travers d'une communauté décentralisée.
-
-De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
-(Intel, Google, Samsung, AMD, ...).
-
 == MirageOS
-
-Le projet MirageOS a commencé en 2009. Il est depuis activement développé et maintenu.
-La _Core Team_ et les contributeurs sont employés dans des laboratoires publics (notamment l'université de Cambridge) ou de R&D (notamment l'entreprise _Tarides_).
 
 = Licences, brevets & certifications
 
@@ -1032,8 +1047,6 @@ y compris une licence propriétaire. Plus d'informations sont disponibles dans
 le dossier `LICENSES` des sources du noyau `Linux`.
 
 == MirageOS
-
-Licence `ISC`
 
 == PikeOS
 

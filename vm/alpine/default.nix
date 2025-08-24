@@ -24,7 +24,7 @@ pkgs.mkShell {
     vcpus=2
     type='pv'
     kernel='${pkgs.grub2_pvgrub_image}/lib/grub-xen/grub-x86_64-xen.bin'
-    disk=[ './vm/alpine/disk.qcow2,qcow2,hda,w' ]
+    disk=[ './vm/alpine/disk.qcow2,qcow2,xvda,w' ]
     boot='d'
     vif = [ 'mac=00:16:3e:00:00:00,bridge=$BRIDGE' ]
     device_model_override='/run/current-system/sw/bin/qemu-system-i386'
