@@ -31,9 +31,8 @@
         '';
       };
 
-      alpine = pkgs.callPackage ./vm/alpine/ { inherit pkgs; };
-
-      foo = pkgs.callPackages ./vm/network.nix { inherit pkgs; };
+      network = pkgs.callPackages ./vm/network.nix { inherit pkgs; };
+      alpine = pkgs.callPackage ./vm/alpine/default.nix { inherit pkgs; };
     });
   };
 }

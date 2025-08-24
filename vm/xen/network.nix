@@ -1,4 +1,4 @@
-{ pkgs, bridge, network, ip ... }:
+{ pkgs, ... }:
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
@@ -7,10 +7,10 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    BRIDGE="${bridge}"
+    BRIDGE="xenbr"
     IFACE=$(ip route | grep default | awk '{print $5}')
-    NETWORK="${network}"
-    IP="${ip}"
+    NETWORK="192.168.1.0"
+    IP="192.168.1.10"
 
     cleanup() {
       sudo xl destroy alpine
