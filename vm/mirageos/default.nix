@@ -4,16 +4,16 @@ let
   ocamlPackages = pkgs.ocamlPackages;
 in
 pkgs.mkShell {
-  buildInputs = (with pkgs; [
+  packages = (with pkgs; [
     qemu
     qemu_xen
     qemu-utils
     xen
-  ]) ++ (with ocamlPackges; [
+  ]) ++ (with ocamlPackages; [
     ocaml
     dune_3
     mirage
-    mirage_xen
+    mirage-xen
   ]);
 
   # shellHook = ''
