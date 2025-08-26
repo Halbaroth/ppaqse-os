@@ -2,6 +2,20 @@
 #set text(lang: "fr")
 #set par(justify: true)
 
+#page(margin: (left: 2in))[
+  #align(horizon + left)[
+    #line(start: (0%, 5%), end: (8.5in, 5%), stroke: (thickness: 2pt))
+    #text(
+      size: 20pt,
+      [Étude comparative de systèmes d'exploitations dans un
+      contexte critique ou temps-réel]
+    )
+
+  ]
+
+  #align(bottom + left)[#datetime.today().display()]
+]
+
 #set page(paper: "a4", margin: (y: 4em), numbering: "1", header: context {
   if calc.odd(here().page()) {
     align(right, emph(hydra(1)))
@@ -14,7 +28,7 @@
 #set heading(numbering: "1.1", supplement: [])
 
 #let definition(t) = {
-  text(weight: "bold")[#t]
+  text(style: "oblique", weight: "semibold")[#t]
 }
 
 #show raw.where(block: true): code => {
@@ -43,60 +57,92 @@
 
 #outline(depth: 1)
 
+
 = Introduction <introduction>
 
-Un #definition[système d'exploitation]#footnote[On parle d'_Operating System_
-en anglais, abrégé _OS_. On utilisera cette abréviation à notre convenance.]
-est un ensemble de routines et de bibliothèques gérant les ressources
-matérielles d'un système informatique (ordinateurs de bureau, serveurs,
-systèmes embarqués, ...). Son objectif est de fournir une couche d'abstraction
-logicielle entre les interfaces matérielles et les logiciels applicatifs.
-Les systèmes d'exploitation se distinguent aussi bien par les mécanismes d'abstraction
-qu'ils offrent, que leur organisation ou leur modularité. Ainsi, certaines tâches
-gérées par un OS peuvent être, dans une autre configuration, déléguées à une autre
-couche logicielle, voire au matériel. Il est donc difficile de caractériser
-rigoureusement ce qu'est un système d'exploitation autrement que par le fait qu'il
-s'exécute en #definition[mode noyau]#footnote[Le mode noyau (_kernel mode_ en anglais) est
-un mode d'exécution privilégié donnant accès à l'ensemble de la mémoire et à
-l'exécution d'instructions habituellement interdites aux logiciels applicatifs.
-A contrario, les logiciels applicatifs s'exécute en mode utilisateur
-(_user mode_ en anglais).].
-Dans ce document, nous étudions trois grandes classes de systèmes d'exploitation:
-- #box[Les #definition[systèmes d'exploitation généralistes]#footnote[On parle parfois
-de _GPOS_ en anglais pour _General-Purpose Operating System_] constituent la
-classe la plus connue du grand public. Ils sont le plus souvent directement
-exécutés au-dessus de la couche matérielle et offrent un large éventail de
-services. Leur domaine d'application est vaste et on les retrouve aussi bien sur
-les ordinateurs personnels, les smartphones que les serveurs et les systèmes embarqués.
-Parmi les plus connus, on peut citer _Linux_, _Windows_ et _macOS_.]
-- #box[Les #definition[hyperviseurs] sont des systèmes d'exploitation dédiés à la
-virtualisation, c'est-à-dire à l'exécution d'OS invités au-dessus d'une couche
-logicielle. Ils sont souvent utilisés pour exécuter simultanément plusieurs OS invités,
-notamment sur des serveurs. Parmi les plus utilisés, on peut citer
-_VMware vSphere_, _Hyper-V_, _KVM_, VirtualBox, QEMU, ...]
-- #box[Les #definition[unikernel] sont des OS se présentent sous la forme d'une
-collection de bibliothèques. Le développeur sélectionne les modules indispensables
-à l'exécution de son logiciel applicatif, puis crée une image en liant son
-programme à l'unikernel. Cette image peut ensuite être exécutée sur un hyperviseur
-ou en #definition[bare-metal]#footnote[C'est-à-dire directement
-sur la couche matérielle sans l'intermédiaire d'un système d'exploitation.].]
+Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
+souvent abrégé _OS_.] est un ensemble de routines gérant les ressources
+matérielles d'un système informatique, qu'il s'agisse d'ordinateurs de bureau,
+de serveurs ou de systèmes embarqués. Son rôle principal est de servir de
+couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
+Il permet ainsi de masquer la complexité et la diversité des interfaces matérielles en
+fournissant des _API_ (_Application Programming Interface_) stables, unifiées et
+parfois standardisées. Les systèmes d'exploitation se distinguent aussi bien
+par les mécanismes d'abstraction qu'ils offrent, que leur organisation ou
+leur modularité. Ainsi, un tâche gérée par un OS peut être dans une autre
+configuration déléguée à une autre couche logicielle, voire au matériel.
+Il est donc difficile de caractériser rigoureusement ce qu'est un système
+d'exploitation autrement que par le fait qu'il s'exécute en
+#definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
+d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
+instructions. A contrario, les logiciels applicatifs s'exécutent en mode
+utilisateur (_user mode_) et interagissent avec l'OS lorsqu'ils ont besoin
+de ses services.
+
+Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
+le contexte de systèmes informatiques critiques ou temps réels. Afin de mieux
+cerner le sujet, commençons par préciser ces deux termes.
+
+Un système est dit #definition[critique] si sa défaillance peut entraîner des
+conséquences indésirables. Cela peut aller de la simple perte de données à la
+destruction matérielle, voire, dans les cas les plus graves, à la perte de
+vies humaines. La criticité d'un système est généralement évalué lors de sa
+conception et le choix d'une solutions informatique adaptée en est une
+étape importante étant donné leur omniprésence dans les appareils modernes.
+
+Un système informatique est dit #definition[temps-réel] lorsque ce système est
+capable de piloter un procédé physique à une vitesse adaptée à l'évolution de ce
+dernier. Un tel système doit respecter des limites et contraintes temporelles.
+Ils sont souvent présents dans des systèmes critiques.
 
 == Systèmes d'exploitation étudiés
-Dans ce document nous examinons les systèmes d'exploitation suivants:
-- KVM (intégré dans Linux)
-- Linux 6.15.2
-- MirageOS 4.9.0
-- PikeOS 5.1.3
-- ProvenVisor (version non communiqué)
-- RTEMS 6.1
+Dans ce document, nous classons les systèmes d'exploitation étudiés en quatre
+grandes catégories:
+- #box[Les #definition[systèmes d'exploitation généralistes]
+(_GPOS_ pour _General-Purpose Operating System_) constituent la
+classe la plus connue du grand public. Ils sont le plus souvent directement
+exécutés au-dessus de la couche matérielle et offrent un large éventail de
+services. Leur domaine d'application est particulièrement vaste puisqu'on les
+retrouve aussi bien sur les ordinateurs personnels, les smartphones que les
+serveurs et les systèmes embarqués. Parmi les systèmes les plus connus, on
+peut citer _Linux_, _Windows_ et _macOS_. Vous trouverez davantage de détails
+sur les _GPOS_ dans la section @type_gpos.]
+- #box[Les #definition[hyperviseurs] sont des systèmes d'exploitation dédiés à
+la virtualisation, c'est-à-dire à l'exécution d'OS invités au-dessus d'une couche
+logicielle. On les retrouve fréquemment sur des serveurs exécutant simultanément
+plusieurs OS invités. Parmi les systèmes les plus utilisés, on peut citer
+_VMware vSphere_, _Hyper-V_, _KVM_, _VirtualBox_ ou encore QEMU. Plus d'informations
+sont disponibles dans la section @type_hypervisor.]
+- #box[Les #definition[systèmes d'exploitation temps-réels] (_RTOS_ pour
+_Real-Time Operating System_) sont des systèmes d'exploitation donnant des
+garanties le délai de réponses. Plus d'informations sont disponibles dans la
+section @type_rtos.]
+- #box[Les #definition[bibliothèques d'OS] (_LibOS_ pour _Library Operating System_)
+ne sont pas à proprement parler des systèmes d'exploitation mais plutôt des collections de
+bibliothèques permettant d'exécuter des logiciels sans avoir recours à un _GPOS_.
+Le développeur lie les modules indispensables à son programme, afin de produire
+une image appelée un #definition[unikernel]. Celui-ci peut ensuite être exécuté
+sur un hyperviseur ou en _bare-metal_, c'est-à-dire
+directement sur la couche matérielle.]
+
+Il est important de noter que certains systèmes d'exploitations rentrent dans
+plusieurs catégories. Dans ce document nous examinons les systèmes
+d'exploitation suivants:
+- Linux 6.15.2 (_GPOS_, _hyperviseur_ et _RTOS_)
+- MirageOS 4.9.0 (_LibOS_)
+- PikeOS 5.1.3 (_hyperviseur_, _RTOS_)
+- ProvenVisor
+- RTEMS 6.1 (_RTOS_)
 - seL4 13.0.0
-- Xen 4.20
-- XtratuM (version non communiqué)
+- Xen 4.20 (_hyperviseur_)
+- XtratuM
 
 Nous nous sommes efforcés de fournir des informations valables pour les
-versions spécifiées ci-dessus. Les entreprises développant `ProvenVisor` et
-`XtratuM` ne communiquent pas de numéros de version pour leurs systèmes
+versions spécifiées ci-dessus. Les entreprises développant ProvenVisor et
+XtratuM ne communiquent pas de numéros de version pour leurs systèmes
 d'exploitation.
+
+== Critères de comparaison
 
 == Organisation de l'étude
 
@@ -114,7 +160,7 @@ au fil de la section.
 
 == Type de système d'exploitation
 
-=== GPOS
+=== GPOS <type_gpos>
 
 Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
 - Les noyaux monolithique.
@@ -127,7 +173,7 @@ dans le _user space_.]
 précédents. Le noyau a la possibilité de charger ou décharger certaines sous-systèmes de
 façon dynamique. C'est notamment le cas des pilotes.]
 
-=== Hyperviseur
+=== Hyperviseur <type_hypervisor>
 
 Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
 raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
@@ -163,9 +209,7 @@ la virtualisation. Cette technique nécessite à la fois un support de l'hypervi
 et du système d'exploitation invité. En contre partie, la paravirtualisation
 permet généralement d'obtenir de meilleures performances.
 
-=== Unikernel
-
-=== Temps réel
+=== RTOS <type_rtos>
 
 Un système temps réel est un système informatique offrant des garanties
 sur le temps d'exécution de tâches critiques. Les contraintes temporelles sont
@@ -388,6 +432,9 @@ des fonctionnalités temps réel.]
 
 Ces deux aspects importants seront abordés respectivement dans les sections
 @linux_kvm et @linux_prempt_rt.
+
+De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
+(Intel, Google, Samsung, AMD, ...).
 
 == Architectures supportées
 
@@ -953,15 +1000,31 @@ n'importe quelle licence @rtems_licenses_website.
 
 = MirageOS <mirageos>
 
-Le projet MirageOS a commencé en 2009. Il est depuis activement développé et
-maintenu. La _Core Team_ et les contributeurs sont employés dans des
-laboratoires publics (notamment l'université de Cambridge) ou de R&D
-(notamment l'entreprise _Tarides_).
+_MirageOS_ est un _unikernel_ open-source conçu pour les applications réseaux.
+Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
+Le projet, lancé en 2009, est activement développé par la _MirageOS Core Team_.
+Cette équipe est composée d'employés du secteur privé et d'universitaires.
+
+En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
+taille et avec une empreinte mémoire minimale. Il offre également des temps de
+démarrage réduit.
+
+== Environnement <mirageos_environnement>
+
+Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
+hyperviseur, un _UNIX_ ou même dans un environnement _bare-metal_.
+
+=== Hyperviseurs supportés <mirageos_hypervisors>
+
+_Xen_, _KVM_, _bhyve_, _VMM_.
+
+=== UNIX <mirageos_unix>
+
+=== Bare-metal <mirageos_bare_metal>
 
 == Architectures supportées <mirageos_architectures>
 
-De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
-(Intel, Google, Samsung, AMD, ...).
+=== Support multi-cœur
 Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
 - #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parrallélisme
 offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
