@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  ocamlPackages = pkgs.ocamlPackages;
+  ocamlPackages = pkgs.ocaml-ng.ocamlPackages_5_1;
 in
 pkgs.mkShell {
   packages = (with pkgs; [
@@ -9,11 +9,28 @@ pkgs.mkShell {
     qemu_xen
     qemu-utils
     xen
+    solo5
   ]) ++ (with ocamlPackages; [
-    ocaml
-    dune_3
-    mirage
-    mirage-xen
+    # findlib
+    # ocaml
+    # dune_3
+    # mirage
+    # mirage-xen
+    # mirage-logs
+    # mirage-profile
+    # mirage-runtime
+    # shared-memory-ring-lwt
+    # lwt
+    # duration
+    # cstruct
+    # fmt
+    # io-page
+    # logs
+    # lwt-dllist
+    # xenstore
+    # mirage-unix
+    # mirage-clock-unix
+    # mirage-bootvar-unix
   ]);
 
   # shellHook = ''
