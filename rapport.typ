@@ -77,22 +77,22 @@ d'exploitation autrement que par le fait qu'il s'exécute en
 d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
 instructions. A contrario, les logiciels applicatifs s'exécutent en mode
 utilisateur (_user mode_) et interagissent avec l'OS lorsqu'ils ont besoin
-de ses services.
+d'accéder au matériel.
 
 Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
-le contexte de systèmes informatiques critiques ou temps réels. Afin de mieux
-cerner le sujet, commençons par préciser ces deux termes.
+le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
+commençons par préciser ces deux termes.
 
 Un système est dit #definition[critique] si sa défaillance peut entraîner des
 conséquences indésirables. Cela peut aller de la simple perte de données à la
 destruction matérielle, voire, dans les cas les plus graves, à la perte de
 vies humaines. La criticité d'un système est généralement évalué lors de sa
 conception et le choix d'une solutions informatique adaptée en est une
-étape importante étant donné leur omniprésence dans les appareils modernes.
+étape importante, étant donné leur omniprésence dans les appareils modernes.
 
-Un système informatique est dit #definition[temps-réel] lorsque ce système est
+Un système informatique est dit #definition[temps-réel] lorsque celui-ci est
 capable de piloter un procédé physique à une vitesse adaptée à l'évolution de ce
-dernier. Un tel système doit respecter des limites et contraintes temporelles.
+dernier. Un tel système doit donc respecter des limites et contraintes temporelles.
 Ils sont souvent présents dans des systèmes critiques.
 
 == Systèmes d'exploitation étudiés
@@ -115,7 +115,7 @@ _VMware vSphere_, _Hyper-V_, _KVM_, _VirtualBox_ ou encore QEMU. Plus d'informat
 sont disponibles dans la section @type_hypervisor.]
 - #box[Les #definition[systèmes d'exploitation temps-réels] (_RTOS_ pour
 _Real-Time Operating System_) sont des systèmes d'exploitation donnant des
-garanties le délai de réponses. Plus d'informations sont disponibles dans la
+garanties sur le temps d'exécution. Plus d'informations sont disponibles dans la
 section @type_rtos.]
 - #box[Les #definition[bibliothèques d'OS] (_LibOS_ pour _Library Operating System_)
 ne sont pas à proprement parler des systèmes d'exploitation mais plutôt des collections de
@@ -146,10 +146,15 @@ d'exploitation.
 
 == Organisation de l'étude
 
-Les systèmes étudiés étant très différents, ils nous a semblait pertinent de
-diviser certaines sections de l'étude suivant le type de système d'exploitation.
+L'étude est organisée suivant le plan suivant:
+- #box[Le chapitre @general_notions contient des généralités sur les systèmes
+d'exploitations et les interfaces matérielles. Les notions abordées sont ensuite
+librement utilisée dans les chapitres ultérieurs.]
+- #box[Les chapitres @linux, @mirageos, @pikeos, @provenvisor, @rtems, @sel4,
+@xen, @xtratum exposent chacun des OS étudiés.]
+- #box[Le chapitre @comp contient des tableaux comparatifs.]
 
-= Notions générales
+= Notions générales <general_notions>
 
 Cette section contient des notions générales autour des systèmes
 d'exploitation et des interfaces matérielles pertinentes pour ce rapport. Ces
@@ -158,70 +163,11 @@ architectures et des OS actuels, et d'autre part le foisonnement des solutions
 existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
 au fil de la section.
 
-== Type de système d'exploitation
-
-=== GPOS <type_gpos>
-
-Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
-- Les noyaux monolithique.
-- #box[Les micro-noyaux: au contraire du noyau monolithique, le micro-noyau se
-concentre sur les opérations fondamentales qui ne peuvent être effectuée que
-dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
-et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
-dans le _user space_.]
-- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux designs
-précédents. Le noyau a la possibilité de charger ou décharger certaines sous-systèmes de
-façon dynamique. C'est notamment le cas des pilotes.]
-
-=== Hyperviseur <type_hypervisor>
-
-Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
-raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
-et sûre, une première solution consiste
-à héberger chaque service sur une machine individuelle. On obtient ainsi une
-isolation totale des différents services. Cette solution présente
-toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
-maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
-besoins à moindre frais.
-
-Les _hyperviseurs_ se divisent généralement en deux catégories:
-- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
-matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
-- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
-intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
-OS dans ce document.]
-
-Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
-- #box[La _virtualisation total_: le comportement de la couche matérielle]
-- #box[La _virtualisation partielle_]
-- #box[La _paravirtualisation_]
-
-La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
-le comportement de la couche matérielle en exposant la même interface aux systèmes
-invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
-lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation totale:
-- la translation binaire (_binary translation_ en anglais)
-- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
-
-La _paravirtualisation_ est une technique de virtualisation qui consiste à
-présenter une interface logicielle similaire au matériel mais optimisée pour
-la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
-et du système d'exploitation invité. En contre partie, la paravirtualisation
-permet généralement d'obtenir de meilleures performances.
-
-=== RTOS <type_rtos>
-
-Un système temps réel est un système informatique offrant des garanties
-sur le temps d'exécution de tâches critiques. Les contraintes temporelles sont
-d'autant plus difficile à garantir que le système est multi-tâche. Un système
-d'exploitation offrant de telles garanties est appelé un RTOS
-(_Real Time Operating System_).
-
 == Partionnement des ressources
 
-Le partitionnement des ressources est un mécanisme fondamental
-des systèmes d'exploitation modernes. Il vise à permettre l'exécution simultanée
-de plusieurs tâche sur une même machine physique. On parle alors de système
+Le partitionnement des ressources est un mécanisme fondamental des systèmes
+d'exploitation modernes. Il vise à permettre l'exécution simultanée de
+plusieurs tâche sur une même machine physique. On parle alors de système
 #definition[multi-tâche].
 En effet, les ressources matérielles étant le plus souvent insuffisantes pour exécuter
 chaque tâche sur sa propre machine, il est nécessaire de partager ces ressources
@@ -237,10 +183,10 @@ la mémoire principale et le processeur.
 
 === Partitionnement en mémoire
 
-Le partitionnement en mémoire vise à partager la mémoire principale entre plusieurs
-tâches en cours d'exécution. Ce partage est crucial car il permet de conserver en mémoire
-tout ou une partie des données de plusieurs processus, améliorant les performances
-du système.
+Le partitionnement en mémoire vise à partager la mémoire principale entre
+plusieurs tâches en cours d'exécution. Ce partage est crucial car il permet de
+conserver en mémoire tout ou une partie des données de plusieurs processus,
+améliorant les performances du système.
 
 Dans le cas des processus, la méthode la plus courante pour gérer ce partage
 s'appuie sur la #definition[mémoire virtuelle]. Au lieu de faire référence à
@@ -261,9 +207,43 @@ demande.
 
 === Partitionnement en temps
 
-Les systèmes d'exploitation permettent l'exécution de programmes dans un contexte
-multi-tâches. Cette exécution peut être #definition[concurrentielle] ou
-#definition[parallèle]. Afin que cett
+Les systèmes d'exploitation moderne permettent l'exécution de programmes dans un
+contexte multi-tâches. Cette exécution peut être #definition[concurrentielle]
+ou #definition[parallèle]. Dans cette section, une tâche peut aussi bien désigner
+un programme, un _thread_ ou même un OS invité.
+
+L'#definition[ordonnanceur de tâche] (_scheduler_) est un des composants
+principales d'un système d'exploitation. Son rôle est de décider quelle tâche doit
+être exécuté à un instant donné sur le CPU. Un _scheduler_ peut poursuivre des
+objectifs différents et parfois incompatibles. Il peut notamment chercher à:
+- #box[Maximiser la quantité de travail accomplie par unité de temps. En anglais,
+on parle souvent du _throughtput_.]
+- #box[Minimiser la #definition[latence] (_latency_), c'est-à-dire ]
+- #box[Être #definition[équitable] (_fairness_) en donnant des tranches de temps
+en proportion de la priorité et de la charge de travail d'une tâche.]
+
+L'ordonnanceur de tâches d'un _RTOS_ cherche à maximiser le nombre de tâches
+pouvant respecter leurs _deadlines_ simultanément. À cette fin, la
+#definition[latence].
+
+L'ordonnanceur de tâches d'un _GPOS_ cherche le plus souvent à maximiser
+la quantité de travail accomplie par unité de temps#footnote[Cette quantité
+est souvent désigner par _throughput_ en anglais.]
+
+Un _cœur_ est un ensemble de circuits intégrés capable d'exécuter des instructions
+de façon autonome. Un microprocesseur embarquant plusieurs cœurs est qualifié
+de _processeur multi-cœur_.
+
+De nos jours, certains fabricants comme Intel ou ARM proposent des processeurs où les
+cœurs ne sont plus identiques. L'intérêt principal de ces architectures hybrides est
+de faire un compromis entre la puissance de calcul et l'efficacité énergétique. Ainsi
+on y trouve généralement deux types de cœurs:
+- #box[Les cœurs performances: ces unités sont dédiées aux tâches lourdes mais
+  sont gourmandes en énergie. On peut citer les cœurs _P-cores_ chez Intel et
+  _big_ chez ARM.]
+- #box[Les cœurs économes: moins performantes que les cœurs de la
+  première catégorie mais consomment nettement moins d'énergie et dissipent moins
+  de chaleur. On peut citer les cœurs _E-cores_ chez Intel et _LITTLE_ chez ARM).]
 
 == Gestion des interruptions
 
@@ -305,11 +285,11 @@ temporairement certaines d'entre elles.
 Les architecture moderne embarque généralement plusieurs puces dédiées à la gestion des
 requêtes d'interruption (_IRQ_ pour _Interrupt ReQuest_). Par exemple, sur les architectures
 Intel et AMD, cette tâche est accomplie par le sous-système _APIC_
-(_Advanced Programmable Interruption Controller_). Sur les architectures ARM, elle
-est dévolue au _GIC_ (_Generic Interrupt Controller_).
+(_Advanced Programmable Interruption Controller_). Sur les architectures ARM,
+elle est dévolue au _GIC_ (_Generic Interrupt Controller_).
 
-Les processeurs multi-cœur disposent aussi de puce _APIC_ par cœur, permettant la gestion
-des interruptions entre cœurs (_Inter-Processor Interrupt_ IPI).
+Les processeurs multi-cœur disposent aussi de puce _APIC_ par cœur, permettant
+la gestion des interruptions entre cœurs (_Inter-Processor Interrupt_ IPI).
 
 Les contrôleurs d'interruption permettent également de mettre des niveaux de priorité
 sur les interruptions.
@@ -337,17 +317,17 @@ De nos jours, les mémoires de type _DRAM_ (_Dynamic Random Access Memory_) sont
 massivement utilisées comme mémoire principale aussi bien sur les serveurs que
 les ordinateurs personnels. Certaines barrettes sont dotées d'une puce
 mémoire supplémentaire permettant l'utilisation d'un code correcteur.
-Ce type de mémoire nécessite une prise en charge par le contrôleur mémoire, le CPU
-et le BIOS. Si cette prise en charge est rare sur le matériel
-grand public, elle est en revanche commune sur celui dédié aux serveurs.
+Ce type de mémoire nécessite une prise en charge par le contrôleur mémoire, le
+CPU et le BIOS. Si cette prise en charge est rare sur le matériel grand public,
+elle est en revanche commune sur celui dédié aux serveurs.
 
 === Scrubbing <scrubbing>
 
 Les mémoires _ECC_ décrites en @ecc_memory permettent de corriger automatiquement
-les erreurs à la lecture. Toutefois certaines données
-peuvent restées en mémoire longtemps sans être accédées. On peut par exemple
-penser aux enregistrements d'une base de donnée que l'on souhaite maintenir
-dans la mémoire principale pour en accélérer l'accès. Les _soft errors_ peuvent
+les erreurs à la lecture. Toutefois certaines données peuvent restées en
+mémoire longtemps sans être accédées. On peut par exemple penser aux
+enregistrements d'une base de donnée que l'on souhaite maintenir dans la
+mémoire principale pour en accélérer l'accès. Les _soft errors_ peuvent
 alors s'y accumuler au point que le code correcteur ne permette plus leur correction.
 Pour pallier ce problème, on a recourt au _scrubbing_. Il en existe de deux types:
 - #box[Le _demand scrubbing_ permet à l'utilisateur de déclencher manuellement le
@@ -358,12 +338,12 @@ pour détecter et corriger les erreurs régulièrement.]
 === Interfaces matérielles
 
 Bien qu'aucun pilote spécifique ne soit requis pour les mémoires _ECC_, certains
-systèmes d'exploitation permettent de les piloter via des interfaces matérielles spécifiques.
-Ces interfaces permettent notamment de:
+systèmes d'exploitation permettent de les piloter via des interfaces matérielles
+spécifiques. Ces interfaces permettent notamment de:
 - #box[Désactiver le _scrubbing_ lorsque cela pose des soucis de performance,]
 - #box[Changer le taux de balayage du _patrol scrubbing_,]
-- #box[Notifier et journaliser les _soft errors_ et les _hard errors_, permettant ainsi
-aux logiciels de réagir,]
+- #box[Notifier et journaliser les _soft errors_ et les _hard errors_,
+permettant ainsi aux logiciels de réagir,]
 - #box[Spécifier une plage d'adresses pour le _demand scrubbing_.]
 Il existent de nombreuses interfaces matérielles. Le tableau comparatif suivant liste
 quelques unes d'entre elles ainsi que leurs caractéristiques clés.
@@ -383,18 +363,18 @@ quelques unes d'entre elles ainsi que leurs caractéristiques clés.
 
 == Watchdog <watchdog>
 
-Un chien de garde, ou _watchdog_ en anglais, est un dispositif matériel ou logiciel
-conçu pour détecter le blocage d'un système informatique, et de réagir de manière
-autonome pour ramener ce système dans un état normal. Qu'il s'agisse d'un
-dispositif matériel ou logiciel, le principe du watchdog consiste
-le plus souvent à demander au système surveillé d'envoyer régulièrement un signal à
+Un chien de garde (_watchdog_) est un dispositif matériel ou logiciel conçu
+pour détecter le blocage d'un système informatique, et de réagir
+de manière autonome pour ramener ce système dans un état normal. Qu'il s'agisse
+d'un dispositif matériel ou logiciel, le principe du watchdog consiste le plus
+souvent à demander au système surveillé d'envoyer régulièrement un signal à
 un système surveillant. Le système surveillé dispose d'une fenêtre de temps
 pour cette action. S'il n'effectue pas la tâche dans le temps imparti, il est
 présumé dysfonctionnel. Le système surveillant peut alors tenter de remédier
 à la situation. Le plus souvent cela consiste à redémarrer la machine.
 
 Les appareils embarqués et les serveurs à haute disponibilité ont souvent
-recours aux watchdogs pour améliorer leur fiabilité.
+recours aux _watchdogs_ pour améliorer leur fiabilité.
 
 == Profilage <profiling>
 
@@ -413,6 +393,78 @@ on n'effectue un échantillonnage de ces mesures en espérant que les échantill
 collectés seront représentatifs des caractéristiques de performances du programme
 étudié.
 
+== Type de système d'exploitation
+
+=== GPOS <type_gpos>
+
+Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
+- Les noyaux monolithique.
+- #box[Les micronoyaux: au contraire du noyau monolithique, le micronoyau se
+concentre sur les opérations fondamentales qui ne peuvent être effectuée que
+dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
+et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
+dans le _user space_.]
+- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
+designs précédents. Le noyau a la possibilité de charger ou décharger certaines
+sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
+
+=== Hyperviseur <type_hypervisor>
+
+Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
+raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
+et sûre, une première solution consiste
+à héberger chaque service sur une machine individuelle. On obtient ainsi une
+isolation totale des différents services. Cette solution présente
+toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
+maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
+besoins à moindre frais.
+
+Les _hyperviseurs_ se divisent généralement en deux catégories:
+- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
+matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
+- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
+intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
+OS dans ce document.]
+
+Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
+- #box[La _virtualisation total_: le comportement de la couche matérielle]
+- #box[La _virtualisation partielle_]
+- #box[La _paravirtualisation_]
+
+La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
+le comportement de la couche matérielle en exposant la même interface aux systèmes
+invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
+lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation
+totale:
+- la translation binaire (_binary translation_ en anglais)
+- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
+
+La _paravirtualisation_ est une technique de virtualisation qui consiste à
+présenter une interface logicielle similaire au matériel mais optimisée pour
+la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
+et du système d'exploitation invité. En contre partie, la paravirtualisation
+permet généralement d'obtenir de meilleures performances.
+
+=== RTOS <type_rtos>
+
+Un _RTOS_ est un système d'exploitation offrant des garanties sur le temps
+d'exécution de ses tâches. Les contraintes temporelles sont d'autant plus
+difficiles à garantir que le système est multi-tâche. On distingue
+trois classes de contraintes temporelles suivant leur criticité:
+- #box[Les contraintes _soft real time_ sont des contraintes nécessaires pour
+offrir une certaine qualité de service. Par exemple le visionnage d'une vidéo
+nécessite un _frame rate_ minimal. La violation de ces contraintes
+n'occasionne qu'une dégradation de la qualité du service rendu.]
+- #box[Les contraintes _firm real time_ sont similaires au cas précédent mais
+leur violation peut conduire à un résultat invalide.]
+- #box[Les contraintes _hard real time_ sont les plus strictes et leur violation
+a généralement des conséquences indésirables. Ces contraintes sont typiques dans
+les systèmes critiques.]
+
+Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
+d'un programme informatique sur une plateforme matérielle donnée.
+
+
 = Linux <linux>
 
 Le noyau _Linux_ est un système d'exploitation généraliste de type UNIX développé par une
@@ -420,40 +472,51 @@ communauté décentralisée de développeurs. Le projet est initié par Linus To
 en 1991. De nos jours, il est utilisé sur une large gamme de matériels comme des
 serveurs, des supercalculateurs, des systèmes embarqués et des ordinateurs personnels.
 Originellement conçu comme un noyau monolithique, _Linux_ est devenu un noyau
-modulaire à partir de la version `1.1.85` publiée en 1995.
-
-En plus d'être un _GPOS_, _Linux_ intègre un hyperviseur et est depuis récemment
-un _RTOS_. Plus précisément:
-- #box[Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur baptisé
-_KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit d'un hyperviseur de type 1
-assisté par le matériel. Il offre également un support pour la paravirtualisation.]
-- #box[Depuis la version `v6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
-des fonctionnalités temps réel.]
-
-Ces deux aspects importants seront abordés respectivement dans les sections
-@linux_kvm et @linux_prempt_rt.
+modulaire à partir de la version `1.1.85` publiée en 1995. En plus d'être un
+_GPOS_, _Linux_ intègre un hyperviseur et est depuis 2024 un _RTOS_.
+Plus précisément:
+- #box[Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
+baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
+d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
+pour la paravirtualisation. Plus de détails sont donnés dans la section @linux_kvm.]
+- #box[Depuis la version `6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
+des fonctionnalités temps réel. Plus d'informations sont données dans la section
+@linux_prempt_rt.]
 
 De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 (Intel, Google, Samsung, AMD, ...).
 
+== KVM <linux_kvm>
+
+== PREMPT_RT <linux_prempt_rt>
+
+Le besoin de faire de _Linux_ un _RTOS_ est apparu à la fin des années 90. À
+cette époque des solutions comme _RTLinux_ ou _RTAI_
+#footnote[_RTAI_ est toujours activement développé.] consistaient à contourner
+le noyau _Linux_ en exécutant un micronoyau temps réel directement sur le
+matériel. _Linux_ est alors exécuté comme une tâche de faible priorité sur
+ce micronoyau. C'est dans ce contexte que le projet _PREMPT_RT_ a été initié
+en 2005.
+
 == Architectures supportées
 
-Le noyau _Linux_ était dans un premier temps développé uniquement pour l'architecture _x86_.
-Il a depuis été porté sur de très nombreuses architectures @linux_arch. Il fonctionne notamment
-sur les architectures suivantes: _x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_,
-_RISC-V_ et _SPARC_.
+Le noyau _Linux_ était dans un premier temps uniquement développé pour
+l'architecture _x86_. Il a depuis été porté sur de très nombreuses architectures
+@linux_arch. Il fonctionne notamment sur les architectures suivantes:
+_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
 
-Quant à l'hyperviseur _KVM_, il nécessite un support matériel pour l'hypervirtualisation.
-Sur architecture _x86_, il supporte _Intel VT-x_ et _AMD-V_. Sur architecture _ARM_,
-il supporte l'architecture _ARM v7_ à partir de _Cortex-A15_ et _ARMv8-A_. Enfin
-il supporte certaines architectures _PowerPC_ comme _BookE_ et _Book3S_.
+Quant à l'hyperviseur _KVM_, il nécessite un support matériel pour
+l'hypervirtualisation. Sur architecture _x86_, il supporte _Intel VT-x_ et
+_AMD-V_. Sur architecture _ARM_, il supporte l'architecture _ARM v7_ à partir
+de _Cortex-A15_ et _ARMv8-A_. Enfin il supporte certaines architectures
+_PowerPC_ comme _BookE_ et _Book3S_.
 
 == Partitionnement <linux_partitioning>
 
 Dans cette section, nous décrivons les principaux mécanismes d'isolation de
-partitionnement des ressources disponible sous _Linux_. Ces mécanismes sont aujourd'hui
-utilisés aussi bien pour la virtualisation via _KVM_ que pour les conteneurs
-des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
+partitionnement des ressources disponibles sous _Linux_. Ces mécanismes sont
+aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
+conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
 === Les _control croups_
 
@@ -720,10 +783,6 @@ sudo opcontrol --start --event=CPU_CYCLES
 sudo opcontrol --reset
 ```
 
-== KVM <linux_kvm>
-
-== PREMPT_RT <linux_prempt_rt>
-
 == Watchdog <linux_watchdog>
 
 Cette section décrit le support pour des _watchdogs_ matériels dans le noyau
@@ -778,6 +837,145 @@ travers des appels systèmes n'est pas considéré comme une œuvre dérivée et
 peut être distribué sous une licence qui n'est pas compatible avec la GPL,
 y compris une licence propriétaire. Plus d'informations sont disponibles dans
 le dossier `LICENSES` des sources du noyau `Linux`.
+
+= MirageOS <mirageos>
+
+_MirageOS_ est un _unikernel_ open-source conçu pour les applications réseaux.
+Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
+Le projet, lancé en 2009, est activement développé par la _MirageOS Core Team_.
+Cette équipe est composée d'employés du secteur privé et d'universitaires.
+
+En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
+taille et avec une empreinte mémoire minimale. Il offre également des temps de
+démarrage réduit.
+
+== Environnement <mirageos_environnement>
+
+Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
+hyperviseur, un _UNIX_ ou même dans un environnement _bare-metal_.
+
+=== Hyperviseurs supportés <mirageos_hypervisors>
+
+_Xen_, _KVM_, _bhyve_, _VMM_.
+
+=== UNIX <mirageos_unix>
+
+=== Bare-metal <mirageos_bare_metal>
+
+== Architectures supportées <mirageos_architectures>
+
+=== Support multi-cœur
+Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
+- #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parallélisme
+offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
+Lorsqu'on souhaite uniquement entrelacer des files d'exécution, on peut utiliser
+des threads coopératifs notamment avec la bibliothèque OCaml Lwt. Si le
+parallèlisme est nécessaire, une solution est d'exécuter plusieurs unikernels
+sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ grâce
+à des canaux de communication entre machines virtuelles appelés _Xen vchan_
+@vchan_low_latency.]
+- #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
+concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
+sur plusieurs cœurs en parallèle.]
+
+== Watchdog <mirageos_watchdog>
+
+== Licences & brevets <mirageos_licenses>
+
+Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
+sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
+`ISC` est nécessaire car en tant qu'_unikernel_, les bibliothèques de _MirageOS_
+doivent être liés statiquement avec le logiciel applicatif pour former l'image
+qui sera mise en production.
+
+= PikeOS <pikeos>
+
+_PikeOS_ est un _RTOS_ et un hyperviseur de type 1 développé par l'entreprise
+_SYSGO_ depuis 2005. En 2012, l'entreprise _SYSGO_ est rachetée par _Thalès_.
+À l'origine l'OS était basé sur le micronoyau _L4_.
+
+Dès sa conception, _PikeOS_ a été pensé pour faciliter sa certification, voir
+la section @pikeos_licenses.
+
+== Architectures supportées <pikeos_architectures>
+
+_PikeOS_ supporte les architectures suivantes: _x86-64_, _ARM v7_, _ARM v8_,
+_PowerPC_, _RISC-V_ et _SPARC_.
+
+Le support matériel se fait via des _BSP_ (_Board Support Package_). Il est
+également possible de financer le développement de nouveaux _BSP_.
+
+== Partitionnement
+
+Son hyperviseur permet à la fois la paravirtualisation et la virtualisation
+de type _HVM_.
+
+== Licenses & brevets <pikeos_licenses>
+
+La société SYSGO propose deux types de licences propriétaires:
+- #box[Une licence de développement permettant de concevoir des systèmes basés
+sur _PikeOS_.]
+- Une licence de déploiement.
+
+Certifications:
+- RTCA DO-178B/C
+- EN 50218
+- EN 50657
+- CEI 61508
+- ISO 26262
+- CEI 62304
+
+Normes:
+- Critères communs (quel niveau?)
+- SAR
+
+= ProvenVisor <provenvisor>
+
+== Licences & brevets <provenvisor_licenses>
+
+- Permet la certification critères communs EAL5
+
+
+= RTEMS <rtems>
+
+== Architectures supportées <rtems_architectures>
+
+_RTEMS_ supporte les architectures suivantes @rtems_licenses_website:
+_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
+
+== Watchdog <rtems_watchdog>
+
+_RTEMS_ ne fournit pas d'API unifié pour gérer les _watchdogs_ matériels.
+Le support est implémenté au niveau du _BSP_ (_Board Support Package_).
+
+Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
+Plus précisément, on peut mettre en place un timer avec la fonction
+`rtems_timer_fire_after`.
+
+== Licences & brevets <rtems_licenses>
+
+`RTEMS` est un logiciel libre distribué sous une multitude de licences libres
+et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
+n'importe quelle licence @rtems_licenses_website.
+
+= seL4 <sel4>
+
+== Licences & brevets <sel4_licenses>
+
+Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
+`GNU General Public License version 2 only (GPL-2.0)`. Le code utilisateur et
+les pilotes peuvent être distribués sous n'importe quelle licence @sel4_licensing.
+
+`seL4` a fait l'objet d'une spécification et d'une vérification formelle à
+l'aide de l'assistant de preuve _Isabelle/HOL_. La correction
+#footnote[La correction d'un algorithme signifie qu'il a été démontré que cet
+algorithme respecte sa spécification.] de l'implémentation
+a été démontrée pour plusieurs configurations et il a été également démontré
+que le code binaire est correct pour les architectures _ARM_ et _RISC-V_ @sel4_verification.
+Cette vérification formelle implique en particulier que `seL4` est dépourvu de
+certaines erreurs de programmation classiques @sel4_implication. Il est notamment
+dépourvu de débordements de tampon, de déréférencements de pointeurs nuls, de
+fuites mémoire et de dépassements d'entier.
 
 = Xen <xen>
 
@@ -956,8 +1154,8 @@ gcc watchdog.c -o watchdog $(pkg-config --cflags --libs xencontrol)
 Il suffit alors de fermer ce programme avec `CTRL-C` pour cesser de réinitialiser
 le _watchdog_. Par défaut, _Xen_ terminera le domaine utilisateur. Ce
 comportement peut être changé avec l'option `on_watchdog` du fichier de
-configuration de `xl`. Par exemple, l'option `on_watchdog='reboot'` provoquera
-le redémarrage du domaine.
+configuration de _xenlight_. Par exemple, l'option `on_watchdog='reboot'`
+provoquera le redémarrage du domaine.
 
 _Xen_ distribue un service _xenwatchdogd_ pour lancer les _watchdogs_
 @xen_watchdog_man_page. Le service est lancé en précisant un _timeout_ et un
@@ -976,111 +1174,46 @@ L'hyperviseur `Xen` est un logiciel libre distribué principalement sous licence
 plus permissives afin de pas contraindre les licences des logiciels
 utilisateurs @xen_licensing.
 
-= RTEMS <rtems>
+= Xtratum <xtratum>
 
-== Architectures supportées <rtems_architectures>
+== Licences & brevets <xtratum_licenses>
 
-_RTEMS_ supporte les architectures suivantes @rtems_licenses_website:
-_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
+- #box[La version originelle de l'hyperviseur `XtratuM` est distribuée sous
+licence `GPL v2` @xtratum_github.]
+- #box[Une nouvelle version `XtratuM New Generation` est développée et
+distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
 
-== Watchdog <rtems_watchdog>
 
-_RTEMS_ ne fournit pas d'API unifié pour gérer les _watchdogs_ matériels.
-Le support est implémenté au niveau du _BSP_ (_Board Support Package_).
+// = OS généralistes
+//
+// Leurs noyaux se répartissent en deux catégories:
+// - #box[Les _noyaux monolithiques_ qui se caractérisent pas le fait que la majorité
+// de leurs services s'exécutent en _mode noyau_.]
+// - #box[Les _micronoyaux_ qui n'exécutent que le strict nécessaire en espace
+// noyau, à savoir l'ordonnancement des processus, la communication
+// inter-processus et la gestion de la mémoire.]
+//
+// = Types de système d'exploitation
+//
+// Les systèmes d'exploitation se distinguent par les mécanismes d'abstraction
+// qu'ils offrent, leur organisation et leur modularité.
+// Certaines tâches gérées par un noyau peuvent être dans une configuration
+// différente déléguées à une autre couche logicielle, voire au matériel. Nous
+// proposons dans cette section une classification en trois catégories: les
+// _unikernels_, les _hyperviseurs_ et les _OS classiques_.
+//
+// == Les unikernels
+//
+// Les _unikernel_ sont des systèmes d'exploitation qui se présentent sous la
+// forme d'une collection de bibliothèques. Le développeur sélectionne les modules
+// indispensables à l'exécution de son application, puis crée une _image_ en
+// compilant son application avec les modules choisis. Cette image est ensuite
+// exécutée sur un _hyperviseur_ ou en _bare-metal_#footnote[C'est-à-dire directement
+// sur la couche matérielle sans l'intermédiaire d'un système d'exploitation.]
+//
+// == Les OS classiques
 
-Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
-Plus précisément, on peut mettre en place un timer avec la fonction
-`rtems_timer_fire_after`.
-
-== Licences & brevets <rtems_licenses>
-
-`RTEMS` est un logiciel libre distribué sous une multitude de licences libres
-et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
-n'importe quelle licence @rtems_licenses_website.
-
-= MirageOS <mirageos>
-
-_MirageOS_ est un _unikernel_ open-source conçu pour les applications réseaux.
-Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
-Le projet, lancé en 2009, est activement développé par la _MirageOS Core Team_.
-Cette équipe est composée d'employés du secteur privé et d'universitaires.
-
-En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
-taille et avec une empreinte mémoire minimale. Il offre également des temps de
-démarrage réduit.
-
-== Environnement <mirageos_environnement>
-
-Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
-hyperviseur, un _UNIX_ ou même dans un environnement _bare-metal_.
-
-=== Hyperviseurs supportés <mirageos_hypervisors>
-
-_Xen_, _KVM_, _bhyve_, _VMM_.
-
-=== UNIX <mirageos_unix>
-
-=== Bare-metal <mirageos_bare_metal>
-
-== Architectures supportées <mirageos_architectures>
-
-=== Support multi-cœur
-Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
-- #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parrallélisme
-offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
-Lorsqu'on souhaite uniquement entrelacer des files d'exécution, on peut utiliser
-des threads coopératifs notamment avec la bibliothèque OCaml Lwt. Si le
-parallèlisme est nécessaire, une solution est d'exécuter plusieurs unikernels
-sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ grâce
-à des canaux de communication entre machines virtuelles appelés _Xen vchan_
-@vchan_low_latency.]
-- #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
-concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
-sur plusieurs cœurs en parallèle.]
-
-== Watchdog <mirageos_watchdog>
-
-== Licences & brevets <mirageos_licenses>
-
-Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
-sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
-`ISC` est nécessaire car en tant qu'_unikernel_, les bibliothèques de _MirageOS_
-doivent être liés statiquement avec le logiciel applicatif pour former l'image
-qui sera mise en production.
-
-= OS généralistes
-
-Leurs noyaux se répartissent en deux catégories:
-- #box[Les _noyaux monolithiques_ qui se caractérisent pas le fait que la majorité
-de leurs services s'exécutent en _mode noyau_.]
-- #box[Les _micro-noyaux_ qui n'exécutent que le strict nécessaire en espace
-noyau, à savoir l'ordonnancement des processus, la communication
-inter-processus et la gestion de la mémoire.]
-
-= Hyperviseurs
-= Unikernels
-
-= Types de système d'exploitation
-
-Les systèmes d'exploitation se distinguent par les mécanismes d'abstraction
-qu'ils offrent, leur organisation et leur modularité.
-Certaines tâches gérées par un noyau peuvent être dans une configuration
-différente déléguées à une autre couche logicielle, voire au matériel. Nous
-proposons dans cette section une classification en trois catégories: les
-_unikernels_, les _hyperviseurs_ et les _OS classiques_.
-
-== Les unikernels
-
-Les _unikernel_ sont des systèmes d'exploitation qui se présentent sous la
-forme d'une collection de bibliothèques. Le développeur sélectionne les modules
-indispensables à l'exécution de son application, puis crée une _image_ en
-compilant son application avec les modules choisis. Cette image est ensuite
-exécutée sur un _hyperviseur_ ou en _bare-metal_#footnote[C'est-à-dire directement
-sur la couche matérielle sans l'intermédiaire d'un système d'exploitation.]
-
-== Les OS classiques
-
-== Tableau récapitulatif
+= Tableau récapitulatif <comp>
 
 #table(
   columns: 3,
@@ -1112,7 +1245,7 @@ la virtualisation assistée par le matériel.]
 Les OS que nous étudions se répartissent ainsi dans cette classification:
 - Unikernel: MirageOS
 - Hyperviseur: _KVM_, _Xen_, _PikeOS_, _ProvenVisor_
-- Classique: _Linux_ (monolithique modulaire), _seL4_ (micro-noyau), _RTEMS_
+- Classique: _Linux_ (monolithique modulaire), _seL4_ (micronoyau), _RTEMS_
 
 = Architectures supportées & multi-cœur
 
@@ -1158,31 +1291,6 @@ s'agit du support pour le matériel surlequel est exécuté l'hyperviseur.
         [Non],    [Non],    [Oui],     [Non],     [Oui],     [Non],  [Non],    [Non],
 )
 
-== Support multi-cœur
-
-Un _cœur_ est un ensemble de circuits intégrés capable d'exécuter des instructions
-de façon autonome. Un microprocesseur embarquant plusieurs cœurs est qualifié
-de _processeur multi-cœur_.
-
-De nos jours, certains fabricants comme Intel ou ARM proposent des processeurs où les
-cœurs ne sont plus identiques. L'intérêt principal de ces architectures hybrides est
-de faire un compromis entre la puissance de calcul et l'efficacité énergétique. Ainsi
-on y trouve généralement deux types de cœurs:
-- #box[Les cœurs performances: ces unités sont dédiées aux tâches lourdes mais
-  sont gourmandes en énergie. On peut citer les cœurs _P-cores_ chez Intel et
-  _big_ chez ARM.]
-- #box[Les cœurs économes: moins performantes que les cœurs de la
-  première catégorie mais consomment nettement moins d'énergie et dissipent moins
-  de chaleur. On peut citer les cœurs _E-cores_ chez Intel et _LITTLE_ chez ARM).]
-
-= Activité
-
-== Linux & KVM
-
-== MirageOS
-
-= Licences, brevets & certifications
-
 == Linux & KVM
 
 Le noyau `Linux` est un logiciel libre distribué sous licence
@@ -1192,56 +1300,6 @@ appels systèmes n'est pas considéré comme une œuvre dérivée de celui-ci et
 peut être distribué sous une licence qui n'est pas compatible avec la GPL,
 y compris une licence propriétaire. Plus d'informations sont disponibles dans
 le dossier `LICENSES` des sources du noyau `Linux`.
-
-== MirageOS
-
-== PikeOS
-
-La société SYSGO propose deux types de licences propriétaires:
-- Une licence de développement permettant de concevoir des systèmes basés sur `PikeOS`.
-- Une licence de déploiement.
-
-Certifications:
-- RTCA DO-178B/C
-- EN 50218
-- EN 50657
-- CEI 61508
-- ISO 26262
-- CEI 62304
-
-Normes:
-- Critères communs (quel niveau?)
-- SAR
-
-== ProvenVisor
-
-- Permet la certification critères communs EAL5
-
-== RTEMS
-
-== seL4
-
-Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
-`GNU General Public License version 2 only (GPL-2.0)`. Le code utilisateur et
-les pilotes peuvent être distribués sous n'importe quelle licence @sel4_licensing.
-
-`seL4` a fait l'objet d'une spécification et d'une vérification formelle à
-l'aide de l'assistant de preuve _Isabelle/HOL_. La correction
-#footnote[La correction d'un algorithme signifie qu'il a été démontré que cet
-algorithme respecte sa spécification.] de l'implémentation
-a été démontrée pour plusieurs configurations et il a été également démontré
-que le code binaire est correct pour les architectures _ARM_ et _RISC-V_ @sel4_verification.
-Cette vérification formelle implique en particulier que `seL4` est dépourvu de
-certaines erreurs de programmation classiques @sel4_implication. Il est notamment
-dépourvu de débordements de tampon, de déréférencements de pointeurs nuls, de
-fuites mémoire et de dépassements d'entier.
-
-== Xen
-
-== XtratuM
-
-- La version originelle de l'hyperviseur `XtratuM` est distribuée sous licence `GPL v2` @xtratum_github
-- Une nouvelle version `XtratuM New Generation` est développée et distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.
 
 = Complexité et maintenabilité
 
