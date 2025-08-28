@@ -268,7 +268,7 @@ ces interruptions doit ou non être prise en compte dans les contraintes tempore
 Les architectures modernes permettent généralement la programmation des interruptions
 grâce à des puces dédiées réparties entre la carte mère et le CPU:
 - #box[Sur les architectures Intel et AMD, cette tâche est répartie entre la puce
-_I/O APIC_#footnote[_APIC_ est un abbréviation pour _Advanced Programmable Interrupt Controller_]
+_I/O APIC_#footnote[_APIC_ est un abréviation pour _Advanced Programmable Interrupt Controller_]
 qui gère les interruptions émises par les périphériques et des circuits intégrés dans chaque
 cœur appelés _Local APIC_ qui gèrent les interruptions entre les cœurs.]
 - #box[Sur les architectures ARM, cette tâche est dévolue au _GIC_
@@ -298,7 +298,7 @@ sur les interruptions.
 
 Dans cette section, on s'intéresse à la corruption de la mémoire et plus
 précisément à la détection et la correction de ces erreurs. On distingue
-de type d'erreurs:
+deux types d'erreurs:
 - #box[Les _soft errors_ sont dues à un événement exceptionnel et transitoire qui
 corrompt des données. Par exemple le rayonnement de fond peut produire un basculement
 de bits (_bit flips_). Ces erreurs peuvent être souvent corrigées à condition
@@ -403,7 +403,11 @@ Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
 concentre sur les opérations fondamentales qui ne peuvent être effectuée que
 dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
 et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
-dans le _user space_.]
+dans le _user space_. Un exemple notable de tel système est le micronoyau _L4_
+développé au sein de l'université Karlsruhe. Ce projet visait à réduire les
+écarts de performances entre les micronoyaux et les architectures monolithiques
+de l'époque. Ce projet a servi de base à deux systèmes d'exploitations étudiés
+dans ce rapport: _seL4_ et _PikeOS_.]
 - #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
 designs précédents. Le noyau a la possibilité de charger ou décharger certaines
 sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
@@ -488,20 +492,35 @@ De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 
 == KVM <linux_kvm>
 
-== PREMPT_RT <linux_prempt_rt>
+== PREEMPT_RT <linux_prempt_rt>
 
-Le besoin de faire de _Linux_ un _RTOS_ est apparu à la fin des années 90. À
-cette époque des solutions comme _RTLinux_ ou _RTAI_
-#footnote[_RTAI_ est toujours activement développé.] consistaient à contourner
-le noyau _Linux_ en exécutant un micronoyau temps réel directement sur le
-matériel. _Linux_ est alors exécuté comme une tâche de faible priorité sur
-ce micronoyau. C'est dans ce contexte que le projet _PREMPT_RT_ a été initié
-en 2005.
+Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
+_Linux_ de capacités temps réel. Le noyau de l'époque ayant été
+développé pour être le cœur d'un _GPOS_, les changements requis dans le
+code source étaient considérés comme trop complexes, et des approches
+alternatives ont émergées. L'une de ces approches consiste à contourner le
+noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
+directement au-dessus d'un micronoyau temps réel. On parle alors de
+_cokernel_. Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est toujours
+activement développé.] adoptèrent cette approche avec succès. L'avantage de celle-ci est
+de donner d'excellentes garanties quant aux respects
+des _deadlines_ et une latence faible. En contrepartie, le développeur d'applications
+temps réel ne peut pas utiliser l'écosystème et les bibliothèques UNIX, rendant
+le développement plus ardu et coûteux. Ce défaut majeur a motivé le développement
+du projet _PREEMPT_RT_ par Ingo Molnár et d'autres développeurs du noyau _Linux_.
+Contrairement aux _cokernels_, l'approche de _PREEMPT_RT_ consiste à modifier en
+profondeur le noyau afin de le rendre préemptible. Le projet a débuté en 2005 et
+s'est étalé sur une vingtaine d'années sous la forme d'une succession de patchs
+qui ont progressivement été intégrés à la branche principale de _Linux_. Les dernières
+intégrations ont été terminées en septembre 2024, faisant de _Linux_ un _RTOS_
+complet.
+
+La documentation de _PREEMPT_RT_: @preempt_rt_doc.
 
 == Architectures supportées
 
-Le noyau _Linux_ était dans un premier temps uniquement développé pour
-l'architecture _x86_. Il a depuis été porté sur de très nombreuses architectures
+Le noyau _Linux_ était dans un premier temps développé pour l'architecture _x86_.
+Il a depuis été porté sur de très nombreuses architectures
 @linux_arch. Il fonctionne notamment sur les architectures suivantes:
 _x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
 
@@ -520,7 +539,7 @@ conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
 === Les _control croups_
 
-Les _cgroups_ (abréviation pour _cgroups_) sont un mécanisme du noyau _Linux_
+Les _cgroups_ (_control groups_) sont un mécanisme du noyau _Linux_
 qui permet une gestion fine et configurable des ressources.
 Il existe deux versions de ce mécanisme dans le noyau actuel:
 - #box[La version `v1`, introduite en 2008 dans le noyau _Linux 2.6.24_,]
@@ -892,10 +911,12 @@ qui sera mise en production.
 
 _PikeOS_ est un _RTOS_ et un hyperviseur de type 1 développé par l'entreprise
 _SYSGO_ depuis 2005. En 2012, l'entreprise _SYSGO_ est rachetée par _Thalès_.
-À l'origine l'OS était basé sur le micronoyau _L4_.
+À l'origine _PikeOS_ était basé sur le micronoyau _L4_#footnote[Voir la section
+@type_gpos pour plus d'informations sur le micronoyau _L4_.].
 
-Dès sa conception, _PikeOS_ a été pensé pour faciliter sa certification, voir
-la section @pikeos_licenses.
+Dès sa conception, _PikeOS_ a été pensé pour faciliter la certification de
+logiciels. Les différents kit de certifications disponibles sont exposés dans la
+section @pikeos_licenses.
 
 == Architectures supportées <pikeos_architectures>
 
@@ -1146,7 +1167,7 @@ réinitialisé d'en un laps de temps de 30 secondes:
   caption: [Exemple d'interaction avec un _watchdog_ sous _Xen_.]
 )
 
-Pour compiler et lancer programme dans le domaine utilisateur, tapez:
+Pour compiler et lancer le programme dans le domaine utilisateur, tapez:
 ```console
 gcc watchdog.c -o watchdog $(pkg-config --cflags --libs xencontrol)
 ./watchdog
@@ -1213,7 +1234,7 @@ distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
 //
 // == Les OS classiques
 
-= Tableau récapitulatif <comp>
+= Tableaux comparitifs<comp>
 
 #table(
   columns: 3,
