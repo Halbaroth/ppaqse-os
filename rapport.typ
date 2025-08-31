@@ -1,4 +1,5 @@
 #import "@preview/hydra:0.6.2": hydra
+#import "@preview/cetz:0.4.1"
 #set text(lang: "fr")
 #set par(justify: true)
 
@@ -495,27 +496,68 @@ De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 == PREEMPT_RT <linux_prempt_rt>
 
 Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
-_Linux_ de capacités temps réel. Le noyau de l'époque ayant été
-développé pour être le cœur d'un _GPOS_, les changements requis dans le
-code source étaient considérés comme trop complexes, et des approches
-alternatives ont émergées. L'une de ces approches consiste à contourner le
-noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
+_Linux_ de capacités temps réel. Le noyau de l'époque avait été développé dans
+l'optique de maximiser le débit de l'ordonnanceur de tâches. Les changements requis
+pour rendre le noyau préemptible étaient donc considérés comme trop complexes,
+et des approches alternatives ont émergées. L'une de ces approches consiste à
+contourner le noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
 directement au-dessus d'un micronoyau temps réel. On parle alors de
-_cokernel_. Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est toujours
-activement développé.] adoptèrent cette approche avec succès. L'avantage de celle-ci est
-de donner d'excellentes garanties quant aux respects
-des _deadlines_ et une latence faible. En contrepartie, le développeur d'applications
-temps réel ne peut pas utiliser l'écosystème et les bibliothèques UNIX, rendant
-le développement plus ardu et coûteux. Ce défaut majeur a motivé le développement
-du projet _PREEMPT_RT_ par Ingo Molnár et d'autres développeurs du noyau _Linux_.
-Contrairement aux _cokernels_, l'approche de _PREEMPT_RT_ consiste à modifier en
-profondeur le noyau afin de le rendre préemptible. Le projet a débuté en 2005 et
-s'est étalé sur une vingtaine d'années sous la forme d'une succession de patchs
-qui ont progressivement été intégrés à la branche principale de _Linux_. Les dernières
+_cokernel_. Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
+toujours activement développé.] adoptèrent cette approche avec succès.
+L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
+des _deadlines_ et une latence faible. En contrepartie, le développeur
+d'applications temps réel ne peut pas utiliser l'écosystème et les
+bibliothèques UNIX, rendant le développement plus ardu et coûteux. Ce défaut
+majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
+d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
+l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
+le rendre préemptible. Le projet a débuté en 2005 et s'est étalé sur une
+vingtaine d'années sous la forme d'une succession de patchs qui ont
+progressivement été intégrés à la branche principale de _Linux_. Les dernières
 intégrations ont été terminées en septembre 2024, faisant de _Linux_ un _RTOS_
 complet.
 
+#let cell(x, y, body, color: white) = cetz.draw.content(
+  x, y,
+  box(
+    align(center + horizon)[#text(fill: white, weight: "bold")[#body]],
+    stroke: 1pt + black,
+    radius: 3pt,
+    fill: color,
+    width: 100%,
+    height: 100%,
+    inset: 1em))
+
+#figure(
+  cetz.canvas({
+    import cetz.draw: *
+    cell((-3, 0), (-1, 1.5), color: red, [Tâche RT 1])
+    cell((0, 0), (2, 1.5), color: red, [...])
+    cell((3, 0), (12, 3.5), color: blue, [])
+    cell((-3, -1.5), (12, -0.5), color: red, [Micronoyau temps réel])
+    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
+    cell((4, 0.5), (6, 2), color: green, [Proc 1])
+    cell((6.5, 0.5), (8.5, 2), color: green, [Proc 2])
+    cell((9, 0.5), (11, 2), color: green, [...])
+    content((6.5, 0.8), (10, 2.8),
+      text(fill: white, weight: "bold")[Noyau Linux])
+  })
+  ,
+  caption: [Architecture _cokernel_]
+) <titi>
+
 La documentation de _PREEMPT_RT_: @preempt_rt_doc.
+
+Bien que les patchs de _PREEMPT_RT_ soient désormais distribués avec la branche
+principale du noyau, il est nécessaire de compiler ce dernier avec l'option
+de compilation `CONFIG_PREEMPT_RT` activé pour obtenir un noyau préemptible.
+Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
+vous pouvez tapez la commande:
+```console
+zcat /proc/config.gz | grep PREEMPT_RT
+```
+Certaines distributions proposent également des noyaux alternatifs avec cette
+option activée, rendant l'installation de _PREEMPT_RT_ nettement plus simple.
 
 == Architectures supportées
 
