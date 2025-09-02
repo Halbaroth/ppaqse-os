@@ -32,16 +32,27 @@
   text(style: "oblique", weight: "semibold")[#t]
 }
 
-#show raw.where(block: true): code => {
+#show raw.where(block: true): set text(font: "FiraCode Nerd Font Mono")
+
+#show raw.where(block: true, lang: "console"): code => {
   show raw.line: line => {
-    text(fill: gray)[#line.number]
     h(1em)
+    "$"
+    h(0.3em)
     line.body
   }
   code
 }
 
 #let snippet(file, lang:none) = {
+  show raw: code => {
+    show raw.line: line => {
+      text(fill: gray)[#line.number]
+      h(1em)
+      line.body
+    }
+    code
+  }
   box(
     stroke: 1pt + black,
     fill: luma(250),
@@ -51,13 +62,10 @@
       right: 16pt,
       top: 10pt,
       bottom: 10pt,
-      raw(read(file), block:true, lang:lang),
-    )
-  )
+      raw(lang:lang, block: true, read(file))))
 }
 
 #outline(depth: 1)
-
 
 = Introduction <introduction>
 
@@ -76,9 +84,9 @@ Il est donc difficile de caractériser rigoureusement ce qu'est un système
 d'exploitation autrement que par le fait qu'il s'exécute en
 #definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
 d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. A contrario, les logiciels applicatifs s'exécutent en mode
-utilisateur (_user mode_) et interagissent avec l'OS lorsqu'ils ont besoin
-d'accéder au matériel.
+instructions. A contrario, les logiciels applicatifs s'exécutent en
+#definition[mode utilisateur] (_user mode_) et interagissent avec l'OS
+lorsqu'ils ont besoin d'accéder au matériel.
 
 Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
 le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
@@ -106,8 +114,7 @@ exécutés au-dessus de la couche matérielle et offrent un large éventail de
 services. Leur domaine d'application est particulièrement vaste puisqu'on les
 retrouve aussi bien sur les ordinateurs personnels, les smartphones que les
 serveurs et les systèmes embarqués. Parmi les systèmes les plus connus, on
-peut citer _Linux_, _Windows_ et _macOS_. Vous trouverez davantage de détails
-sur les _GPOS_ dans la section @type_gpos.]
+peut citer _Linux_, _Windows_ et _macOS_.]
 - #box[Les #definition[hyperviseurs] sont des systèmes d'exploitation dédiés à
 la virtualisation, c'est-à-dire à l'exécution d'OS invités au-dessus d'une couche
 logicielle. On les retrouve fréquemment sur des serveurs exécutant simultanément
@@ -155,6 +162,129 @@ librement utilisée dans les chapitres ultérieurs.]
 @xen, @xtratum exposent chacun des OS étudiés.]
 - #box[Le chapitre @comp contient des tableaux comparatifs.]
 
+= Conceptions générales
+
+Cette section regroupe davantage d'informations sur les designs généraux des
+systèmes d'exploitations. À ce titre cet exposé peut être pertinent quant au
+choix du design dans un projet.
+
+== Noyau monolithique versus micronoyau <monolithic_vs_microkernel>
+
+La notion de système d'exploitation est complexe à délimiter car
+les tâches exécutées en mode noyau peuvent varier considérablement d'un système
+à l'autre. Toutefois, les systèmes d'exploitation modernes partagent un ensemble
+de services fondamentaux et notamment:
+- La gestion de la mémoire principale.
+- La gestion des _threads_ et des processus.
+- #box[La communication inter-processus
+#footnote[En anglais _Inter Process Communication_, abrégé _IPC_.].]
+- La gestion des périphériques d'entrée/sortie.
+- La pile réseau.
+- Le système fichiers.
+- La gestion des droits d'accès.
+
+Deux approches extrêmes s'opposent dans la conception des noyaux:
+- #box[Les noyaux #definition[monolithiques] intègrent un grand nombres de
+services exécutés en mode noyau. Par exemple, le noyau _Linux_ gère
+tous les services mentionnés ci-dessus dans ce mode.]
+- #box[Les #definition[micronoyaux], au contraire, cherchent à minimiser la
+quantité de code exécuter en mode noyau. La gestion de la mémoire, des
+_threads_ et l'_IPC_ sont assurés par le micronoyau, tandis que les autres
+services peuvent être exécutés en mode utilisateur.]
+
+Les deux approches ont des avantages et inconvénients:
+- #box[L'approche monolithique
+est souvent de conception plus simple. Elle offre de très bonnes performances
+en permettant une communication rapide entre les différents services, évitant
+notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
+d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
+souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
+à la taille nettement plus importante de leur base de code. Leur vérification et
+certification est également plus complexe, tandis que la fiabilité du système
+est compromise dès lors que l'un de ses services fait défaut.]
+- #box[L'approche micronoyau est conceptuellement plus complexe. L'efficacité
+de la communication _IPC_ est cruciale pour les performances étant donné qu'un
+grand nombres de services tournent en mode utilisateur. En contrepartie, cette
+approche offre une plus grande fiabilité et robustesse face aux pannes. La vérification
+et la certification est facilité par la base de code plus réduite.]
+
+On peut également citer une dernière conception qui est une variante de l'approche
+monolithique. Il s'agit des noyaux #definition[modulaires].
+
+=== Le noyau L4 <l4_kernel>
+Un exemple notable de tel système est le micronoyau _L4_
+développé au sein de l'université Karlsruhe. Ce projet visait à réduire les
+écarts de performances entre les micronoyaux et les architectures monolithiques
+de l'époque. Ce projet a servi de base à deux systèmes d'exploitations étudiés
+dans ce rapport: _seL4_ et _PikeOS_.
+
+Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
+- Les noyaux monolithique.
+- #box[Les micronoyaux: au contraire du noyau monolithique, le micronoyau se
+concentre sur les opérations fondamentales qui ne peuvent être effectuée que
+dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
+et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
+dans le _user space_. ]
+- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
+designs précédents. Le noyau a la possibilité de charger ou décharger certaines
+sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
+
+== Hyperviseur <type_hypervisor>
+
+Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
+raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
+et sûre, une première solution consiste
+à héberger chaque service sur une machine individuelle. On obtient ainsi une
+isolation totale des différents services. Cette solution présente
+toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
+maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
+besoins à moindre frais.
+
+Les _hyperviseurs_ se divisent généralement en deux catégories:
+- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
+matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
+- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
+intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
+OS dans ce document.]
+
+Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
+- #box[La _virtualisation total_: le comportement de la couche matérielle]
+- #box[La _virtualisation partielle_]
+- #box[La _paravirtualisation_]
+
+La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
+le comportement de la couche matérielle en exposant la même interface aux systèmes
+invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
+lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation
+totale:
+- la translation binaire (_binary translation_ en anglais)
+- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
+
+La _paravirtualisation_ est une technique de virtualisation qui consiste à
+présenter une interface logicielle similaire au matériel mais optimisée pour
+la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
+et du système d'exploitation invité. En contre partie, la paravirtualisation
+permet généralement d'obtenir de meilleures performances.
+
+== RTOS <type_rtos>
+
+Un _RTOS_ est un système d'exploitation offrant des garanties sur le temps
+d'exécution de ses tâches. Les contraintes temporelles sont d'autant plus
+difficiles à garantir que le système est multi-tâche. On distingue
+trois classes de contraintes temporelles suivant leur criticité:
+- #box[Les contraintes _soft real time_ sont des contraintes nécessaires pour
+offrir une certaine qualité de service. Par exemple le visionnage d'une vidéo
+nécessite un _frame rate_ minimal. La violation de ces contraintes
+n'occasionne qu'une dégradation de la qualité du service rendu.]
+- #box[Les contraintes _firm real time_ sont similaires au cas précédent mais
+leur violation peut conduire à un résultat invalide.]
+- #box[Les contraintes _hard real time_ sont les plus strictes et leur violation
+a généralement des conséquences indésirables. Ces contraintes sont typiques dans
+les systèmes critiques.]
+
+Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
+d'un programme informatique sur une plateforme matérielle donnée.
+
 = Notions générales <general_notions>
 
 Cette section contient des notions générales autour des systèmes
@@ -164,7 +294,7 @@ architectures et des OS actuels, et d'autre part le foisonnement des solutions
 existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
 au fil de la section.
 
-== Partionnement des ressources
+== Partitionnement des ressources
 
 Le partitionnement des ressources est un mécanisme fondamental des systèmes
 d'exploitation modernes. Il vise à permettre l'exécution simultanée de
@@ -364,7 +494,7 @@ quelques unes d'entre elles ainsi que leurs caractéristiques clés.
 
 == Watchdog <watchdog>
 
-Un chien de garde (_watchdog_) est un dispositif matériel ou logiciel conçu
+Un #definition[watchdog] est un dispositif matériel ou logiciel conçu
 pour détecter le blocage d'un système informatique, et de réagir
 de manière autonome pour ramener ce système dans un état normal. Qu'il s'agisse
 d'un dispositif matériel ou logiciel, le principe du watchdog consiste le plus
@@ -393,82 +523,6 @@ d'enregistrer tous les événements possibles lors de l'exécution du programme,
 on n'effectue un échantillonnage de ces mesures en espérant que les échantillons
 collectés seront représentatifs des caractéristiques de performances du programme
 étudié.
-
-== Type de système d'exploitation
-
-=== GPOS <type_gpos>
-
-Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
-- Les noyaux monolithique.
-- #box[Les micronoyaux: au contraire du noyau monolithique, le micronoyau se
-concentre sur les opérations fondamentales qui ne peuvent être effectuée que
-dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
-et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
-dans le _user space_. Un exemple notable de tel système est le micronoyau _L4_
-développé au sein de l'université Karlsruhe. Ce projet visait à réduire les
-écarts de performances entre les micronoyaux et les architectures monolithiques
-de l'époque. Ce projet a servi de base à deux systèmes d'exploitations étudiés
-dans ce rapport: _seL4_ et _PikeOS_.]
-- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
-designs précédents. Le noyau a la possibilité de charger ou décharger certaines
-sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
-
-=== Hyperviseur <type_hypervisor>
-
-Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
-raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
-et sûre, une première solution consiste
-à héberger chaque service sur une machine individuelle. On obtient ainsi une
-isolation totale des différents services. Cette solution présente
-toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
-maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
-besoins à moindre frais.
-
-Les _hyperviseurs_ se divisent généralement en deux catégories:
-- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
-matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
-- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
-intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
-OS dans ce document.]
-
-Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
-- #box[La _virtualisation total_: le comportement de la couche matérielle]
-- #box[La _virtualisation partielle_]
-- #box[La _paravirtualisation_]
-
-La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
-le comportement de la couche matérielle en exposant la même interface aux systèmes
-invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
-lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation
-totale:
-- la translation binaire (_binary translation_ en anglais)
-- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
-
-La _paravirtualisation_ est une technique de virtualisation qui consiste à
-présenter une interface logicielle similaire au matériel mais optimisée pour
-la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
-et du système d'exploitation invité. En contre partie, la paravirtualisation
-permet généralement d'obtenir de meilleures performances.
-
-=== RTOS <type_rtos>
-
-Un _RTOS_ est un système d'exploitation offrant des garanties sur le temps
-d'exécution de ses tâches. Les contraintes temporelles sont d'autant plus
-difficiles à garantir que le système est multi-tâche. On distingue
-trois classes de contraintes temporelles suivant leur criticité:
-- #box[Les contraintes _soft real time_ sont des contraintes nécessaires pour
-offrir une certaine qualité de service. Par exemple le visionnage d'une vidéo
-nécessite un _frame rate_ minimal. La violation de ces contraintes
-n'occasionne qu'une dégradation de la qualité du service rendu.]
-- #box[Les contraintes _firm real time_ sont similaires au cas précédent mais
-leur violation peut conduire à un résultat invalide.]
-- #box[Les contraintes _hard real time_ sont les plus strictes et leur violation
-a généralement des conséquences indésirables. Ces contraintes sont typiques dans
-les systèmes critiques.]
-
-Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
-d'un programme informatique sur une plateforme matérielle donnée.
-
 
 = Linux <linux>
 
@@ -502,7 +556,39 @@ pour rendre le noyau préemptible étaient donc considérés comme trop complexe
 et des approches alternatives ont émergées. L'une de ces approches consiste à
 contourner le noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
 directement au-dessus d'un micronoyau temps réel. On parle alors de
-_cokernel_. Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
+_cokernel_. Cette architecture est illustrée dans la figure
+@architecture_cokernel.
+
+#let cell(x, y, body, color: white) = cetz.draw.content(
+  x, y,
+  box(
+    align(center)[#text(font: "Fira Sans")[#body]],
+    stroke: 1pt + black,
+    radius: 3pt,
+    fill: gradient.radial(white, color, center: (40%, 20%), radius: 150%),
+    width: 100%,
+    height: 100%,
+    inset: 1em))
+
+#figure(
+  cetz.canvas({
+    import cetz.draw: *
+    cell((-3, 0), (-1, 1.5), color: red, [Tâche RT])
+    cell((0, 0), (2, 1.5), color: red, [...])
+    cell((3, 0), (12, 3.5), color: blue, [])
+    cell((-3, -1.5), (12, -0.5), color: red, [Micronoyau temps réel])
+    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
+    cell((4, 0.5), (6, 2), color: green, [Proc])
+    cell((6.5, 0.5), (8.5, 2), color: green, [Proc])
+    cell((9, 0.5), (11, 2), color: green, [...])
+    content((6.5, 0.8), (10, 2.8),
+      text(font: "Fira Sans")[Noyau Linux])
+  })
+  ,
+  caption: [Architecture _cokernel_]
+) <architecture_cokernel>
+
+Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
 toujours activement développé.] adoptèrent cette approche avec succès.
 L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
 des _deadlines_ et une latence faible. En contrepartie, le développeur
@@ -511,40 +597,26 @@ bibliothèques UNIX, rendant le développement plus ardu et coûteux. Ce défaut
 majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
 d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
 l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
-le rendre préemptible. Le projet a débuté en 2005 et s'est étalé sur une
-vingtaine d'années sous la forme d'une succession de patchs qui ont
-progressivement été intégrés à la branche principale de _Linux_. Les dernières
-intégrations ont été terminées en septembre 2024, faisant de _Linux_ un _RTOS_
-complet.
-
-#let cell(x, y, body, color: white) = cetz.draw.content(
-  x, y,
-  box(
-    align(center + horizon)[#text(fill: white, weight: "bold")[#body]],
-    stroke: 1pt + black,
-    radius: 3pt,
-    fill: color,
-    width: 100%,
-    height: 100%,
-    inset: 1em))
+le rendre préemptible, voir la figure @architecture_preempt_rt. Le projet a
+débuté en 2005 et s'est étalé sur une vingtaine d'années sous la forme d'une
+succession de patchs qui ont progressivement été intégrés à la branche
+principale de _Linux_. Les derniers patchs ont été ajoutés en septembre 2024,
+faisant de _Linux_ un _RTOS_ complet.
 
 #figure(
   cetz.canvas({
     import cetz.draw: *
-    cell((-3, 0), (-1, 1.5), color: red, [Tâche RT 1])
-    cell((0, 0), (2, 1.5), color: red, [...])
-    cell((3, 0), (12, 3.5), color: blue, [])
-    cell((-3, -1.5), (12, -0.5), color: red, [Micronoyau temps réel])
-    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
-    cell((4, 0.5), (6, 2), color: green, [Proc 1])
-    cell((6.5, 0.5), (8.5, 2), color: green, [Proc 2])
-    cell((9, 0.5), (11, 2), color: green, [...])
-    content((6.5, 0.8), (10, 2.8),
-      text(fill: white, weight: "bold")[Noyau Linux])
+    cell((-3, 0), (12, 3.5), color: blue, [])
+    cell((-3, -1.5), (12, -0.5), color: gray, [Couche matérielle])
+    cell((-2, 0.5), (0, 2), color: green, [Proc])
+    cell((0.5, 0.5), (2.5, 2), color: red, [Proc RT])
+    cell((3, 0.5), (5, 2), color: green, [...])
+    content((-2, 0.8), (10, 2.8),
+      text(font: "Fira Sans")[Noyau Linux + _PREEMPT_RT_])
   })
   ,
-  caption: [Architecture _cokernel_]
-) <titi>
+  caption: [Architecture de _Linux_ avec _PREEMPT_RT_]
+) <architecture_preempt_rt>
 
 La documentation de _PREEMPT_RT_: @preempt_rt_doc.
 
@@ -626,11 +698,13 @@ Supposons que nous souhaitions limiter la consommation de mémoire d'un processu
 à 5 Mio. On commence par créer deux#footnote[Il n'est pas possible
 de le faire avec un seul _cgroup_ dû à une règle de l'API appelée
 «no internal processes».] _cgroups_ `foo` et `bar`:
-```sh
+
+```bash
 sudo mkdir -p /sys/fs/cgroup/foo/bar
 echo "+memory" | sudo tee /sys/fs/cgroup/foo/cgroup.subtree_control
 echo "5 * 2^20" | bc | sudo tee /sys/fs/cgroup/foo/bar/memory.max
 ```
+
 Désormais la mémoire totale occupée par les processus du _cgroup_ `bar` ne
 doit pas excéder les 5 Mio.
 #figure(
@@ -645,9 +719,11 @@ gcc -O0 limited.c -o limited
 ./limited
 ```
 et dans une autre console, on ajoute le processus au cgroup `bar`:
-```sh
+
+```bash
 pgrep limited | sudo tee /sys/fs/cgroup/foo/bar/cgroup.procs
 ```
+
 Finalement, on demande plus de mémoire que la limite autorisée et le processus
 est tué:
 ```console
@@ -717,6 +793,21 @@ Container foo exited successfully.
 révélant que `alone` est le seul processus visible dans le conteneur `foo` et
 qu'il a le PID 1.
 
+=== _Capabilities_ <linux_capabilities>
+
+De façon traditionnelle, les UNIX considèrent seulement deux catégories de
+processus:
+- #box[Les processus privilégiés. Ces processus peuvent exécuter la majorité des
+commandes et sont le plus souvent lancés par _root_ ou le noyau.]
+- #box[Les processus non-privilégiés.]
+
+==== SetUID
+Les processus peuvent être privilégiés parce qu'ils ont été lancé par
+l'utilisateur _root_ ou via le mécanisme du _setUID_ qui permet à processus
+d'avoir certains des privilèges du propriétaire du binaire plutôt que de
+l'utilisateur qui l'a lancé. Ainsi le binaire `passwd` appartient à _root_
+mais permet à n'importe qui de changer son propre mot de passe.
+
 == Corruption de la mémoire <linux_memory_corruption>
 
 Le noyau _Linux_ intègre un sous-système nommé _EDAC_ (_Error Detection and Correction_)
@@ -726,9 +817,10 @@ grâce au démon _rasdaemon_.
 Certains processeurs AMD nécessitent l'utilisation d'un pilote pour que _EDAC_
 fonctionne.
 
-Le noyau fournit également une interface logicielle commune @linux_scrub via _sysfs_#footnote[
-Le système de fichiers _sysfs_ est un pseudo système de fichiers disponible sous Linux. Il permet
-aux logiciels tournant dans le _user space_ de lire et de modifier des paramètres des pilotes et
+Le noyau fournit également une interface logicielle commune @linux_scrub via
+_sysfs_#footnote[Le système de fichiers _sysfs_ est un pseudo système de
+fichiers disponible sous Linux. Il permet aux logiciels tournant dans le
+_user space_ de lire et de modifier des paramètres des pilotes et
 des périphériques via des fichiers. Il est généralement monté dans le dossier _/sys_.]
 pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interfaces,
 à l'exception de l'interface _ARS_ qui utilise son propre pilote.
@@ -771,7 +863,7 @@ Examinons les performances de notre programme @miss_source à l'aide de la
 sous-commande `perf stat`. Cette dernière retourne des statistiques issues
 des registres _PMU_ du processeur. En lançant `perf stat ./miss`, on obtient
 la sortie:
-```
+```console
 Performance counter stats for './miss':
 
        116.46 msec task-clock:u                     #    0.991 CPUs utilized
@@ -795,7 +887,7 @@ Performance counter stats for './miss':
 Tandis que parcourir le tableau `arr` dans un ordre aléatoire conduit à un
 résultat très différent en terme de performance. En effet la commande
 `perf stat ./miss random` donne la sortie:
-```
+```console
 Performance counter stats for './miss random':
 
      1,974.28 msec task-clock:u                     #    0.999 CPUs utilized
@@ -954,7 +1046,7 @@ qui sera mise en production.
 _PikeOS_ est un _RTOS_ et un hyperviseur de type 1 développé par l'entreprise
 _SYSGO_ depuis 2005. En 2012, l'entreprise _SYSGO_ est rachetée par _Thalès_.
 À l'origine _PikeOS_ était basé sur le micronoyau _L4_#footnote[Voir la section
-@type_gpos pour plus d'informations sur le micronoyau _L4_.].
+@monolithic_vs_microkernel pour plus d'informations sur le micronoyau _L4_.].
 
 Dès sa conception, _PikeOS_ a été pensé pour faciliter la certification de
 logiciels. Les différents kit de certifications disponibles sont exposés dans la
@@ -1022,6 +1114,90 @@ et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
 n'importe quelle licence @rtems_licenses_website.
 
 = seL4 <sel4>
+
+Le noyau _seL4_ est un micronoyau de troisième génération. Il inclut un
+hyperviseur de type 1 et un _RTOS_. Sa conception a débuté en 2006 à
+l'institut de recherche _NICTA_ #footnote[Acronyme pour _National Information
+and Communications Technology Autralia_)]. L'objectif était de créer un
+système d'exploitation capable de satisfaire les
+exigences de sécurité et de sûreté des _Critères Communs_. À ce titre, les
+contraintes induites par la vérification formelle du noyau ont été prises
+en compte dès le départ du projet. Comme son nom le suggère, dans son design,
+_seL4_ est fortement inspiré du micronoyau de seconde génération _L4_. Ainsi, il
+fournit des abstractions pour la mémoire virtuelle, les _threads_ et
+la communication inter-processus. Toutefois, contrairement à la majorité des
+autres micronoyaux de la famille _L4_, il fournit également des _capabilities_
+pour gérer les autorisations.
+
+== Installation <sel4_installation>
+
+Le site de _seL4_ fournit un tutoriel détaillé et une image _docker_ contenant
+tout le nécessaire pour tester le micronoyau dans une machine virtuelle.
+En supposant que vous avez installé _docker_ sur votre machine, il vous suffit
+de récupérer l'image docker de la façon suivante:
+```console
+git clone https://github.com/seL4/seL4-CAmkES-L4v-dockerfiles.git
+cd seL4-CAmkES-L4v-dockerfiles
+make user
+```
+
+== Architectures supportées <sel4_architectures>
+
+Le développement initial de _seL4_ s'est fait uniquement sur l'architecture
+_ARM v6_. Le projet a depuis été porté sur les plateformes _x86_ et _RISC-V_.
+La dernière version du micronoyau supporte les architectures suivantes: _ARM v6_,
+_ARM v7_, _x86-32_, _x86-64_ et _RISC-V_.
+
+Sur la plateforme _x86_, il est possible d'utiliser les instructions _VT-X_ pour
+la virtualisation assistée par le matériel.
+
+Plus d'informations sur le support des différentes plateformes sont
+disponibles sur leur site @sel4_supported_platforms.
+
+== Partitionnement <sel4_partition>
+
+#figure(
+  cetz.canvas({
+    import cetz.draw: *
+    cell((-3, -1.5), (12, -0.5), color: blue, [seL4])
+    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
+    cell((-3, 0.5), (0, 1.6), color: purple, [Application])
+    cell((0.5, 0.5), (3.5, 6), color: yellow, [VM 1])
+    cell((0.7, 0.7), (3.3, 4), color: orange, [Linux])
+    cell((0.9, 0.9), (3.1, 2), color: orange, [Pilote])
+    cell((4, 0.5), (7, 6), color: yellow, [VM 2])
+    cell((4.2, 0.7), (6.8, 4), color: orange, [Linux])
+    cell((4.5, 0.9), (6.5, 2), color: orange, [FS])
+    cell((9, 0.5), (12, 3), color: green, [Pilote])
+  })
+  ,
+  caption: [Architecture de l'hyperviseur _seL4_.]
+) <architecture_xen>
+
+Lorsqu'il est utilisé en tant qu'hyperviseur, _seL4_ s'exécute dans le mode
+d'exécution _hyperviseur_.
+
+=== Capabilities
+
+Les #definition[capabilities] de _seL4_ sont des jetons donnant à leur
+possesseur des droits d'accès à une ressource spécifique. Il existe trois types
+de _capabilities_:
+- #box[Les _capabilities_ donnant accès à des objets du noyau comme le
+_thread control block_. Ces _capabilities_ sont donnés à la tâche _root_ durant
+l'initialisation du système.]
+- #box[Les _capabilities_ donnant accès à des ressources abstraitres comme _IRQControl_.]
+- #box[Les _capabilities untyped_.]
+
+De façon plus concrète, les _capabilities_ se présentent sous la forme de
+pointeurs constants contenant des informations supplémentaires pour encoder les
+droits d'accès. Disposer d'un tel pointeur est la seule façon d'accéder à la
+ressource qu'il pointe.
+
+== Vérification formelle <sel4_formal_verification>
+
+Le noyau _seL4_ a fait l'objet d'une vérification formelle profonde. L'approche
+suppose la correction du compilateur, du code assembleur et du matériel mais
+démontre la conformité du code C avec ses spécifications.
 
 == Licences & brevets <sel4_licenses>
 
@@ -1108,6 +1284,21 @@ une distribution _Linux_ modifiée (voir la section @xen_os).]
 - #box[Les domaines utilisateurs (abrégé _domU_) sont les domaines qui contiennent les
 OS invités. Il existe deux types de tels domaines. Les domaines de paravirtualisation
 et les domaines _HVM_.]
+
+#figure(
+  cetz.canvas({
+    import cetz.draw: *
+    cell((-3, -1.5), (12, -0.5), color: blue, [Xen])
+    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
+    cell((-3, 0.5), (0, 6), color: green, [Dom0])
+    cell((0.5, 0.5), (3.5, 6), color: green, [DomU#sub[1]])
+    cell((4, 0.5), (7, 6), color: green, [DomU#sub[2]])
+    cell((9, 0.5), (12, 6), color: green, [DomU#sub[n]])
+  })
+  ,
+  caption: [Architecture de _Xen_]
+) <architecture_xen>
+
 
 === Driver domain <xen_driver_domain>
 
@@ -1395,7 +1586,7 @@ Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_webs
 
 = Mécanisme de détection ou de tolérance aux pannes
 
-== Partionnement temps et/ou mémoire
+== Partitionnement temps et/ou mémoire
 
 ==== Linux
 

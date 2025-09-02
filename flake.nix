@@ -17,13 +17,19 @@
           typst
           gnumake
           fira-sans
+          fira-mono
+          fira-code
           fontconfig
         ];
 
         shellHook =
         let
           fontsConf = pkgs.makeFontsConf {
-            fontDirectories = [ "${pkgs.fira-sans}/share/fonts/opentype" ];
+            fontDirectories = [
+              "${pkgs.fira-sans}/share/fonts/opentype"
+              "${pkgs.fira-mono}/share/fonts/opentype"
+              "${pkgs.fira-code}/share/fonts/truetype"
+            ];
           };
         in
         ''
