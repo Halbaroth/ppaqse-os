@@ -1,0 +1,12 @@
+name = 'watchdog'
+kernel = 'watchdog.xen'
+type = 'pvh'
+memory = 256
+on_crash = 'preserve'
+
+disk = [  ]
+
+# if your system uses openvswitch then either edit /etc/xen/xl.conf and set
+#     vif.default.script="vif-openvswitch"
+# or add "script=vif-openvswitch," before the "bridge=" below:
+vif = [  ]

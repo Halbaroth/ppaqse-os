@@ -1,7 +1,17 @@
 #import "@preview/hydra:0.6.2": hydra
 #import "@preview/cetz:0.4.1"
-#set text(lang: "fr")
+#import "@preview/in-dexter:0.7.2": *
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
+#import fletcher.shapes: house, hexagon
+#set text(lang: "fr", size: 12pt)
 #set par(justify: true)
+
+// Table style
+#show table: set par(justify: false)
+#set table(
+  align: left + horizon,
+  fill: (x, y) =>
+    if x == 0 or y == 0 { rgb("#e5e5e5") })
 
 #page(margin: (left: 2in))[
   #align(horizon + left)[
@@ -9,7 +19,7 @@
     #text(
       size: 20pt,
       [Étude comparative de systèmes d'exploitations dans un
-      contexte critique ou temps-réel]
+      contexte critique et temps-réel]
     )
 
   ]
@@ -67,44 +77,114 @@
 
 #outline(depth: 1)
 
+#show link: set text(blue)
+#show ref: set text(blue)
+
 = Introduction <introduction>
 
-Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
-souvent abrégé _OS_.] est un ensemble de routines gérant les ressources
-matérielles d'un système informatique, qu'il s'agisse d'ordinateurs de bureau,
-de serveurs ou de systèmes embarqués. Son rôle principal est de servir de
-couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
-Il permet ainsi de masquer la complexité et la diversité des interfaces matérielles en
-fournissant des _API_ (_Application Programming Interface_) stables, unifiées et
-parfois standardisées. Les systèmes d'exploitation se distinguent aussi bien
-par les mécanismes d'abstraction qu'ils offrent, que leur organisation ou
-leur modularité. Ainsi, un tâche gérée par un OS peut être dans une autre
-configuration déléguée à une autre couche logicielle, voire au matériel.
-Il est donc difficile de caractériser rigoureusement ce qu'est un système
-d'exploitation autrement que par le fait qu'il s'exécute en
-#definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
-d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. A contrario, les logiciels applicatifs s'exécutent en
-#definition[mode utilisateur] (_user mode_) et interagissent avec l'OS
-lorsqu'ils ont besoin d'accéder au matériel.
+L'usage de composants informatiques dans les systèmes critiques#footnote[Un
+système est dit critique#index[critique] si sa défaillance conduit à des dommages inacceptable.]
+est de nos jours monnaie courante. De tels composants se retrouvent dans de
+nombreuses industries comme l'aéronautique, l'automobile et le nucléaire. Ainsi,
+la sûreté des logiciels devient un enjeu crucial et en particulier celle du système
+d'exploitation. Le développement et la maintenance d'un système d'exploitation
+étant complexe et coûteux, il est souhaitable d'avoir recours à une solution
+informatique sur étagères #footnote[On parle parfois de _COTS_ pour
+_Commercial off-the-shelf_#index[CTOS].], c'est-à-dire dans le cas présent
+un système d'exploitation ayant été conçu pour les systèmes critiques.
+Le présent document est une étude comparative de systèmes d'exploitation utilisés
+dans un contexte critique et temps réel.
+Plus précisément, nous étudions les systèmes d'exploitation suivants: Linux,
+MirageOS, PikeOS, ProvenVisor, RTEMS, seL4, Xen et XtratuM.
 
-Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
-le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
-commençons par préciser ces deux termes.
+L'étude met l'accent sur l'aspect sûreté#index[sûreté] de ces systèmes, c'est-à-dire sur
+leurs mécanismes de protection contre les incidents qu'ils soient dûs à un
+phénomène physique (rayonnement ambiant, ...) ou une erreur humaine (bug dans un
+pilote, ...). L'aspect sécurité, qui vise à prévenir les attaques d'origine
+humaine, n'est pas abordée.
 
-Un système est dit #definition[critique] si sa défaillance peut entraîner des
-conséquences indésirables. Cela peut aller de la simple perte de données à la
-destruction matérielle, voire, dans les cas les plus graves, à la perte de
-vies humaines. La criticité d'un système est généralement évalué lors de sa
-conception et le choix d'une solutions informatique adaptée en est une
+Avant de plonger plus avant dans les systèmes étudiés, il est important de
+cerner davantage le sujet et notamment certaines notions de base dans les
+sous-sections @kezako_os, @why_os qui seront utilisées tout au long de l'étude.
+
+== Qu'est-ce qu'un système d'exploitation? <kezako_os>
+
+La diversité des besoins et des systèmes informatiques existant a conduit à un
+foisonnement de systèmes d'exploitation et en faire une zoologie complète serait
+hors sujet. Il est en fait difficile de caractériser rigoureusement ce qu'est
+un système d'exploitation et nous adoptons ici l'approche retenue dans
+@tanenbaum2015modern @tanenbaum1997operating @silberschatz2013operating pour
+définir ce concept. Nous appelons donc
+#definition[système d'exploitation]#index[système d'exploitation]#footnote[En anglais
+_Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
+les ressources matérielles d'un système informatique et s'exécutant dans un mode
+privilégié du processeur. Le système en question
+peut être un serveur, un ordinateur personnel ou un système embarqué. Le rôle
+principal du système d'exploitation est de fournir une couche d'abstraction logicielle entre le
+matériel et les logiciels applicatifs. Il permet ainsi de masquer la complexité
+et la diversité des interfaces matérielles en fournissant des interfaces stables,
+unifiées et parfois standardisées.
+
+== Pourquoi utiliser un système d'exploitation? <why_os>
+
+Au début de l'introduction, nous avons évoqué l'usage croissant des systèmes
+d'exploitation dans les systèmes critiques. L'usage d'un OS dans un tel contexte
+ne va pas de soi et une alternative viable est d'exécuter directement
+l'application sur la couche matérielle#footnote[On parle parfois de programme
+_bare metal_.]. Toutefois, l'utilisation d'un système d'exploitation procure un
+grand nombre de bénéfices essentiellement en facilitant la conception et la
+portabilité des applications. Le @compare_os_baremetal donne des éléments de
+comparaison entre la conception d'une application exécutée dans un OS ou dans
+un environnement _bare metal_.
+
+#figure(
+  table(
+    columns: (1fr, 2fr, 2fr),
+    stroke: 1pt + black,
+    align: left + horizon,
+    [Caractéristique], [Système d'exploitation], [Environnement _bare metal_],
+
+    [Portabilité],
+    [Élevée, grâce à des interfaces logicielles et des pilotes.],
+    [Faible.],
+
+    [Débogage], [Facilité par de nombreux outils.], [Souvent plus complexe.],
+
+    [Isolation en espace/temps],
+    [Fourni par l'OS avec différents niveaux de garantie.],
+    [Absente.],
+
+    [Multi-tâche],
+    [Souvent supporté via le concept de processus/thread/partition.],
+    [Absent.],
+
+    [Latence],
+    [Induite par l'exécution de routines.],
+    [Performance maximale offerte par le matériel.],
+
+    [Certification],
+    [Facilité dans le cas où l'OS a fait l'objet d'une certification. Dans le
+    cas contraire la tâche peut-être plus complexe encore.],
+    [À refaire de zéro.]
+  ),
+  caption: [Comparaison OS et _bare metal_.]
+) <compare_os_baremetal>
+
+== Criticité et temps réel
+
+Un système est dit #definition[critique]#index[critique] si sa défaillance peut
+entraîner des conséquences indésirables. Cela peut aller de la simple perte de
+données à la destruction matérielle, voire, dans les cas les plus graves, à la
+perte de vies humaines. La criticité d'un système est généralement évalué lors
+de sa conception et le choix d'une solutions informatique adaptée en est une
 étape importante, étant donné leur omniprésence dans les appareils modernes.
 
-Un système informatique est dit #definition[temps-réel] lorsque celui-ci est
-capable de piloter un procédé physique à une vitesse adaptée à l'évolution de ce
-dernier. Un tel système doit donc respecter des limites et contraintes temporelles.
-Ils sont souvent présents dans des systèmes critiques.
+Un système informatique est dit #definition[temps-réel]#index[temps réel] lorsque
+celui-ci est capable de piloter un procédé physique à une vitesse adaptée à
+l'évolution de ce dernier. Un tel système doit donc respecter des limites et
+contraintes temporelles. Ils sont souvent présents dans des systèmes critiques.
 
-== Systèmes d'exploitation étudiés
+== Type de systèmes d'exploitation
 Dans ce document, nous classons les systèmes d'exploitation étudiés en quatre
 grandes catégories:
 - #box[Les #definition[systèmes d'exploitation généralistes]
@@ -115,7 +195,8 @@ services. Leur domaine d'application est particulièrement vaste puisqu'on les
 retrouve aussi bien sur les ordinateurs personnels, les smartphones que les
 serveurs et les systèmes embarqués. Parmi les systèmes les plus connus, on
 peut citer _Linux_, _Windows_ et _macOS_.]
-- #box[Les #definition[hyperviseurs] sont des systèmes d'exploitation dédiés à
+- #box[Les #definition[hyperviseurs]#footnote[On parle également de
+_Virtual Machine Monitor_ abrégé _VMM_.] sont des systèmes d'exploitation dédiés à
 la virtualisation, c'est-à-dire à l'exécution d'OS invités au-dessus d'une couche
 logicielle. On les retrouve fréquemment sur des serveurs exécutant simultanément
 plusieurs OS invités. Parmi les systèmes les plus utilisés, on peut citer
@@ -133,6 +214,8 @@ une image appelée un #definition[unikernel]. Celui-ci peut ensuite être exécu
 sur un hyperviseur ou en _bare-metal_, c'est-à-dire
 directement sur la couche matérielle.]
 
+== Systèmes d'exploitation étudiés
+
 Il est important de noter que certains systèmes d'exploitations rentrent dans
 plusieurs catégories. Dans ce document nous examinons les systèmes
 d'exploitation suivants:
@@ -143,7 +226,7 @@ d'exploitation suivants:
 - RTEMS 6.1 (_RTOS_)
 - seL4 13.0.0
 - Xen 4.20 (_hyperviseur_)
-- XtratuM
+- XtratuM (_hyperviseur_, _RTOS_)
 
 Nous nous sommes efforcés de fournir des informations valables pour les
 versions spécifiées ci-dessus. Les entreprises développant ProvenVisor et
@@ -699,7 +782,7 @@ Supposons que nous souhaitions limiter la consommation de mémoire d'un processu
 de le faire avec un seul _cgroup_ dû à une règle de l'API appelée
 «no internal processes».] _cgroups_ `foo` et `bar`:
 
-```bash
+```console
 sudo mkdir -p /sys/fs/cgroup/foo/bar
 echo "+memory" | sudo tee /sys/fs/cgroup/foo/cgroup.subtree_control
 echo "5 * 2^20" | bc | sudo tee /sys/fs/cgroup/foo/bar/memory.max
@@ -714,19 +797,19 @@ doit pas excéder les 5 Mio.
 
 À titre d'exemple, compilons et lançons le programme dont le code source
 est donné dans //@limited:
-```sh
+```console
 gcc -O0 limited.c -o limited
 ./limited
 ```
 et dans une autre console, on ajoute le processus au cgroup `bar`:
 
-```bash
+```console
 pgrep limited | sudo tee /sys/fs/cgroup/foo/bar/cgroup.procs
 ```
 
 Finalement, on demande plus de mémoire que la limite autorisée et le processus
 est tué:
-```console
+```
 How many bytes do you want to allocate? 6000000
 fish: Job 1, './limited' terminated by signal SIGKILL (Forced quit)
 ```
@@ -795,11 +878,68 @@ qu'il a le PID 1.
 
 === _Capabilities_ <linux_capabilities>
 
-De façon traditionnelle, les UNIX considèrent seulement deux catégories de
-processus:
-- #box[Les processus privilégiés. Ces processus peuvent exécuter la majorité des
-commandes et sont le plus souvent lancés par _root_ ou le noyau.]
-- #box[Les processus non-privilégiés.]
+Les implémentations UNIX traditionnelles distinguent deux catégories
+de processus: les processus #definition[privilégiés] et les processus
+#definition[non privilégiés]. Les processus privilégiés contournent toutes les
+vérifications de permission du noyau, tandis que les processus non
+privilégiés sont soumis à ces vérifications en se basant sur des identifiants
+associés au processus#footnote[Ces identifiants sont le plus souvent l'UID
+(_User IDentifier_) effectif, le GID (_Group IDentifier_) effectif ou les
+groupes supplémentaires du processus.]. Par exemple la commande suivante:
+```console
+ps -U root -u root
+```
+affiche tous les processus ayant pour UID réel ou effectif `root`. Ils constituent
+l'essentiel des processus privilégiés en cours d'exécution. Vous devriez obtenir
+une sortie similaire à celle-ci:
+```
+    PID TTY          TIME CMD
+      1 ?        00:00:03 systemd
+      2 ?        00:00:00 kthreadd
+      3 ?        00:00:00 pool_workqueue_release
+      4 ?        00:00:00 kworker/R-rcu_gp
+      5 ?        00:00:00 kworker/R-sync_wq
+      6 ?        00:00:00 kworker/R-kvfree_rcu_reclaim
+      7 ?        00:00:00 kworker/R-slub_flushwq
+      8 ?        00:00:00 kworker/R-netns
+     10 ?        00:00:00 kworker/0:0H-events_highpri
+     13 ?        00:00:00 kworker/R-mm_percpu_wq
+     ...
+```
+Sans surprise `systemd` et un grand nombre de workers et de threads noyaux
+sont des processus privilégiés. La commande suivante:
+```console
+ps -U $(whoami)
+```
+vous donnera la liste des processus qui s'exécutent avec l'UID effectif de
+votre utilisateur. Vous devriez y retrouver vos logiciels. Par exemple,
+sur mon ordinateur j'obtiens la sortie:
+```
+    PID TTY          TIME CMD
+   2512 ?        00:00:00 systemd
+   2514 ?        00:00:00 (sd-pam)
+   2523 ?        00:00:00 devmon
+   2524 ?        00:00:00 gamemoded
+   2530 tty1     00:00:00 fish
+   2537 ?        00:00:00 mpd
+   2541 ?        00:00:00 dbus-daemon
+   2652 ?        00:00:44 pipewire
+   2653 ?        00:00:11 wireplumber
+   2683 ?        00:00:00 udevil
+   2715 ?        00:17:47 niri
+  29113 pts/3    00:00:02 typst
+  ...
+```
+Les logiciels `niri`, `fish` et `typst` sont en cours d'exécution avec mes
+droits utilisateurs. En particulier, ils ne peuvent pas modifier n'importe
+quel fichier du disque ou faire tous les appels systèmes car ils ont des
+privilèges limités.
+
+Cette distinction en deux catégories n'offre pas toujours suffisamment de
+granularité. Il est fréquent de ne vouloir exécuter que quelques appels
+systèmes avec les privilèges `root` dans un processus. Or exécuter un programme
+avec les droits `root` constitue un risque de sécurité car s'il présente une
+faille exploitable, un intrus pourrait obtenir les droits `root` à travers lui.
 
 ==== SetUID
 Les processus peuvent être privilégiés parce qu'ils ont été lancé par
@@ -993,19 +1133,132 @@ le dossier `LICENSES` des sources du noyau `Linux`.
 
 = MirageOS <mirageos>
 
-_MirageOS_ est un _unikernel_ open-source conçu pour les applications réseaux.
-Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
-Le projet, lancé en 2009, est activement développé par la _MirageOS Core Team_.
-Cette équipe est composée d'employés du secteur privé et d'universitaires.
+_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux et
+le _cloud computing_. Le projet est initié en 2009 au sein du laboratoire
+_Computer Laboratory_ de l'université de Cambridge sous la houlette de
+Anil Madhavapeddy. Il est de nos jours maintenu par la _MirageOS Core Team_
+composée d'universitaires et d'ingénieurs du secteur privé.
 
-En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
-taille et avec une empreinte mémoire minimale. Il offre également des temps de
-démarrage réduit.
+Au tournant des années 2010, l'usage de la virtualisation révolutionne le
+déploiement des services, permettant de réduire les coûts et d'externaliser une
+grande partie de la maintenance via le concept de _cloud_. À cette époque, la majorité
+des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette approche
+présente l'avantage de circonscrire au système d'exploitation les
+modifications requises pour la virtualisation. En contre partie, la pile
+logicielle est grandement complexifié comme
+l'illustre la @comparison_unikernel_gpos. En particulier, certains mécanismes
+d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
+le noyau exécuté dans la VM. De plus, l'introduction d'un _GPOS_ augmente
+considérablement la surface d'attaque et les sources de bugs, d'autant plus que
+ce dernier est souvent écrit dans un langage de programmation n'offrant que peu
+de garantie du point de vue des types et de la mémoire.
+C'est de ces deux constats que naît le projet _MirageOS_.
 
-== Environnement <mirageos_environnement>
+#let blob(pos, label, tint: white, ..args) = node(
+	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
+	width: 45mm,
+	fill: gradient.radial(white, tint, center: (40%, 20%), radius: 150%),
+	corner-radius: 3pt,
+ 	stroke: 1pt + tint.darken(20%),
+	..args,
+)
+
+#let blob2(pos, label, tint: white, ..args) = node(
+	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
+	width: 55mm,
+	fill: gradient.radial(white, tint, center: (40%, 20%), radius: 150%),
+	corner-radius: 3pt,
+ 	stroke: 1pt + tint.darken(20%),
+	..args,
+)
+
+#figure(
+grid(
+  columns: (1fr, 1fr),
+  column-gutter: -4cm,
+  [
+    #diagram(
+      spacing: 10pt,
+      cell-size: (8mm, 10mm),
+      edge-stroke: 1pt,
+      edge-corner-radius: 5pt,
+      mark-scale: 70%,
+
+      blob((2,0), [Application], tint: blue),
+      edge("-|>"),
+      blob((2,1), [Fichier de configuration], tint: red),
+      edge("-|>"),
+      blob((2,2), [Environnement d'exécution du langage], tint: blue, name: <runtime>),
+      blob((2,3.5), [Bibliothèques partagées], tint: red, name: <bib>),
+      edge("-|>"),
+      blob((2,4.5), [Noyau], tint: red, name: <kernel>),
+      edge(<runtime>, <gpos>, "-|>"),
+      node(
+        [#align(left)[#pad(-1.8em)[#rotate(-90deg)[
+          #text(font: "Fira Sans", size: 11pt)[GPOS]]]]],
+        inset:15pt,
+        corner-radius: 3pt,
+        enclose: (<bib>, <kernel>),
+        stroke: red, fill: red.lighten(90%),
+        name: <gpos>),
+      edge(<gpos>, <hypervisor>, "-|>"),
+      blob((2,5.8), [Hyperviseur], tint: green, name: <hypervisor>),
+      edge("-|>"),
+      blob((2,6.8), [Couche matérielle], tint: gray),
+    )
+  ],
+  [
+    #diagram(
+      spacing: 8pt,
+      cell-size: (8mm, 10mm),
+      edge-stroke: 1pt,
+      edge-corner-radius: 5pt,
+      mark-scale: 70%,
+
+      blob((2,0), [Application], tint: blue, name: <app>),
+      edge("-|>"),
+      blob((2,1), [Environnement d'exécution du langage], tint: blue, name: <runtime>),
+      node(
+        [#align(left)[#pad(-2.7em)[#rotate(-90deg)[
+          #text(font: "Fira Sans", size: 11pt)[Unikernel]]]]],
+        inset:15pt,
+        corner-radius: 3pt,
+        enclose: (<app>, <runtime>),
+        stroke: blue, fill: blue.lighten(90%),
+        name: <unikernel>),
+      edge(<unikernel>, <hypervisor>, "-|>"),
+      blob((2,2.5), [Hyperviseur], tint: green, name: <hypervisor>),
+      edge("-|>"),
+      blob((2,3.5), [Couche matérielle], tint: gray),
+    )
+  ]),
+  caption: [Comparaison entre l'approche _GPOS_ et l'approche _unikernel_.]
+) <comparison_unikernel_gpos>
+
+_MirageOS_ adopte une approche de type _LibOS_. Au lieu de fournir un environnement
+d'exécution pour les services, _MirageOS_ se présentent sous la forme d'une
+collection de bibliothèques modulaires. Ces dernières sont écrites en _OCaml_,
+un langage de programmation de haut niveau offrant la sûreté des types et
+équipé d'un ramasse-miette. La configuration et l'ensemble des bibliothèques
+nécessaires au service sont liés durant la compilation pour produire une image
+appelée _unikernel_. Cet _unikernel_ peut alors être exécuté dans divers
+environnements, voir la sous-section @mirageos_environments. Cela conduit à une
+simplification de la pile logicielle, voir @comparison_unikernel_gpos. Cette
+approche présente de nombreux avantages en comparaison de celle basée sur un _GPOS_:
+- #box[Une plus petite surface d'attaque à la fois par la réduction de le taille du
+code source et l'utilisation d'un langage de programmation sûr.]
+- #box[Une amélioration des performances et notamment du temps de démarrage.]
+- #box[Une réduction de la taille des exécutables produits.]
+- #box[Un profilage simplifié par la suppression d'une couche logicielle.]
+
+== Environnements <mirageos_environments>
 
 Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
 hyperviseur, un _UNIX_ ou même dans un environnement _bare-metal_.
+
+Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
+_Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage le
+plus fréquent.
 
 === Hyperviseurs supportés <mirageos_hypervisors>
 
@@ -1031,7 +1284,80 @@ sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ gr�
 concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
 sur plusieurs cœurs en parallèle.]
 
+== Partitionnement <mirageos_partitioning>
+
+Le partitionnement est entièrement délégué à l'environnement d'exécution, qui
+est le plus souvent un hyperviseur. Lorsqu'on souhaite isoler plusieurs services,
+il suffit de créer des partitions différentes pour chaque service et de les faire
+communiquer via le protocole de communication inter-partition de l'hyperviseur.
+Par exemple dans le cas de _Xen_, on peut créer des _domU_ pour chaque _unikernel_
+et les faire communiquer via.
+
+== Profilage <mirageos_profiling>
+
+== Maintenabilité <mirageos_maintenability>
+
+_MirageOS_ est en majorité écrit en OCaml.
+
+== Draft
+
+Les bibliothèques d'OS souffrent d'un problème de portabilité. Cette situation
+est amendée par l'usage d'un hyperviseur plutôt qu'un exécution bare-metal.
+
+Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
+Une particularité importante de _MirageOS_ est d'être écrit dans le langage
+_OCaml_. Ce langage est de haut niveau et sûr. La majorité des systèmes
+d'exploitations sont écrit en langage C. C'est un langage de programmation bas
+niveau offrant peu de garantie de sûreté, notamment vis-à-vis de la mémoire.
+
+En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
+taille et avec une empreinte mémoire minimale. Il offre également des temps de
+démarrage réduit.
+
+Une des motivations d'exécuter un unikernel dans un hyperviseur plutôt qu'un
+système d'exploitation classique est de supprimer une couche logicielle volumineuse
+qui contient beaucoup de fonctionnalité inutile comme le support pour du matériel
+ancien, le support d'anciennes API, l'ordonnanceur pour les processus/threads en
+plus de celui de l'hyperviseur.
+
+_MirageOS_ ne cherche pas à proposer une interface _POSIX_ dans un souci
+de minimalité et de clarté des _API_.
+
+La majorité du code est écrit en OCaml. Toutefois il subsiste plusieurs parties
+qui sont toujours en langage C. Il y a le runtime OCaml lui-même (ce qui inclut
+le ramasse miette d'OCaml), un certain nombres de pilotes et quelques bibliothèques
+(notamment GMP) dont la réécriture en OCaml est possible mais très laborieuse.
+
+_MirageOS_ utilise un freestanding runtime pour OCaml @ocamlsolo5github.
+
+Objectif réduire la complexité des systèmes actuels.
+
+Quelques avantages:
+- surface d'attaque réduite
+- vérification et certification modulaire
+
+== Image docker <mirageos_imagedocker>
+Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
+disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
+nécessaire pour compiler des images avec MirageOS. Pour installer l'image, tapez:
+```console
+make -C mirageos setup
+```
+Vous pouvez accéder au shell du `docker` en tapant:
+```console
+make -C mirageos shell
+```
+
+== SpaceOS <mirageos_spaceos>
+
 == Watchdog <mirageos_watchdog>
+
+_MirageOS_ ne semble pas offrir d'_API_ en OCaml pour interagir avec un _watchdog_.
+Le support est donc dépendant de l'environnement dans lequel l'image est exécutée.
+Dans le cas de l'hyperviseur _Xen_, il suffit d'appeler les fonctions C de la
+bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à travers
+des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
+`tools/ocaml/` du dépôt _Xen_.
 
 == Licences & brevets <mirageos_licenses>
 
@@ -1398,7 +1724,7 @@ réinitialisé d'en un laps de temps de 30 secondes:
 #figure(
   snippet("./xen/watchdog.c", lang:"c"),
   caption: [Exemple d'interaction avec un _watchdog_ sous _Xen_.]
-)
+) <xen_watchdog_example>
 
 Pour compiler et lancer le programme dans le domaine utilisateur, tapez:
 ```console
@@ -1428,7 +1754,87 @@ L'hyperviseur `Xen` est un logiciel libre distribué principalement sous licence
 plus permissives afin de pas contraindre les licences des logiciels
 utilisateurs @xen_licensing.
 
-= Xtratum <xtratum>
+= XtratuM <xtratum>
+
+_XtratuM_ est un hyperviseur temps-réel de type 1 qualifié pour un usage dans
+le spatial. Le projet est initié en 2004 au sein de l'institut
+_Automática e Informática Industrial_ (ai2) de l'_Universidad Politécnica_ de
+Valence en Espagne @masmano2005overview @red5gespacial. Ces travaux
+universitaires ont abouti à la création de l'entreprise _fentISS_
+@fentiss_website en 2010 avec le soutien du _CNES_ et du groupe
+_Airbus_ @red5gespacial. L'hyperviseur _XtratuM_ est désormais maintenu et
+développé par _fentISS_. _XtratuM_ a été conçu pour être exécuté sur de
+l'embarqué critique en donnant de fortes garanties quant à l'isolation
+spatiale et temporaire de ses partitions @masmano2005overview. L'entreprise
+_fentISS_ propose deux versions de _XtratuM_:
+- Une version libre,
+- Une version propriétaire appelée _Xtratum/NG_ (abrégé _XNG_).
+
+développé à l'origine
+par une équipe de recherche de l'_Universidad Politécnica_ de Valence et
+maintenant maintenu par l'entreprise _fentISS_ @fentiss_website.
+
+_XtratuM_ est un hyperviseur temps-réel de type 1 qualifié pour l'usage dans
+le spatial. Le projet est initié en 2004. Il est développé par l'entreprise
+_fentISS_.
+
+_XtratuM_ virtualises la mémoire, les timers et les interruptions.
+
+Il est conçu pour permettre l'isolation temporelle et spatiale
+d'applications critiques sur une même plateforme physique grâce à l'usage
+des technologies de virtualisation matérielle.
+
+_XtratuM_ fait parti du projet _SAFEST_ @safest_project. Il s'agit d'un projet
+visant à faire collaborer différents acteurs du secteur aérospatial européen
+afin d'améliorer les performances et de réduire les coûts.
+
+Tools:
+- XPM est un pluging Eclipse pour la gestion d'un projet sur XtratuM
+- Xoncrete (schedule analysis and generation)
+- Xcparser (hypervisor configuration)
+- Xtraceview (observability support)
+- SKE (XtratuM simulator on servers)
+
+_IMA_ (_Integrated Modular Avionics_) est une tendance dans l'avionique à ramener
+au niveau de calculateurs modulaires identiques des fonctions logicielles
+auparavant prises en charge par des calculateurs dédiés.
+
+TODO:
+- C'est quoi `cyclic scheduling policy`?
+- `inter-partition communication` avec sampling et queuing ARINC-653-like ports
+- health monitoring service
+
+
+L'hyperviseur a déjà été utilisé dans le spatial avec notamment les missions
+suivantes:
+- PLATiNO (XtratuM + RTEMS) 2020
+- MERLIN (XtratuM + RTEMS) 2021
+- SVOM (XtratuM + lithOS) 2021
+- SWOT (XtratuM + RTEMS) 2021
+- JUICE (XtratuM + lithOS) 2022
+
+_XtratuM/NG_(abrégé _XNG_) est une version plus récente de l'hyperviseur qui offre un meilleur
+support multi-cœur.
+
+== Architectures supportées <xtratum_architectures>
+
+_XtratuM_ supporte les architectures suivantes:
+_x86-32_, _SPARC_, _ARM-v7_, _ARM-v8_.
+
+Il supporte SPARC/LEON (LEON2, 3, 4).
+
+== OS supportés <xtratum_invited_os>
+
+Il permet l'exécution en bare-metal via un _runtime_ appelé _XRE_ (_XUL Runtime Environment_).
+
+_XRE_ _LithOS_, _RTEMS_, _Linux_
+
+ECSS-Qualified?
+
+_lithOS_ est un système d'exploitation temps réel conçu pour être exécuté dans
+une partition de _XtratuM_.
+
+== Qualifications
 
 == Licences & brevets <xtratum_licenses>
 
@@ -1436,7 +1842,6 @@ utilisateurs @xen_licensing.
 licence `GPL v2` @xtratum_github.]
 - #box[Une nouvelle version `XtratuM New Generation` est développée et
 distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
-
 
 // = OS généralistes
 //
@@ -1471,7 +1876,6 @@ distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
 
 #table(
   columns: 3,
-  align: left + horizon,
   table.header[Type d'OS][Avantages][Inconvénients],
   [Unikernel], [
     - Petite surface d'attaque
@@ -1645,5 +2049,51 @@ un méchanisme abstrait appelé _Event channel_. Il est alors possible de masque
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
 
 == Monitoring & profiling
+
+= Introduction2 <introduction2>
+
+Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
+souvent abrégé _OS_.] est un ensemble de routines gérant les ressources
+matérielles d'un système informatique, qu'il s'agisse d'ordinateurs de bureau,
+de serveurs ou de systèmes embarqués. Son rôle principal est de servir de
+couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
+Il permet ainsi de masquer la complexité et la diversité des interfaces matérielles en
+fournissant des _API_ (_Application Programming Interface_) stables, unifiées et
+parfois standardisées. Les systèmes d'exploitation se distinguent aussi bien
+par les mécanismes d'abstraction qu'ils offrent, que leur organisation ou
+leur modularité. Ainsi, un tâche gérée par un OS peut être dans une autre
+configuration déléguée à une autre couche logicielle, voire au matériel.
+Il est donc difficile de caractériser rigoureusement ce qu'est un système
+d'exploitation autrement que par le fait qu'il s'exécute en
+#definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
+d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
+instructions. A contrario, les logiciels applicatifs s'exécutent en
+#definition[mode utilisateur] (_user mode_) et interagissent avec l'OS
+lorsqu'ils ont besoin d'accéder au matériel.
+
+Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
+le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
+commençons par préciser ces deux termes.
+
+On distingue le plus souvent trois modes d'exécutions sur les processeurs modernes:
+- #box[Le #definition[mode noyau]#index[mode noyau] (_kernel mode_) est un mode
+d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
+instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
+d'exploitations.]
+- #box[Le #definition[mode utilisateur]#index[mode utilisateur] (_user mode_)
+est a contrario un mode d'exécution qui n'a pas accès à toutes les
+instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
+et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
+nécessitant des privilèges plus élevés.]
+- #box[Le #definition[mode hyperviseur]#index[mode hyperviseur] (_hypervisor mode_)
+est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
+tels systèmes d'exploitation dans cette étude.]
+
+
+
+= Index
+#columns(3)[
+  #make-index(title: none)
+]
 
 #bibliography("references.bib")

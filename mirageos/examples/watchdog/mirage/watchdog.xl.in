@@ -1,0 +1,12 @@
+name = '@NAME@'
+kernel = '@KERNEL@'
+type = 'pvh'
+memory = @MEMORY@
+on_crash = 'preserve'
+
+disk = [  ]
+
+# if your system uses openvswitch then either edit /etc/xen/xl.conf and set
+#     vif.default.script="vif-openvswitch"
+# or add "script=vif-openvswitch," before the "bridge=" below:
+vif = [  ]

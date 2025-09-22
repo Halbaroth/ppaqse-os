@@ -20,10 +20,23 @@ RUN adduser                \
 RUN apk add        \
     neovim         \
     libseccomp-dev \
-    linux-headers
+    linux-headers  \
+    xen
 
 USER docker
 WORKDIR /home/docker
 RUN opam init
-RUN opam install mirage
+RUN opam install             \
+    mirage                   \
+    mirage-bootvar           \
+    mirage-crypto-rng-mirage \
+    mirage-mtime             \
+    mirage-ptime             \
+    mirage-runtime           \
+    mirage-sleep             \
+    mirage-xen               \
+    ocaml-solo5              \
+    opam-monorepo            \
+    solo5
+
 COPY --chown=docker:docker ./examples /home/docker/examples
