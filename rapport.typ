@@ -1,10 +1,39 @@
 #import "@preview/hydra:0.6.2": hydra
 #import "@preview/cetz:0.4.1"
 #import "@preview/in-dexter:0.7.2": *
+#import "@preview/showybox:2.0.4": showybox
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 #import fletcher.shapes: house, hexagon
 #set text(lang: "fr", size: 12pt)
 #set par(justify: true)
+
+// Boxes
+#let metabox(color: gray, header: "", title, content) = {
+  showybox(
+    title-style: (
+      weight: 900,
+      color: color.darken(40%),
+      sep-thickness: 0pt,
+      align: center
+    ),
+    frame: (
+      title-color: color.lighten(80%),
+      border-color: color.darken(40%),
+      thickness: (left: 1pt),
+      radius: 0pt
+    ),
+    title: [#header: #title]
+  )[#content]
+}
+
+#let howto(title, content) = {
+  metabox(color: green, header: "Tutoriel", title, content)
+}
+
+#let warning(title, content) = {
+  metabox(color: yellow, header: "Attention", title, content)
+}
+
 
 // Table style
 #show table: set par(justify: false)
@@ -232,6 +261,29 @@ Nous nous sommes efforcés de fournir des informations valables pour les
 versions spécifiées ci-dessus. Les entreprises développant ProvenVisor et
 XtratuM ne communiquent pas de numéros de version pour leurs systèmes
 d'exploitation.
+
+== Tutoriels
+
+L'étude contient un certain nombres de tutoriels et exemples illustrant
+le fonctionnement des différents systèmes étudiés. Pour que ces exemples
+puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+
+=== Xen & MirageOS
+Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
+d'un support pour l'hyperviseur _Xen_.
+
+#howto[mise en place d'un pont virtuel][
+  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
+  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
+  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
+  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
+  vous pouvez mettre en place un tel pont ainsi:
+  ```console
+  sudo ip link add br0 type bridge
+  sudo ip link set br0 up
+  sudo ip addr 10.0.0.1/24 dev br0
+  ```
+]
 
 == Critères de comparaison
 
@@ -1134,25 +1186,30 @@ le dossier `LICENSES` des sources du noyau `Linux`.
 = MirageOS <mirageos>
 
 _MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux et
-le _cloud computing_. Le projet est initié en 2009 au sein du laboratoire
+le _cloud computing_#footnote[Le _cloud computing_ est une pratique consistant à
+utiliser des serveurs chez un tiers pour héberger des services plutôt
+que sur un serveur local.]. Le projet est initié en 2009 au sein du laboratoire
 _Computer Laboratory_ de l'université de Cambridge sous la houlette de
-Anil Madhavapeddy. Il est de nos jours maintenu par la _MirageOS Core Team_
-composée d'universitaires et d'ingénieurs du secteur privé.
+Anil Madhavapeddy @mirageos_unikernels. Il est de nos jours maintenu par la
+_MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé.
+_MirageOS_ fait parti des projets soutenus par le _Xen Project_
+@mirageos_xen_project et bon nombre de ces contributeurs ont également contribué
+au projet _Xen_.
 
 Au tournant des années 2010, l'usage de la virtualisation révolutionne le
 déploiement des services, permettant de réduire les coûts et d'externaliser une
-grande partie de la maintenance via le concept de _cloud_. À cette époque, la majorité
-des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette approche
-présente l'avantage de circonscrire au système d'exploitation les
+partie de la maintenance via le concept de _cloud computing_. À cette époque,
+la majorité des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette
+approche présente l'avantage de circonscrire au système d'exploitation les
 modifications requises pour la virtualisation. En contre partie, la pile
 logicielle est grandement complexifié comme
 l'illustre la @comparison_unikernel_gpos. En particulier, certains mécanismes
 d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
 le noyau exécuté dans la VM. De plus, l'introduction d'un _GPOS_ augmente
-considérablement la surface d'attaque et les sources de bugs, d'autant plus que
-ce dernier est souvent écrit dans un langage de programmation n'offrant que peu
-de garantie du point de vue des types et de la mémoire.
-C'est de ces deux constats que naît le projet _MirageOS_.
+considérablement la surface d'attaque et les sources de bugs. Ce dernier est
+souvent écrit dans un langage de programmation n'offrant que peu
+de garantie du point de vue des types et de la mémoire. C'est de ces deux
+constats que naît le projet _MirageOS_.
 
 #let blob(pos, label, tint: white, ..args) = node(
 	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
@@ -1243,30 +1300,106 @@ un langage de programmation de haut niveau offrant la sûreté des types et
 nécessaires au service sont liés durant la compilation pour produire une image
 appelée _unikernel_. Cet _unikernel_ peut alors être exécuté dans divers
 environnements, voir la sous-section @mirageos_environments. Cela conduit à une
-simplification de la pile logicielle, voir @comparison_unikernel_gpos. Cette
-approche présente de nombreux avantages en comparaison de celle basée sur un _GPOS_:
+simplification de la pile logicielle comme illustré dans @comparison_unikernel_gpos.
+L'approche _unikernel_ présente de nombreux avantages:
 - #box[Une plus petite surface d'attaque à la fois par la réduction de le taille du
 code source et l'utilisation d'un langage de programmation sûr.]
 - #box[Une amélioration des performances et notamment du temps de démarrage.]
 - #box[Une réduction de la taille des exécutables produits.]
 - #box[Un profilage simplifié par la suppression d'une couche logicielle.]
 
-== Environnements <mirageos_environments>
+== Image docker <mirageos_imagedocker>
+Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
+disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
+nécessaire pour compiler des images avec MirageOS. Pour installer l'image, tapez:
+```console
+make -C mirageos setup
+```
+Vous pouvez accéder au shell du `docker` en tapant:
+```console
+make -C mirageos shell
+```
+
+== Environnements d'exécution <mirageos_environments>
 
 Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
-hyperviseur, un _UNIX_ ou même dans un environnement _bare-metal_.
+hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-metal_.
+
+#figure(
+  table(
+    columns: (1fr, 2fr, 2fr, 2fr),
+    stroke: 1pt + black,
+    align: center,
+    inset: 10pt,
+    [Cible],
+    [Description],
+    [Environnement],
+    [Compilateur],
+
+    [`unix`],
+    [Exécute l'unikernel comme un processus Unix normal],
+    [_GNU/Linux_],
+    [Compilateur OCaml classique, et la bibliothèque `mirage-unix`],
+
+    [`hvt`],
+    [Unikernel pour la virtualisation avec Solo5],
+    [_KVM_],
+    [Solo5 (tender `hvt`), compilateur OCaml],
+
+    [`xen`],
+    [Unikernel paravirtualisé pour Xen],
+    [_Xen_ + _Mini-OS_],
+    [outils de compilation Xen, compilateur OCaml],
+
+    [`spt`],
+    [Unikernel sécurisé avec seccomp],
+    [_KVM_],
+    [Solo5 (tender `spt`), compilateur OCaml, Linux seccomp],
+
+    [`virtio`],
+    [Unikernel utilisant virtio-blk/net],
+    [_virtio_],
+    [Qemu, Solo5 (tender `virtio`), compilateur OCaml],
+
+    [`mue`],
+    [Unikernel pour l'embarqué sans OS],
+    [_bare-metal_],
+    [Micro-Unikernel Environnement (MUE), compilateur OCaml],
+
+    [`qemu`],
+    [Unikernel pour Qemu],
+    [_QEMU_],
+    [Qemu, MirageOS backend Qemu],
+  )
+)
+
+#howto[choisir l'environnement d'exécution][
+Le choix de l'environnement d'exécution se fait au moment de la configuration
+du projet via la commande:
+```console
+mirage configure -t ENV
+```
+où `ENV` peut désigner les valeurs suivantes:
+`unix`, `macosx`, `xen`, `virtio`, `hvt`, `muen`, `qubes`, `genode`, `spt`,
+`unikraft-firecracker` ou `unikraft-qemu`.
+]
+- #box[L'option `xen` permet l'exécution dans un domaine de _Xen_. Il s'agit
+de l'environnement original du projet _MirageOS_. En production, on exécute
+généralement le noyau minimaliste _Mini-OS_ dans le _dom0_ de _Xen_ @xen_minios.]
+- #box[L'option `unix` permet d'exécuter l'_unikernel_ dans _KVM_. L'environnement
+requière]
+- #box[Les options `unix` et `macosx` permettent d'exécuter
+l'_unikernel_ dans une distribution _GNU/Linux_, respectivement _macOS_. C'est
+un atout précieux pour le débogage et le profilage de l'application mais ne
+correspond généralement pas à l'environnement d'exécution en production.]
+- #box[_Xen_, _KVM_, _bhyve_, _VMM_.]
+- #box[Les options `unikraft-firecracker` et `unikraft-qemu` ont été ajoutées
+récemment au projet @mirageos_unikraft. Elles permettent d'exécuter l'_unikernel_
+dans un environnement _unikraft_.]
 
 Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
 _Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage le
 plus fréquent.
-
-=== Hyperviseurs supportés <mirageos_hypervisors>
-
-_Xen_, _KVM_, _bhyve_, _VMM_.
-
-=== UNIX <mirageos_unix>
-
-=== Bare-metal <mirageos_bare_metal>
 
 == Architectures supportées <mirageos_architectures>
 
@@ -1293,11 +1426,125 @@ communiquer via le protocole de communication inter-partition de l'hyperviseur.
 Par exemple dans le cas de _Xen_, on peut créer des _domU_ pour chaque _unikernel_
 et les faire communiquer via.
 
-== Profilage <mirageos_profiling>
+== Corruption de la mémoire <mirageos_memory_corruption>
+
+La gestion de la corruption de la mémoire est généralement déléguée à l'environnement
+d'exécution.
+
+== Profilage & traçage <mirageos_profiling>
+
+Le profilage d'un unikernel dépend fortement de l'environnement dans lequel
+il est exécuté. Le cas le plus favorable est celui de l'environnement _UNIX_ et
+en particulier d'une distribution _GNU/LINUX_, puisque il existe pléthore
+d'outils de profilage dans cette situation, voir la sous-section @linux_profiling
+pour des exemples sous _Linux_. Toutefois il est également souhaitable de
+profiler l'_unikernel_ en conditions réelles, ce qui ne correspond presque jamais
+à l'environnement _UNIX_. Nous nous bordons à l'environnement _Xen_ dans ce qui
+suit.
+
+=== Flame graphs
+
+=== Profilage mémoire avec `memtrace-mirage`
+
+Le programme `memtrace` @memtrace_github développé par Janestreet est un
+profiler mémoire pour le langage OCaml. Il permet de générer une trace
+compacte de l'utilisation de la mémoire d'un programme écrit OCaml. La trace
+produite peut-être exploré avec `memtrace-viewer` @memtrace_viewer_github.
+Il existe une bibliothèque _MirageOS_ permettant d'utiliser `memtrace` dans un
+_unikernel_.
+
+#figure(
+  snippet("./mirageos/examples/memtrace/config.ml", lang: "ocaml"),
+  caption: [Configuration de l'_unikernel_]
+)
+
+#figure(
+  snippet("./mirageos/examples/memtrace/unikernel.ml", lang: "ocaml"),
+  caption: [Exemple d'utilisation de `memtrace-mirage`]
+) <example_memtrace_mirage>
+
+L'exemple @example_memtrace_mirage illustre l'utilisation de `memtrace-mirage`
+dans un _unikernel_. La fonction `start` est le point d'entrée de l'_unikernel_.
+Cette fonction commence par établir un socket `TCP` à l'adresse `10.0.0.1:24`
+#footnote[L'adresse `10.0.0.1` est l'adresse _IP_ par défaut utilisée par la bibliothèque
+`mirage-tcp-ip`.]. Lorsqu'un client établit une connexion, `memtrace` est lancé jusqu'à ce que
+la connexion soit interrompue. La fonction `alloc`
+est exécutée de façon concurrentielle afin de produire un grand nombre d'allocations.
+L'exécution de l'_unikernel_ se termine après 100 secondes.
+
+#howto[exécution de l'exemple dans _Xen_][
+  On commence par créer l'unikernel à l'aide de l'image docker, puis on lance
+  cet unikernel dans un domaine de _Xen_:
+  ```console
+  make build-memtrace
+  cd dist/memtrace
+  sudo xl create memtrace.xl -c
+  ```
+  On peut alors récupérer la trace produite par `memtrace` en établissant dans
+  autre terminal une connexion sur `10.0.0.2:1234`:
+  ```console
+  nc 10.0.0.2 1234 > trace
+  ```
+  Finalement, on peut lancer une instance de `memtrace-view`:
+  ```console
+  make mentrace-view
+  ```
+]
+
+
+#warning[incompatibilité avec OCaml 5][
+  Le module `Gc.Memprof` nécessaire à `memtrace` ne fonctionne plus en OCaml 5
+  car le fonctionnement du ramasse-miette a été changé en profondeur. Des efforts
+  sont en cours pour restaurer cette fonctionnalité dans une version ultérieure
+  du compilateur OCaml.
+]
+
+=== Traçagage
+
+Il existe des `hooks` dans le code de _MirageOS_ qui permet un traçage de bout
+en bout. On peut utiliser un backend spécifique comme `mirageos-trace-viewer`.
+C'est un atout majeur en comparaison de _strace_ qui ne permet que de tracer
+les appels systèmes.
 
 == Maintenabilité <mirageos_maintenability>
 
-_MirageOS_ est en majorité écrit en OCaml.
+_MirageOS_ est en majorité écrit en OCaml. Comme nous l'avons indiqué dans
+l'introduction de cette section, il s'agit d'un langage de haut niveau qui offre
+de bonne garantie du point de vue de la sûreté des types et de la mémoire. Toutefois
+la totalité de l'unikernel ne provient pas de la compilation de code OCaml. Il
+subsiste plusieurs parties en langage C et notamment:
+- #box[L'environnement d'exécution du langage OCaml est écrit en C. Cela inclut en
+particulier son ramasse-miette,]
+- #box[Quelques bibliothèques en C comme _GMP_ au travers de _Zarith_. Leur réécriture
+en OCaml est théorique possible mais nécessiterait un effort considérable en pratique,]
+- #box[Les pilotes doivent être écrit dans un langage bas niveau.]
+
+À ce jour le dépôt https://github.com/mirage/mirage est constitué à 99% de code
+OCaml pour un total de 9075 _SLOC_.
+
+== Watchdog <mirageos_watchdog>
+
+_MirageOS_ ne semble pas offrir d'_API_ en OCaml pour interagir avec un _watchdog_.
+Le support est donc dépendant de l'environnement dans lequel l'image est exécutée.
+Dans le cas de l'hyperviseur _Xen_, il suffit d'appeler les fonctions C de la
+bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à travers
+des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
+`tools/ocaml/` du dépôt _Xen_.
+
+== Certifications <mirageos_certifications>
+
+À notre connaissance, _MirageOS_ n'a pas fait l'objet de certification. L'objectif
+premier de _MirageOS_ est davantage la sécurité que la sûreté de fonctionnement.
+Cet objectif est atteint en minimisant la surface d'attaque et en utilisant un
+langage de programmation sûr.
+
+== Licences <mirageos_licenses>
+
+Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
+sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
+`ISC` est nécessaire car l'_unikernel_ produit par _MirageOS_ est lié statiquement
+avec les bibliothèques. En particulier, vous n'avez pas l'obligation de distribuer
+les sources de l'application lorsque vous distribuez le binaire de l'_unikernel_.
 
 == Draft
 
@@ -1336,36 +1583,7 @@ Quelques avantages:
 - surface d'attaque réduite
 - vérification et certification modulaire
 
-== Image docker <mirageos_imagedocker>
-Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
-disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
-nécessaire pour compiler des images avec MirageOS. Pour installer l'image, tapez:
-```console
-make -C mirageos setup
-```
-Vous pouvez accéder au shell du `docker` en tapant:
-```console
-make -C mirageos shell
-```
-
 == SpaceOS <mirageos_spaceos>
-
-== Watchdog <mirageos_watchdog>
-
-_MirageOS_ ne semble pas offrir d'_API_ en OCaml pour interagir avec un _watchdog_.
-Le support est donc dépendant de l'environnement dans lequel l'image est exécutée.
-Dans le cas de l'hyperviseur _Xen_, il suffit d'appeler les fonctions C de la
-bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à travers
-des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
-`tools/ocaml/` du dépôt _Xen_.
-
-== Licences & brevets <mirageos_licenses>
-
-Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
-sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
-`ISC` est nécessaire car en tant qu'_unikernel_, les bibliothèques de _MirageOS_
-doivent être liés statiquement avec le logiciel applicatif pour former l'image
-qui sera mise en production.
 
 = PikeOS <pikeos>
 
@@ -1986,10 +2204,6 @@ Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_webs
   [XtratuM],     [?],             [?],              [C (?)],
 )
 
-= Temps de démarrage
-
-= Mécanisme de détection ou de tolérance aux pannes
-
 == Partitionnement temps et/ou mémoire
 
 ==== Linux
@@ -2048,8 +2262,6 @@ tournant dans le domaine privilégié _Dom0_ et transmises aux domaines concern�
 un méchanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
 
-== Monitoring & profiling
-
 = Introduction2 <introduction2>
 
 Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
@@ -2088,8 +2300,6 @@ nécessitant des privilèges plus élevés.]
 - #box[Le #definition[mode hyperviseur]#index[mode hyperviseur] (_hypervisor mode_)
 est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
 tels systèmes d'exploitation dans cette étude.]
-
-
 
 = Index
 #columns(3)[

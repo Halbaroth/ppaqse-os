@@ -8,17 +8,20 @@ setup:
 	chmod 777 ./dist
 
 shell: setup
-	$(DOCKER) run --user docker -it ppaqse-os/mirageos sh
+	$(DOCKER) run --user opam -it ppaqse-os/mirageos /bin/bash
 
 build-hello_world: setup
-	$(DOCKER) run --user docker -v ./dist:/dist ppaqse-os/mirageos ./examples/hello_world/build.sh
+	$(DOCKER) run --user opam -v ./dist:/dist ppaqse-os/mirageos ./examples/hello_world/build.sh
 
 build-watchdog: setup
 	$(DOCKER) run --user docker -v ./dist:/dist ppaqse-os/mirageos ./examples/watchdog/build.sh
 
-build: build-hello_world build-watchdog
+build-memtrace: setup
+	$(DOCKER) run --user opam -v ./dist:/dist ppaqse-os/mirageos ./examples/memtrace/build.sh
+
+build: build-hello_world build-watchdog build-memtrace
 
 clean:
 	yes
 
-.PHONY: all setup shell build build-hello_world build-watchdog clean
+.PHONY: all setup shell build build-hello_world build-watchdog build-memtrace clean

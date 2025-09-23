@@ -7,10 +7,10 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    BRIDGE="xenbr"
+    BRIDGE="br0"
     IFACE=$(ip route | grep default | awk '{print $5}')
-    NETWORK="192.168.10.0"
-    IP="192.168.10.1"
+    NETWORK="10.0.0.0"
+    IP="10.0.0.1"
 
     cleanup() {
       sudo iptables -D FORWARD -i "$BRIDGE" -o "$IFACE" -j ACCEPT

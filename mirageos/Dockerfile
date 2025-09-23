@@ -1,31 +1,23 @@
-FROM ocaml/opam:alpine-ocaml-5.3
-ENV USER=docker
-ENV GROUPNAME="$USER"
-ENV UID=12345
-ENV GID=12345
+FROM ocaml/opam:ubuntu-25.04-ocaml-5.3
 ENV OPAMYES=yes
 
 USER root
 RUN rm /usr/bin/opam && ln -s /usr/bin/opam-2.4 /usr/bin/opam
 
-RUN addgroup     \
-    --gid "$GID" \
-    "$GROUPNAME"
-RUN adduser                \
-    --disabled-password    \
-    --uid "$UID"           \
-    --ingroup "$GROUPNAME" \
-    "$USER"
+RUN apt-get install -y  \
+    neovim
+#    gmp-dev        \
+#    libffi-dev     \
+#    openssl-dev    \
+#    pcre-dev       \
+#    zlib-dev       \
+#    libseccomp-dev \
+#    linux-headers  \
+#    xen
 
-RUN apk add        \
-    neovim         \
-    libseccomp-dev \
-    linux-headers  \
-    xen
-
-USER docker
-WORKDIR /home/docker
-RUN opam init
+USER opam
+RUN opam init --bare
+RUN opam switch create default ocaml-variants.4.14.2+options ocaml-option-fp
 RUN opam install             \
     mirage                   \
     mirage-bootvar           \
@@ -35,8 +27,11 @@ RUN opam install             \
     mirage-runtime           \
     mirage-sleep             \
     mirage-xen               \
+    memtrace                 \
+    memtrace-mirage          \
+    memtrace_viewer          \
     ocaml-solo5              \
     opam-monorepo            \
     solo5
 
-COPY --chown=docker:docker ./examples /home/docker/examples
+COPY --chown=opam:opam ./examples /home/opam/examples

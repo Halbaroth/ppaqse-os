@@ -20,6 +20,7 @@
           fira-mono
           fira-code
           fontconfig
+          netcat
         ];
 
         shellHook =
