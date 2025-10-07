@@ -10,4 +10,4 @@ let main =
 
 let stackv4v6 = generic_stackv4v6 default_network
 
-let () = register "Memtrace" [ main $ stackv4v6 ]
+let () = register "memtrace" [ main $ stackv4v6 ]

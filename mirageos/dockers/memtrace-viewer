@@ -1,0 +1,11 @@
+FROM ocaml/opam:ubuntu-25.04-ocaml-5.3
+EXPOSE 8080
+ENV OPAMYES=yes
+
+USER root
+RUN rm /usr/bin/opam && ln -s /usr/bin/opam-2.4 /usr/bin/opam
+
+USER opam
+RUN opam init --bare
+RUN opam switch create default ocaml-base-compiler.4.14.2
+RUN opam install memtrace_viewer

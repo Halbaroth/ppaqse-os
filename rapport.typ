@@ -1,8 +1,8 @@
 #import "@preview/hydra:0.6.2": hydra
 #import "@preview/cetz:0.4.1"
-#import "@preview/in-dexter:0.7.2": *
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
+#import "@preview/glossy:0.8.0": *
 #import fletcher.shapes: house, hexagon
 #set text(lang: "fr", size: 12pt)
 #set par(justify: true)
@@ -34,6 +34,9 @@
   metabox(color: yellow, header: "Attention", title, content)
 }
 
+#let aside(title, content) = {
+  metabox(color: blue, header: "Aparté", title, content)
+}
 
 // Table style
 #show table: set par(justify: false)
@@ -73,15 +76,18 @@
 
 #show raw.where(block: true): set text(font: "FiraCode Nerd Font Mono")
 
+#show raw.where(block: true, lang: "console"): set block(fill: luma(240), inset: 1em, radius: 0.5em, width: 100%)
+
 #show raw.where(block: true, lang: "console"): code => {
   show raw.line: line => {
-    h(1em)
     "$"
     h(0.3em)
     line.body
   }
   code
 }
+
+#show raw.where(block: true, lang: "output"): set block(fill: luma(240), inset: 1em, radius: 0.5em, width: 100%)
 
 #let snippet(file, lang:none) = {
   show raw: code => {
@@ -109,28 +115,43 @@
 #show link: set text(blue)
 #show ref: set text(blue)
 
+// Glossary
+#show: init-glossary.with(yaml("glossary.yaml"))
+
+// Figures
+
+#let blob(pos, label, tint: white, width: 45mm, ..args) = node(
+	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
+	width: width,
+	fill: gradient.radial(white, tint, center: (40%, 20%), radius: 150%),
+	corner-radius: 3pt,
+ 	stroke: 1pt + tint.darken(20%),
+	..args,
+)
+
+
 = Introduction <introduction>
 
 L'usage de composants informatiques dans les systèmes critiques#footnote[Un
-système est dit critique#index[critique] si sa défaillance conduit à des dommages inacceptable.]
+système est dit critique si sa défaillance conduit à des dommages inacceptable.]
 est de nos jours monnaie courante. De tels composants se retrouvent dans de
 nombreuses industries comme l'aéronautique, l'automobile et le nucléaire. Ainsi,
 la sûreté des logiciels devient un enjeu crucial et en particulier celle du système
 d'exploitation. Le développement et la maintenance d'un système d'exploitation
 étant complexe et coûteux, il est souhaitable d'avoir recours à une solution
 informatique sur étagères #footnote[On parle parfois de _COTS_ pour
-_Commercial off-the-shelf_#index[CTOS].], c'est-à-dire dans le cas présent
+_Commercial off-the-shelf_.], c'est-à-dire dans le cas présent
 un système d'exploitation ayant été conçu pour les systèmes critiques.
 Le présent document est une étude comparative de systèmes d'exploitation utilisés
 dans un contexte critique et temps réel.
 Plus précisément, nous étudions les systèmes d'exploitation suivants: Linux,
 MirageOS, PikeOS, ProvenVisor, RTEMS, seL4, Xen et XtratuM.
 
-L'étude met l'accent sur l'aspect sûreté#index[sûreté] de ces systèmes, c'est-à-dire sur
+L'étude met l'accent sur l'aspect @safety de ces systèmes, c'est-à-dire sur
 leurs mécanismes de protection contre les incidents qu'ils soient dûs à un
 phénomène physique (rayonnement ambiant, ...) ou une erreur humaine (bug dans un
-pilote, ...). L'aspect sécurité, qui vise à prévenir les attaques d'origine
-humaine, n'est pas abordée.
+pilote, ...). L'aspect @security, qui vise à prévenir les attaques d'origine
+humaine, n'est pas abordée en profondeur.
 
 Avant de plonger plus avant dans les systèmes étudiés, il est important de
 cerner davantage le sujet et notamment certaines notions de base dans les
@@ -144,7 +165,7 @@ hors sujet. Il est en fait difficile de caractériser rigoureusement ce qu'est
 un système d'exploitation et nous adoptons ici l'approche retenue dans
 @tanenbaum2015modern @tanenbaum1997operating @silberschatz2013operating pour
 définir ce concept. Nous appelons donc
-#definition[système d'exploitation]#index[système d'exploitation]#footnote[En anglais
+#definition[système d'exploitation]#footnote[En anglais
 _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
 privilégié du processeur. Le système en question
@@ -201,14 +222,14 @@ un environnement _bare metal_.
 
 == Criticité et temps réel
 
-Un système est dit #definition[critique]#index[critique] si sa défaillance peut
+Un système est dit #definition[critique] si sa défaillance peut
 entraîner des conséquences indésirables. Cela peut aller de la simple perte de
 données à la destruction matérielle, voire, dans les cas les plus graves, à la
 perte de vies humaines. La criticité d'un système est généralement évalué lors
 de sa conception et le choix d'une solutions informatique adaptée en est une
 étape importante, étant donné leur omniprésence dans les appareils modernes.
 
-Un système informatique est dit #definition[temps-réel]#index[temps réel] lorsque
+Un système informatique est dit #definition[temps-réel] lorsque
 celui-ci est capable de piloter un procédé physique à une vitesse adaptée à
 l'évolution de ce dernier. Un tel système doit donc respecter des limites et
 contraintes temporelles. Ils sont souvent présents dans des systèmes critiques.
@@ -286,6 +307,18 @@ d'un support pour l'hyperviseur _Xen_.
 ]
 
 == Critères de comparaison
+
+- #box[Les architectures matérielles supportées. Afin que cette comparaison est
+un sens nous nous bornons ici aux architectures sur lesquelles il est possible
+d'exécuter nativement le système d'exploitation, c'est-à-dire sans avoir recourt
+à un mécanisme d'émulation.]
+- #box[Dans le cadre SMP, le masquage des interruptions seuls ne suffit pas à garantir
+l'isolation d'une section critique.]
+- #box[Le temps de démarrage. C'est un enjeu important à la fois dans l'hébergement
+lorsqu'on veut avoir recours à des techniques de grappe. C'est aussi un enjeu
+dans l'embarqué. C'est important car en cas de défaillance, on veut que la machine
+redémarre vite afin de réduire le temps où le service est indisponible et réduire
+les pertes engendrées.]
 
 == Organisation de l'étude
 
@@ -668,19 +701,16 @@ serveurs, des supercalculateurs, des systèmes embarqués et des ordinateurs per
 Originellement conçu comme un noyau monolithique, _Linux_ est devenu un noyau
 modulaire à partir de la version `1.1.85` publiée en 1995. En plus d'être un
 _GPOS_, _Linux_ intègre un hyperviseur et est depuis 2024 un _RTOS_.
-Plus précisément:
-- #box[Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
-baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
-d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
-pour la paravirtualisation. Plus de détails sont donnés dans la section @linux_kvm.]
-- #box[Depuis la version `6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
-des fonctionnalités temps réel. Plus d'informations sont données dans la section
-@linux_prempt_rt.]
 
 De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 (Intel, Google, Samsung, AMD, ...).
 
 == KVM <linux_kvm>
+
+Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
+baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
+d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
+pour la paravirtualisation.
 
 == PREEMPT_RT <linux_prempt_rt>
 
@@ -694,6 +724,60 @@ directement au-dessus d'un micronoyau temps réel. On parle alors de
 _cokernel_. Cette architecture est illustrée dans la figure
 @architecture_cokernel.
 
+#figure(
+  diagram(
+    spacing: 10pt,
+    cell-size: (8mm, 10mm),
+    edge-stroke: 1pt,
+    edge-corner-radius: 5pt,
+    mark-scale: 70%,
+
+    // blob((2,0), [Application], tint: blue),
+    // edge("-|>"),
+    // blob((2,1), [Fichier de configuration], tint: red),
+    // edge("-|>"),
+    // blob((2,2), [Environnement d'exécution du langage], tint: blue, name: <runtime>),
+    // blob((2,3.5), [Bibliothèques partagées], tint: red, name: <bib>),
+    // edge("-|>"),
+    // blob((2,4.5), [Noyau], tint: red, name: <kernel>),
+    // edge(<runtime>, <gpos>, "-|>"),
+    // node(
+    //   [#align(left)[#pad(-1.8em)[#rotate(-90deg)[
+    //     #text(font: "Fira Sans", size: 11pt)[GPOS]]]]],
+    //   inset:15pt,
+    //   corner-radius: 3pt,
+    //   enclose: (<bib>, <kernel>),
+    //   stroke: red, fill: red.lighten(90%),
+    //   name: <gpos>),
+
+    blob((2.25, 4.5), [Proc 1], tint: green, width:20mm, name: <proc1>),
+    blob((2.52, 4.5), [Proc 2], tint: green, width:20mm, name: <proc2>),
+    blob((2.79, 4.5), [Proc ...], tint: green, width:20mm, name: <proc3>),
+
+    node(
+      [#align(left)[#pad(-1.8em)[#rotate(-90deg)[
+        #text(font: "Fira Sans", size: 11pt)[Linux]]]]],
+      inset:15pt,
+      corner-radius: 3pt,
+      enclose: (<proc1>, <proc2>, <proc3>),
+      stroke: blue, fill: blue.lighten(90%),
+      name: <linux>),
+    edge(<linux>, <microkernel>, "-|>"),
+
+    blob((1.26, 4.5), [Tâche RT 1], tint: red, width:20mm, name: <rt_task1>),
+    blob((1.55, 4.5), [Tâche RT 2], tint: red, width:20mm, name: <rt_task2>),
+    blob((1.84, 4.5), [Tâche RT ...], tint: red, width:20mm, name: <rt_task3>),
+    edge(<rt_task1>, <microkernel>, "-|>"),
+    edge(<rt_task2>, <microkernel>, "-|>"),
+    edge(<rt_task3>, <microkernel>, "-|>"),
+    blob((2,5.8), [Micronoyau temps réel], tint: red, width:140mm, name: <microkernel>),
+    edge("-|>"),
+    blob((2,6.8), [Couche matérielle], tint: gray, width:140mm),
+  ),
+  caption: [Architecture _cokernel_.]
+) <architecture_cokernel>
+
+
 #let cell(x, y, body, color: white) = cetz.draw.content(
   x, y,
   box(
@@ -704,24 +788,6 @@ _cokernel_. Cette architecture est illustrée dans la figure
     width: 100%,
     height: 100%,
     inset: 1em))
-
-#figure(
-  cetz.canvas({
-    import cetz.draw: *
-    cell((-3, 0), (-1, 1.5), color: red, [Tâche RT])
-    cell((0, 0), (2, 1.5), color: red, [...])
-    cell((3, 0), (12, 3.5), color: blue, [])
-    cell((-3, -1.5), (12, -0.5), color: red, [Micronoyau temps réel])
-    cell((-3, -3), (12, -2), color: gray, [Couche matérielle])
-    cell((4, 0.5), (6, 2), color: green, [Proc])
-    cell((6.5, 0.5), (8.5, 2), color: green, [Proc])
-    cell((9, 0.5), (11, 2), color: green, [...])
-    content((6.5, 0.8), (10, 2.8),
-      text(font: "Fira Sans")[Noyau Linux])
-  })
-  ,
-  caption: [Architecture _cokernel_]
-) <architecture_cokernel>
 
 Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
 toujours activement développé.] adoptèrent cette approche avec succès.
@@ -737,6 +803,9 @@ débuté en 2005 et s'est étalé sur une vingtaine d'années sous la forme d'un
 succession de patchs qui ont progressivement été intégrés à la branche
 principale de _Linux_. Les derniers patchs ont été ajoutés en septembre 2024,
 faisant de _Linux_ un _RTOS_ complet.
+
+Depuis la version `6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
+des fonctionnalités temps réel.
 
 #figure(
   cetz.canvas({
@@ -778,6 +847,33 @@ l'hypervirtualisation. Sur architecture _x86_, il supporte _Intel VT-x_ et
 _AMD-V_. Sur architecture _ARM_, il supporte l'architecture _ARM v7_ à partir
 de _Cortex-A15_ et _ARMv8-A_. Enfin il supporte certaines architectures
 _PowerPC_ comme _BookE_ et _Book3S_.
+
+== Support multi-processeur <linux_multiprocessor>
+
+Cette section aborde le support d'architectures multi-processeur sous _Linux_.
+=== Architectures SMP
+Le support pour les architectures @smp est ajouté dans _Linux 2.0_ en 1998.
+Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
+tapez la commande suivante:
+```console
+zcat /proc/config.gz | grep CONFIG_SMP
+```
+
+=== Processeurs distants
+
+Depuis la branche `3.x`, le noyau _Linux_ offre un support pour les processeurs
+distants via les sous-systèmes `remoteproc` @linux_remoteproc et `RPMsg` @linux_rpmsg.
+Vous pouvez vérifier que votre noyau est compilé avec le support pour ces systèmes
+via respectivement les commandes:
+```console
+zcat /proc/config.gz | grep CONFIG_REMOTEPROC
+zcat /proc/config.gz | grep CONFIG_RPMSG
+```
+
+Le cas d'usage typique est l'exécution d'un _RTOS_ sur un processeur secondaire
+dans un système embarqué hétérogène sous la forme d'un @soc. Avant l'apparition
+de `remoteproc`, le contrôle des processeurs secondaires se faisait via des @api
+propriétaires et non standardisées.
 
 == Partitionnement <linux_partitioning>
 
@@ -861,7 +957,7 @@ pgrep limited | sudo tee /sys/fs/cgroup/foo/bar/cgroup.procs
 
 Finalement, on demande plus de mémoire que la limite autorisée et le processus
 est tué:
-```
+```output
 How many bytes do you want to allocate? 6000000
 fish: Job 1, './limited' terminated by signal SIGKILL (Forced quit)
 ```
@@ -918,7 +1014,7 @@ gcc -static ./foo/alone.c -o ./foo/alone
 sudo systemd-nspawn -D ./foo ./alone
 ```
 On obtient alors la sortie suivante:
-```
+```output
 ░ Spawning container foo on /foo.
 ░ Press Ctrl-] three times within 1s to kill container.
 My pid: 1
@@ -944,7 +1040,7 @@ ps -U root -u root
 affiche tous les processus ayant pour UID réel ou effectif `root`. Ils constituent
 l'essentiel des processus privilégiés en cours d'exécution. Vous devriez obtenir
 une sortie similaire à celle-ci:
-```
+```output
     PID TTY          TIME CMD
       1 ?        00:00:03 systemd
       2 ?        00:00:00 kthreadd
@@ -966,7 +1062,7 @@ ps -U $(whoami)
 vous donnera la liste des processus qui s'exécutent avec l'UID effectif de
 votre utilisateur. Vous devriez y retrouver vos logiciels. Par exemple,
 sur mon ordinateur j'obtiens la sortie:
-```
+```output
     PID TTY          TIME CMD
    2512 ?        00:00:00 systemd
    2514 ?        00:00:00 (sd-pam)
@@ -1036,14 +1132,10 @@ Le mot clé `volatile` sur le tableau `arr` assure que `gcc` ne supprimera pas
 les accès en lecture sur ce dernier bien que son contenu soit prévisible
 et jamais utilisé. Vous pouvez le compiler avec la commande `gcc miss.c -o miss`.
 
-=== _perf_ <linux_perf>
+=== Profileur _perf_ <linux_perf>
 Depuis sa version 2.6.31, _Linux_ intègre un outil puissant de profilage
 dénommé _perf_ @perf_wiki. À l'origine _perf_ permettait de tracer l'activité
-du _CPU_ via des compteurs _PMU_
-#footnote[Les compteurs _PMU_ pour _Performance Monitoring Unit_
-sont des registres matériels intégrés dans les microprocesseurs modernes. Ils
-permettent de compter des événements bas niveau.].
-Depuis, ses fonctionnalités ont été considérablement
+du _CPU_ via des compteurs @pmu Depuis, ses fonctionnalités ont été considérablement
 étendues et il permet maintenant d'instrumenter aussi bien le noyau que
 les programmes exécutés dans l'espace utilisateur. Dans cette section, nous
 allons voir trois méthodes d'instrumentation: les _tracepoints_,
@@ -1053,23 +1145,23 @@ les _kprobes_ et les _uprobes_.
 
 Examinons les performances de notre programme @miss_source à l'aide de la
 sous-commande `perf stat`. Cette dernière retourne des statistiques issues
-des registres _PMU_ du processeur. En lançant `perf stat ./miss`, on obtient
+des registres @pmu du processeur. En lançant `perf stat ./miss`, on obtient
 la sortie:
-```console
+```output
 Performance counter stats for './miss':
 
-       116.46 msec task-clock:u                     #    0.991 CPUs utilized
-            0      context-switches:u               #    0.000 /sec
-            0      cpu-migrations:u                 #    0.000 /sec
-        1,028      page-faults:u                    #    8.827 K/sec
-  270,371,076      cycles:u                         #    2.322 GHz
-1,100,144,340      instructions:u                   #    4.07  insn per cycle
-  100,029,819      branches:u                       #  858.891 M/sec
-        2,352      branch-misses:u                  #    0.00% of all branches
-                   TopdownL1                 #     25.1 %  tma_backend_bound
-                                             #      1.2 %  tma_bad_speculation
-                                             #      0.2 %  tma_frontend_bound
-                                             #     73.6 %  tma_retiring
+       116.46 msec task-clock:u            #    0.991 CPUs utilized
+            0      context-switches:u      #    0.000 /sec
+            0      cpu-migrations:u        #    0.000 /sec
+        1,028      page-faults:u           #    8.827 K/sec
+  270,371,076      cycles:u                #    2.322 GHz
+1,100,144,340      instructions:u          #    4.07  insn per cycle
+  100,029,819      branches:u              #  858.891 M/sec
+        2,352      branch-misses:u         #    0.00% of all branches
+                   TopdownL1               #  25.1 %  tma_backend_bound
+                                           #   1.2 %  tma_bad_speculation
+                                           #   0.2 %  tma_frontend_bound
+                                           #  73.6 %  tma_retiring
 
   0.117552543 seconds time elapsed
 
@@ -1079,21 +1171,21 @@ Performance counter stats for './miss':
 Tandis que parcourir le tableau `arr` dans un ordre aléatoire conduit à un
 résultat très différent en terme de performance. En effet la commande
 `perf stat ./miss random` donne la sortie:
-```console
+```output
 Performance counter stats for './miss random':
 
-     1,974.28 msec task-clock:u                     #    0.999 CPUs utilized
-            0      context-switches:u               #    0.000 /sec
-            0      cpu-migrations:u                 #    0.000 /sec
-        2,003      page-faults:u                    #    1.015 K/sec
-5,945,316,708      cycles:u                         #    3.011 GHz
-7,896,922,743      instructions:u                   #    1.33  insn per cycle
-1,600,032,861      branches:u                       #  810.440 M/sec
-    3,229,770      branch-misses:u                  #    0.20% of all branches
-                   TopdownL1                 #     60.4 %  tma_backend_bound
-                                             #      2.7 %  tma_bad_speculation
-                                             #      2.8 %  tma_frontend_bound
-                                             #     34.1 %  tma_retiring
+     1,974.28 msec task-clock:u            #    0.999 CPUs utilized
+            0      context-switches:u      #    0.000 /sec
+            0      cpu-migrations:u        #    0.000 /sec
+        2,003      page-faults:u           #    1.015 K/sec
+5,945,316,708      cycles:u                #    3.011 GHz
+7,896,922,743      instructions:u          #    1.33  insn per cycle
+1,600,032,861      branches:u              #  810.440 M/sec
+    3,229,770      branch-misses:u         #    0.20% of all branches
+                   TopdownL1               #  60.4 %  tma_backend_bound
+                                           #   2.7 %  tma_bad_speculation
+                                           #   2.8 %  tma_frontend_bound
+                                           #  34.1 %  tma_retiring
 
   1.975546187 seconds time elapsed
 
@@ -1114,7 +1206,7 @@ Les _kprobes_ sont un mécanisme permettant d'injecter du code
 ==== _Uprobes_ <linux_perf_uprobes>
 Les _uprobes_ permettent d'instrumenter du code utilisateur.
 
-=== _oprofile_ <linux_oprofile>
+=== Profileur _oprofile_ <linux_oprofile>
 
 Le logiciel _oprofile_ est un profileur de performance à l'échelle du système
 _Linux_ entier. Il utilise les compteurs _PMU_ du processeur pour collecter
@@ -1127,6 +1219,38 @@ sudo opcontrol --start --event=CPU_CYCLES
 ```console
 sudo opcontrol --reset
 ```
+
+== Profilage de `systemd` <linux_systemd_analyze>
+
+Le programme `systemd` fournit un outil intéressant de profilage baptisé
+`systemd-analyze`. Il permet d'analyser le temps de démarrage du système et
+des sessions utilisateurs afin d'identifier des goulots d'étranglement. Détaillons
+quelques unes des ses commandes:
+- #box[`systemd-analyze time`: affiche différents temps relatifs au démarrage du
+système.]
+- #box[`systemd-analyze blame`: affiche le temps de démarrage des différents services. Il
+est à noter que certains services pouvant s'exécuter en parallèle, l'analyse de sa sortie
+requière une certaine prudence.]
+- #box[`systemd-analyze dot`: produit un graphe de dépendance des services.]
+- #box[`systemd-analyze plot`: produit une frise chronologique du démarrage des services.]
+
+Par exemple, la commande suivante:
+```console
+systemd-analyze time
+```
+produit une sortie de la forme:
+```output
+Startup finished in 7.274s (firmware) + 3.428s (loader) + 1.007s (kernel) + 11.451s (initrd) + 7.587s (userspace) = 30.749s
+multi-user.target reached after 7.321s in userspace.
+```
+Le dernier temps indique le délais écoulé avant que l'@userspace ne soit disponible,
+ce qui correspond en général à l'affichage d'un prompteur pour ouvrir une session.
+On retrouve aussi d'autres informations intéressantes:
+- #box[_Firmware_: Temps de chargement des firmwares via le BIOS.]
+- #box[_Load_: Temps écoulé dans le @bootloader.]
+- #box[_Kernel_: Temps de chargement et d'initialisation du noyau.]
+- #box[_Initrd_: Temps d'initialisation de la _RAM disk_.]
+- #box[_Userspace_: Temps écoulé pour lancer tous les services de l'@userspace.]
 
 == Watchdog <linux_watchdog>
 
@@ -1174,7 +1298,9 @@ pas ce dernier dans un délai de 30 secondes.
   caption: [Exemple de service _systemd_ avec _watchdog_.]
 ) <linux_systemd_watchdog_example>
 
-== Licences & brevets
+== Masquage des interruptions <linux_masking>
+
+== Licences <linux_licenses>
 
 Le noyau `Linux` est un logiciel libre distribué sous licence `GPL-2.0` avec
 l'exception _syscall_ qui stipule qu'un logiciel utilisant le noyau `Linux` au
@@ -1182,6 +1308,37 @@ travers des appels systèmes n'est pas considéré comme une œuvre dérivée et
 peut être distribué sous une licence qui n'est pas compatible avec la GPL,
 y compris une licence propriétaire. Plus d'informations sont disponibles dans
 le dossier `LICENSES` des sources du noyau `Linux`.
+
+== Temps de démarrage <linux_booting>
+
+Il existe de nombreuses techniques pour réduire le temps de démarrage d'un système
+_Linux_. Ces techniques concernent aussi bien le @bootloader, l'initialisation
+du noyau ou l'initialisation de l'@userspace.
+- #box[Pour le @bootloader, on peut n'initialiser que les périphériques
+indispensables et optimiser le code assembleur.]
+- #box[Pour l'initialisation du noyau, on peut utiliser une image non compressée, désactiver
+les fonctionnalités inutiles pour notre usage et en particulier les outils de profilages.]
+- #box[Pour l'initialisation de l'@userspace]
+
+L'initialisation de l'@userspace
+est généralement l'étape la plus longue et donc la phase à optimiser en priorité.
+
+Dans l'article @singh2011optimizing, les auteurs étudient des méthodes
+d'optimisation pour le temps démarrage d'un système _Android_ exécuté sur
+un dispositif embarqué dans une automobile. Ils parviennent à réduire de 65% le
+temps de démarrage en passant de 29,7s à 10,1s. Sur le noyau _Linux_ lui-même,
+ils obtiennent une amélioration d'un facteur 4.
+
+Dans le mémoire @AlAbduallah2023Decreasing, les auteurs comparent et optimisent
+différents @initsystem:pl à la fois dans un environnement émulé avec _QEMU_ et
+dans une distribution _GNU/Linux_ dédiée à l'embarqué. Leur conclusion est
+qu'une réduction substantielle du temps démarrage de l'@userspace est possible via
+leurs méthodes d'optimisation et que le choix du @initsystem est déterminant
+mais dépendant de l'environnement d'exécution.
+
+(MOVE)
+Le project Yocto @yocto_project est un projet libre offrant la possibilité de
+créer sa distribution _Linux_ dédiée à l'embarqué.
 
 = MirageOS <mirageos>
 
@@ -1191,7 +1348,8 @@ utiliser des serveurs chez un tiers pour héberger des services plutôt
 que sur un serveur local.]. Le projet est initié en 2009 au sein du laboratoire
 _Computer Laboratory_ de l'université de Cambridge sous la houlette de
 Anil Madhavapeddy @mirageos_unikernels. Il est de nos jours maintenu par la
-_MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé.
+_MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé
+(_Tarides_, _IBM Research_, ...).
 _MirageOS_ fait parti des projets soutenus par le _Xen Project_
 @mirageos_xen_project et bon nombre de ces contributeurs ont également contribué
 au projet _Xen_.
@@ -1210,24 +1368,6 @@ considérablement la surface d'attaque et les sources de bugs. Ce dernier est
 souvent écrit dans un langage de programmation n'offrant que peu
 de garantie du point de vue des types et de la mémoire. C'est de ces deux
 constats que naît le projet _MirageOS_.
-
-#let blob(pos, label, tint: white, ..args) = node(
-	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
-	width: 45mm,
-	fill: gradient.radial(white, tint, center: (40%, 20%), radius: 150%),
-	corner-radius: 3pt,
- 	stroke: 1pt + tint.darken(20%),
-	..args,
-)
-
-#let blob2(pos, label, tint: white, ..args) = node(
-	pos, align(center)[#text(font: "Fira Sans", size: 11pt)[#label]],
-	width: 55mm,
-	fill: gradient.radial(white, tint, center: (40%, 20%), radius: 150%),
-	corner-radius: 3pt,
- 	stroke: 1pt + tint.darken(20%),
-	..args,
-)
 
 #figure(
 grid(
@@ -1342,8 +1482,8 @@ hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-met
     [Compilateur OCaml classique, et la bibliothèque `mirage-unix`],
 
     [`hvt`],
-    [Unikernel pour la virtualisation avec Solo5],
-    [_KVM_],
+    [Unikernel pour la virtualisation avec Solo5, requière le support matériel],
+    [_KVM_, _FreeBSD_, _Google Compute Engine_],
     [Solo5 (tender `hvt`), compilateur OCaml],
 
     [`xen`],
@@ -1372,6 +1512,12 @@ hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-met
     [Qemu, MirageOS backend Qemu],
   )
 )
+
+#aside[la plateforme _Solo5_][
+  _Solo5_ est un initialement un projet pour porter _MirageOS_ sur _KVM_. Le
+  projet a depuis été étendu pour permettre l'exécution d'_unikernels_ sur les
+  hyperviseurs de _FreeBSD_ et .
+]
 
 #howto[choisir l'environnement d'exécution][
 Le choix de l'environnement d'exécution se fait au moment de la configuration
@@ -1403,7 +1549,21 @@ plus fréquent.
 
 == Architectures supportées <mirageos_architectures>
 
-=== Support multi-cœur
+Pour qu'une architecture soit supportée par _MirageOS_, il est nécessaire que
+celle-ci soit une cible de compilation du compilateur OCaml. Le compilateur pour
+OCaml 4 supporte les architectures suivantes: _x86-32_, _x86-64_, _ARM v7_,
+_ARM v8_, _PowerPC_, _SPARC_ et _MIPS_. Toutefois le support (en natif) des
+architectures 32-bits a été supprimé à partir d'OCaml 5.
+
+=== Support multi-processeur <mirageos_multiprocessors>
+
+#aside[la bibliothèque _Lwt_][
+  La bibliothèque _Lwt_ (_Light Weight Thread_) @vouillon2008lwt @lwt_manual
+  est une bibliothèque de _threads_ coopératifs écrite en OCaml. Elle permet
+  l'écriture de programme dans un style asynchrone et concurrentiel. Cette
+  bibliothèque est un bloc fondamental du projet _MirageOS_.
+]
+
 Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
 - #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parallélisme
 offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
@@ -1415,9 +1575,11 @@ sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ gr�
 @vchan_low_latency.]
 - #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
 concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
-sur plusieurs cœurs en parallèle.]
+sur plusieurs cœurs en parallèle. Un effort est en cours pour porter _MirageOS_
+sur OCaml 5 @mirageos_on_ocaml5 afin de bénéficier des nouvelles fonctionnalités
+de ce dernier.]
 
-== Partitionnement <mirageos_partitioning>
+== Partitionnement <mirageos_partioning>
 
 Le partitionnement est entièrement délégué à l'environnement d'exécution, qui
 est le plus souvent un hyperviseur. Lorsqu'on souhaite isoler plusieurs services,
@@ -1449,7 +1611,7 @@ suit.
 Le programme `memtrace` @memtrace_github développé par Janestreet est un
 profiler mémoire pour le langage OCaml. Il permet de générer une trace
 compacte de l'utilisation de la mémoire d'un programme écrit OCaml. La trace
-produite peut-être exploré avec `memtrace-viewer` @memtrace_viewer_github.
+produite peut-être explorée avec `memtrace-viewer` @memtrace_viewer_github.
 Il existe une bibliothèque _MirageOS_ permettant d'utiliser `memtrace` dans un
 _unikernel_.
 
@@ -1466,18 +1628,18 @@ _unikernel_.
 L'exemple @example_memtrace_mirage illustre l'utilisation de `memtrace-mirage`
 dans un _unikernel_. La fonction `start` est le point d'entrée de l'_unikernel_.
 Cette fonction commence par établir un socket `TCP` à l'adresse `10.0.0.1:24`
-#footnote[L'adresse `10.0.0.1` est l'adresse _IP_ par défaut utilisée par la bibliothèque
-`mirage-tcp-ip`.]. Lorsqu'un client établit une connexion, `memtrace` est lancé jusqu'à ce que
-la connexion soit interrompue. La fonction `alloc`
-est exécutée de façon concurrentielle afin de produire un grand nombre d'allocations.
-L'exécution de l'_unikernel_ se termine après 100 secondes.
+#footnote[L'adresse `10.0.0.1` est l'adresse _IP_ par défaut utilisée par la
+bibliothèque `mirage-tcp-ip`.]. Lorsqu'un client établit une connexion,
+`memtrace` est lancé jusqu'à ce que la connexion soit interrompue. La fonction
+`alloc` est exécutée de façon concurrentielle afin de produire un grand
+nombre d'allocations. L'exécution de l'_unikernel_ se termine après 100 secondes.
 
-#howto[exécution de l'exemple dans _Xen_][
+#howto[exécution de l'exemple @example_memtrace_mirage dans _Xen_][
   On commence par créer l'unikernel à l'aide de l'image docker, puis on lance
   cet unikernel dans un domaine de _Xen_:
   ```console
   make build-memtrace
-  cd dist/memtrace
+  cd unikernels/memtrace
   sudo xl create memtrace.xl -c
   ```
   On peut alors récupérer la trace produite par `memtrace` en établissant dans
@@ -1489,6 +1651,7 @@ L'exécution de l'_unikernel_ se termine après 100 secondes.
   ```console
   make mentrace-view
   ```
+  Cette commande lance un serveur web écoutant sur l'adresse `localhost:8080`.
 ]
 
 
@@ -1499,7 +1662,7 @@ L'exécution de l'_unikernel_ se termine après 100 secondes.
   du compilateur OCaml.
 ]
 
-=== Traçagage
+=== Traçage
 
 Il existe des `hooks` dans le code de _MirageOS_ qui permet un traçage de bout
 en bout. On peut utiliser un backend spécifique comme `mirageos-trace-viewer`.
@@ -1531,7 +1694,7 @@ bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à trav
 des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
 `tools/ocaml/` du dépôt _Xen_.
 
-== Certifications <mirageos_certifications>
+== Qualifications & certifications <mirageos_certifications>
 
 À notre connaissance, _MirageOS_ n'a pas fait l'objet de certification. L'objectif
 premier de _MirageOS_ est davantage la sécurité que la sûreté de fonctionnement.
@@ -1601,7 +1764,7 @@ section @pikeos_licenses.
 _PikeOS_ supporte les architectures suivantes: _x86-64_, _ARM v7_, _ARM v8_,
 _PowerPC_, _RISC-V_ et _SPARC_.
 
-Le support matériel se fait via des _BSP_ (_Board Support Package_). Il est
+Le support matériel se fait via des @bsp. Il est
 également possible de financer le développement de nouveaux _BSP_.
 
 == Partitionnement
@@ -1609,7 +1772,7 @@ Le support matériel se fait via des _BSP_ (_Board Support Package_). Il est
 Son hyperviseur permet à la fois la paravirtualisation et la virtualisation
 de type _HVM_.
 
-== Licenses & brevets <pikeos_licenses>
+== Licences & brevets <pikeos_licenses>
 
 La société SYSGO propose deux types de licences propriétaires:
 - #box[Une licence de développement permettant de concevoir des systèmes basés
@@ -1634,13 +1797,71 @@ Normes:
 
 - Permet la certification critères communs EAL5
 
-
 = RTEMS <rtems>
+
+_RTEMS_ (_Real-Time Executive for Multiprocessor Systems_) est un _RTOS_ libre
+conçu pour les systèmes embarqués. Son développement débute à la fin des années 80
+et se poursuit jusqu'à nos jours. Il est aujourd'hui maintenu par une communauté
+de bénévoles. Le système propose une API _POSIX_ et une pile réseau _TCP/IP_ basée
+sur celle du projet _FreeBSD_.
+
+- Il offre un support pour les architectures @smp et @amp.
+- Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
+- Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
+- ARINC 653 RTEMS
+- Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
 
 == Architectures supportées <rtems_architectures>
 
 _RTEMS_ supporte les architectures suivantes @rtems_licenses_website:
 _x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
+
+Le support se fait via des @bsp.
+
+== Support multi-processeur <rtems_multiprocessors>
+
+_RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
+mais également pour les architectures @amp.
+
+L'utilisation d'un processeur SMP augmente significativement le risque d'accès
+concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
+
+Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
+
+- Le support concerne un sous ensemble des architectures cibles et de bps? Lesquelles? faire un tableau?
+- Les architectures supportées: AArch64, ARMv7-A, i386, PowerPC, RSIC-V et SPARC.
+- Le support est disponible depuis la version 4.11.0 et doit être activé explicitement lors de la configuration via l'option `--enable-smp`.
+- Support pour les processeurs @smp LEON3 et LEON4. Ce sont des processeurs _SPARC v8_. LEON est un processeur 32bits libre développé par @esa.
+- Il existe un support affinité des tâches. Autrement dit on peut spécifier sur quel sous-ensemble de cœur une tâche peut s'exécuter.
+- Il y a un support pour la migration de tâche.
+
+== Partionnement <rtems_partioning>
+
+_RTEMS_ est un système à espace d'adressage unique. Le noyau et les tâches partagent
+le même espace d'adressage et s'exécute en mode noyau (vérifier). Par conséquent _RTEMS_
+n'offre pas les mêmes niveaux de sûreté qu'un noyau de séparation comme un hyperviseur.
+C'est la raison pour laquelle il est parfois exécuté au-dessus d'un hyperviseur.
+
+Il y a un support pour les MPU (memory protection unit) qui sont des version simplifiées
+des MMU. Vérifier si cette info est valable.
+
+_RTEMS_ propose aussi des mécanismes de partitionnement en mémoire.
+
+_RTEMS_ propose un ordonnanceur en _cluster_ (_clustered scheduling_). Cet ordonnanceur
+permet de partitionner l'ensemble des cœurs en des sous-ensembles appelés _cluster_.
+L'objectif de cette conception est de limiter les migrations de tâches entre cœur pour des
+raisons de performances#footnote[La migration excessive de tâche conduit à une invalidation
+des caches des cœurs.] tout en préservant un bon contrôle sur la latence dans le pire cas
+(_worst-case latencies_). _RTEMS_ propose également des primitives de synchronisation
+inter-clusters. En utilisant des clusters et des mécanismes de synchronisation
+adéquate, il est possible d'avoir des tâches temps réels et des tâches maximisant le
+_throughput_.
+
+
+== Profilage <rtems_profiling>
+
+Il y a un support pour profiler les goulots d'étranglement, notamment
+les verrous et le thread dispatch. Cela produit une sortie XML. @rtems_test_suites.
 
 == Watchdog <rtems_watchdog>
 
@@ -1651,11 +1872,32 @@ Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
 Plus précisément, on peut mettre en place un timer avec la fonction
 `rtems_timer_fire_after`.
 
-== Licences & brevets <rtems_licenses>
+== Qualifications & certifications <rtems_certifications>
+
+L'ESA (_European Space Agency_) offre un kit de @qualification pour des
+applications de _RTEMS_ dans le spatial @rtems_qdp dans sa version @smp.
+
+- QDP kit de préqualification.
+- Le kit est sous licence Creative Common Attribution-ShareAlike 4.0.
+- Plateforme supportée Cobham Gaisler GR712RC (double-cœur LEON3) et GR740 (quadri-cœur LEON4).
+- Utilise GCC (v10.2.1) et la bibliothèque mathématique pour les systèmes critiques (libmcs).
+- L'application est liée statiquement à RTEMS. Il faut donc une qualification conjointe de l'application et de RTEMS.
+- Conformité @ecss
+
+Il y a une qualification de RTEMS dans un cadre mono-cœur par Edisoft.
+
+Un effort important a été livré pour appliquer des méthodes formelles sur RTEMS.
+C'est une activité sponsorisé par @ecss afin de s'assurer de la fiabilité de RTEMS
+dans un cadre @smp. Ils ont utilisé Promela/SPIN @butterfield2023applying,
+un model-checker. Edisoft a encore contribué sur cette version.
+
+- Promela est le langage de formalisation tandis que SPIN est le model checker.
+
+== Licences <rtems_licenses>
 
 `RTEMS` est un logiciel libre distribué sous une multitude de licences libres
-et open-sources. Le noyau peut utiliser ou être lié avec des programmes sous
-n'importe quelle licence @rtems_licenses_website.
+et open-sources avec pour licence principale BSD-2. Le noyau peut utiliser ou
+être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
 
 = seL4 <sel4>
 
@@ -2288,22 +2530,23 @@ le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le suje
 commençons par préciser ces deux termes.
 
 On distingue le plus souvent trois modes d'exécutions sur les processeurs modernes:
-- #box[Le #definition[mode noyau]#index[mode noyau] (_kernel mode_) est un mode
+- #box[Le #definition[mode noyau] (_kernel mode_) est un mode
 d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
 instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
 d'exploitations.]
-- #box[Le #definition[mode utilisateur]#index[mode utilisateur] (_user mode_)
+- #box[Le #definition[mode utilisateur] (_user mode_)
 est a contrario un mode d'exécution qui n'a pas accès à toutes les
 instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
 et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
 nécessitant des privilèges plus élevés.]
-- #box[Le #definition[mode hyperviseur]#index[mode hyperviseur] (_hypervisor mode_)
+- #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
 est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
 tels systèmes d'exploitation dans cette étude.]
 
-= Index
-#columns(3)[
-  #make-index(title: none)
-]
+#glossary(
+  title: "Glossaire",
+  sort: true,
+  ignore-case: false,
+)
 
 #bibliography("references.bib")

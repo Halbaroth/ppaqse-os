@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(dirname "$0")"
-DIST_DIR="/dist/hello_world"
+DIST_DIR="/unikernels/hello_world"
 
 cd "$SCRIPT_DIR"
 mirage configure -t xen

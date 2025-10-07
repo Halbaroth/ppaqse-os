@@ -3,13 +3,12 @@ open Lwt.Infix
 module Make (S : Tcpip.Stack.V4V6) = struct
   module Memtrace = Memtrace.Make (S.TCP)
 
-  let alloc s =
-    let rec loop () =
+  let rec alloc i =
+    if i < 0 then Lwt.return_unit
+    else
       let a = Array.init 1_000_000 (fun i -> i * i) in
       Array.sort Int.compare a;
-      Lwt.pause () >>= loop
-    in
-    Lwt.pause () >>= loop
+      Lwt.pause () >>= fun () -> alloc (i - 1)
 
   let start s =
     S.TCP.listen (S.tcp s) ~port:1234 (fun f ->
@@ -23,9 +22,6 @@ module Make (S : Tcpip.Stack.V4V6) = struct
           S.TCP.read f >|= fun _ ->
           Memtrace.stop_tracing tracer);
         Lwt.return_unit);
-    Lwt.pick [
-      Mirage_sleep.ns (Duration.of_sec 100);
-      alloc ()
-    ]
+    alloc 10
 end
 

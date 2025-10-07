@@ -1,0 +1,114 @@
+api:
+  short: API
+  long: Applicaton Programming Interface
+  description: >
+    Interface de programmation applicative.
+
+soc:
+  short: SoC
+  long: System on a chip
+  description: >
+    Système embarqué complet sur un seul circuit intégré.
+
+pmu:
+  short: PMU
+  long: Performance Monitoring Unit
+  description: >
+    Registres matériels intégrés dans les microprocesseurs modernes afin de
+    compter des événements bas niveau dans un but de profilage.
+
+bootloader:
+  short: bootloader
+  description: >
+    Programme prenant le relais du BIOS afin d'initialiser le matériel, puis de
+    localiser et charger l'image d'un noyau. Il passe ensuite le relais au
+    système d'exploitation qu'il vient d'initialiser.
+
+initsystem:
+  short: init system
+  description: >
+    Premier programme exécuté sur un système d'exploitation de type _UNIX_.
+
+userspace:
+  short: espace utilisateur
+  article: l'
+  description: |
+    todo
+
+safety:
+  short: sûreté
+  article: la
+  description: |
+    Mesure prise pour veiller au bon fonctionnement d'un système et en cas de
+    défaillance pour limiter les dégât occasionné.
+
+security:
+  short: sécurité
+  article: la
+  description: |
+    Mesure prise pour prévenir les attaques d'une entité malveillante.
+
+qualification:
+  short: qualification
+  article: la
+  description: |
+    todo
+
+certification:
+  short: certification
+  article: la
+  description: |
+    todo
+
+bsp:
+  short: BSP
+  long: Board Support Package
+  description: |
+    todo
+
+esa:
+  short: ESA
+  long: European Space Agency
+  description: |
+    todo
+
+ecss:
+  short: ECSS
+  long: European Cooperation for Space Standardization
+  description: |
+    Ensembles de normes utilisées dans le spatial.
+
+amp:
+  short: AMP
+  long: Asymmetric multiprocessing
+  description: |
+    todo
+
+smp:
+  short: SMP
+  long: Symmetric multiprocessing
+  description: |
+    todo
+
+html:
+  short: HTML
+  article: an
+  long: Hypertext Markup Language
+  longarticle: a
+  description: A standard language for creating web pages
+  group: Web
+
+css:
+  short: CSS
+  long: Cascading Style Sheets
+  description: A stylesheet language used for describing the presentation of a document
+  group: Web
+
+tps:
+  short: TPS
+  long: test procedure specification
+  description: A formal document describing test steps and expected results
+  plural: TPSes
+  longplural: test procedure specifications
+
+WWW: World Wide Web

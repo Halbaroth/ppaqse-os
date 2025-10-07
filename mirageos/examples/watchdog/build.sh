@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(dirname "$0")"
-DIST_DIR="/dist/watchdog"
+DIST_DIR="/unikernels/watchdog"
 
 cd "$SCRIPT_DIR"
 mirage configure -t xen

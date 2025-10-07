@@ -2,22 +2,28 @@ DOCKER:=docker
 
 all: build
 
-setup:
-	$(DOCKER) build -t ppaqse-os/mirageos --file ./Dockerfile .
-	mkdir -p ./dist
-	chmod 777 ./dist
+setup-toolchain:
+	$(DOCKER) build -t ppaqse-os/mirageos-toolchain --file ./dockers/toolchain .
+	mkdir -p ./unikernels
+	chmod 777 ./unikernels
 
-shell: setup
-	$(DOCKER) run --user opam -it ppaqse-os/mirageos /bin/bash
+setup-memtrace-viewer:
+	$(DOCKER) build -t ppaqse-os/mirageos-memtrace-viewer --file ./dockers/memtrace-viewer .
 
-build-hello_world: setup
-	$(DOCKER) run --user opam -v ./dist:/dist ppaqse-os/mirageos ./examples/hello_world/build.sh
+toolchain: setup-toolchain
+	$(DOCKER) run --user opam -it ppaqse-os/mirageos-toolchain /bin/bash
 
-build-watchdog: setup
-	$(DOCKER) run --user docker -v ./dist:/dist ppaqse-os/mirageos ./examples/watchdog/build.sh
+memtrace-viewer: setup-memtrace-viewer
+	$(DOCKER) run
 
-build-memtrace: setup
-	$(DOCKER) run --user opam -v ./dist:/dist ppaqse-os/mirageos ./examples/memtrace/build.sh
+build-hello_world: setup-toolchain
+	$(DOCKER) run --user opam -v ./unikernels:/unikernels ppaqse-os/mirageos-toolchain ./examples/hello_world/build.sh
+
+build-watchdog: setup-toolchain
+	$(DOCKER) run --user docker -v ./unikernels:/unikernels ppaqse-os/mirageos-toolchain ./examples/watchdog/build.sh
+
+build-memtrace: setup-toolchain
+	$(DOCKER) run --user opam -v ./unikernels:/unikernels ppaqse-os/mirageos-toolchain ./examples/memtrace/build.sh
 
 build: build-hello_world build-watchdog build-memtrace
 

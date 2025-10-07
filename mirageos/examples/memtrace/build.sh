@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(dirname "$0")"
-DIST_DIR="/dist/memtrace"
+DIST_DIR="/unikernels/memtrace"
 
 cd "$SCRIPT_DIR"
 mirage configure -t xen
