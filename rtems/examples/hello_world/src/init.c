@@ -1,0 +1,15 @@
+#include <rtems.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_MAXIMUM_TASKS 1
+#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+#define CONFIGURE_INIT
+#include <rtems/confdefs.h>
+
+rtems_task Init(rtems_task_argument ignored) {
+  printf("\nHello, world!\n");
+  exit(0);
+}
