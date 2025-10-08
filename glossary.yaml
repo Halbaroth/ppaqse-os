@@ -1,3 +1,27 @@
+tee:
+  short: TEE
+  long: Trusted execution environment
+  description: >
+    Un environnement d'exécution de confiance est une zone sécurisée
+    et isolée des autres environnements d'exécution. Cette zone est située
+    dans le processeur. Elle garantit la confidentialité des données qui y
+    sont stockées.
+
+tcb:
+  short: TCB
+  long: Trusted computing base
+  description: >
+    La base de calcul approuvé fait référence à l'ensemble des composants
+    matériels et logiciels d'un système informatique dont la compromission
+    conduit à celle du système entier. Plus cette base est petite et
+    à fait l'objet de vérification, plus la sécurité du système est élevée.
+
+ido:
+  short: IdO
+  long: internet des objets
+  description: >
+    Réseau d'objets embarqués et connectés au travers d'Internet.
+
 api:
   short: API
   long: Applicaton Programming Interface

@@ -732,24 +732,6 @@ _cokernel_. Cette architecture est illustrée dans la figure
     edge-corner-radius: 5pt,
     mark-scale: 70%,
 
-    // blob((2,0), [Application], tint: blue),
-    // edge("-|>"),
-    // blob((2,1), [Fichier de configuration], tint: red),
-    // edge("-|>"),
-    // blob((2,2), [Environnement d'exécution du langage], tint: blue, name: <runtime>),
-    // blob((2,3.5), [Bibliothèques partagées], tint: red, name: <bib>),
-    // edge("-|>"),
-    // blob((2,4.5), [Noyau], tint: red, name: <kernel>),
-    // edge(<runtime>, <gpos>, "-|>"),
-    // node(
-    //   [#align(left)[#pad(-1.8em)[#rotate(-90deg)[
-    //     #text(font: "Fira Sans", size: 11pt)[GPOS]]]]],
-    //   inset:15pt,
-    //   corner-radius: 3pt,
-    //   enclose: (<bib>, <kernel>),
-    //   stroke: red, fill: red.lighten(90%),
-    //   name: <gpos>),
-
     blob((2.25, 4.5), [Proc 1], tint: green, width:20mm, name: <proc1>),
     blob((2.52, 4.5), [Proc 2], tint: green, width:20mm, name: <proc2>),
     blob((2.79, 4.5), [Proc ...], tint: green, width:20mm, name: <proc3>),
@@ -835,7 +817,7 @@ zcat /proc/config.gz | grep PREEMPT_RT
 Certaines distributions proposent également des noyaux alternatifs avec cette
 option activée, rendant l'installation de _PREEMPT_RT_ nettement plus simple.
 
-== Architectures supportées
+== Architectures supportées <linux_architectures>
 
 Le noyau _Linux_ était dans un premier temps développé pour l'architecture _x86_.
 Il a depuis été porté sur de très nombreuses architectures
@@ -1793,9 +1775,90 @@ Normes:
 
 = ProvenVisor <provenvisor>
 
-== Licences & brevets <provenvisor_licenses>
+_ProvenVisor_ est un hyperviseur de type 1 développé par l'entreprise _ProvenRun_.
+Il se place comme un concurrent de _Xen_ avec pour différence d'avoir un @tcb plus
+réduit et d'être vérifié grâce à des méthodes formelles. Sa cible est le marché de
+l'@ido sur des microprocesseurs _ARM_.
+
+_ProvenVisor_ a été développé pour être combiné avec _ProvenCore_. _ProvenCore_
+est un noyau sécurisé et prouvé. @tee
+
+À ce titre _ProvenVisor_ est comparable à _seL4_ car tous les deux cherchent à
+offrir le plus petit @tcb possible.
+
+_ProvenCore_ est un micronoyau qui cherche à la fois à minimiser la taille du code
+et la surface d'attaque (les deux allant souvent de pair). Il propose des containeurs
+sécurisé avec la possibilité de communiquer de façon sécuriser entre eux. Il a
+fait l'objet d'une vérification formelle @lescuyer2015provencore.
+
+_ProvenVisor_ est développé par l'entreprise _ProvenRun_ qui est spécialisée
+dans la sécurité et les systèmes embarqués critiques.
+
+#figure(
+  diagram(
+    spacing: 10pt,
+    cell-size: (8mm, 10mm),
+    edge-stroke: 1pt,
+    edge-corner-radius: 5pt,
+    mark-scale: 70%,
+
+    blob((2.25, 3.5), [Proc 1], tint: green, width:20mm, name: <proc1>),
+    blob((2.52, 3.5), [Proc 2], tint: green, width:20mm, name: <proc2>),
+    blob((2.79, 3.5), [Proc ...], tint: green, width:20mm, name: <proc3>),
+    edge(<proc1>, "d", "-|>"),
+    edge(<proc2>, "d", "-|>"),
+    edge(<proc3>, "d", "-|>"),
+
+    blob((2.53, 4.5), [ProvenCore], tint: blue, width:73mm, name: <provencore>),
+
+    node(
+      [#align(center)[#pad(-5.8em)[
+        #text(font: "Fira Sans", size: 11pt)[Secure world]]]],
+      inset:12pt,
+      corner-radius: 3pt,
+      enclose: (<proc1>, <proc2>, <proc3>, <provencore>),
+      stroke: blue, fill: blue.lighten(90%),
+      name: <secure>),
+    edge(<secure>, "d", "-|>"),
+
+    blob((1.38, 3.5), [VM 1], tint: yellow, width:20mm, name: <vm1>),
+    blob((1.62, 3.5), [VM 2], tint: yellow, width:20mm, name: <vm2>),
+    blob((1.86, 3.5), [VM ...], tint: yellow, width:20mm, name: <vm3>),
+    edge(<vm1>, "d", "-|>"),
+    edge(<vm2>, "d", "-|>"),
+    edge(<vm3>, "d", "-|>"),
+
+    blob((1.62, 4.5), [ProvenVisor], tint: blue, width:63mm, name: <provenvisor>),
+
+    node(
+      [#align(left)[#pad(-1.8em)[#rotate(-90deg)[
+        #text(font: "Fira Sans", size: 11pt)[Normal world]]]]],
+      inset:12pt,
+      corner-radius: 3pt,
+      enclose: (<vm1>, <vm2>, <vm3>, <provenvisor>),
+      stroke: blue, fill: blue.lighten(90%),
+      name: <normal>),
+    edge(<normal>, "d", "-|>"),
+
+    blob((2,5.8), [Moniteur], tint: green, width:140mm, name: <monitor>),
+    edge("-|>"),
+    blob((2,6.8), [Couche matérielle], tint: gray, width:140mm),
+  ),
+  caption: [Architecture de _ProvenVisor_.]
+) <architecture_provenvisor>
+
+== Architectures supportées <provenvisor_architectures>
+
+L'hyperviseur est disponible sur l'architecture _ARM v8-A_. Il offre un support
+pour le _MMU_ sur cette architecture.
+
+_ProvenCore_ est conçu pour fonctionner avec le @tee _TrustZone_ de l'architecture _ARM_.
+
+== Certifications <provenvisor_foo>
 
 - Permet la certification critères communs EAL5
+
+== Licences <provenvisor_leicuenses>
 
 = RTEMS <rtems>
 
@@ -1867,6 +1930,15 @@ les verrous et le thread dispatch. Cela produit une sortie XML. @rtems_test_suit
 
 _RTEMS_ ne fournit pas d'API unifié pour gérer les _watchdogs_ matériels.
 Le support est implémenté au niveau du _BSP_ (_Board Support Package_).
+
+===  Exemple avec un Raspberry PI
+
+#figure(
+  snippet("./rtems/examples/watchdog/src/init.c", lang:"c"),
+  caption: [Exemple d'interaction avec un _watchdog_ sur un _Raspberry PI B 4_.]
+) <rtems_watchdog_example>
+
+=== Time Manager
 
 Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
 Plus précisément, on peut mettre en place un timer avec la fonction

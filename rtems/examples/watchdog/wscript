@@ -13,7 +13,7 @@ def build(bld):
     rtems.build(bld)
     bld(
         features='c cprogram',
-        target='hello_world',
+        target='watchdog',
         cflags='-g -O2',
         source='src/init.c',
     )

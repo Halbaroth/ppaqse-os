@@ -26,7 +26,8 @@ RUN apk add \
     sed \
     perl \
     xz \
-    bsd-compat-headers
+    bsd-compat-headers \
+    neovim
 
 # Ensure that sb-check will found these commands.
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
@@ -53,11 +54,28 @@ RUN git clone https://gitlab.rtems.org/rtems/rtos/rtems.git \
     --branch "6.1" \
     "$RTEMS_DIR/kernel"
 
-ENV RTEMS_PREFIX="$HOME/build/v6"
+ENV RTEMS_PREFIX="$RTEMS_DIR/build/v6"
 ENV RSB_DIR="$RTEMS_DIR/rsb"
 ENV PATH="$RSB_DIR/source-builder:$PATH"
 
+# Build the toolchain
 RUN sb-set-builder \
     --topdir="$RSB_DIR/rtems" \
     --prefix="$RTEMS_PREFIX/tools" \
     "6/rtems-aarch64"
+
+# Build and install the kernel
+WORKDIR "$RTEMS_DIR/kernel"
+RUN echo "[aarch64/raspberrypi4b]" > config.ini
+RUN ./waf \
+    --prefix="$RTEMS_PREFIX/kernel" \
+    --rtems-tools="$RTEMS_PREFIX/tools" \
+    configure
+RUN ./waf
+RUN ./waf install
+
+WORKDIR "$HOME"
+
+ENV PATH="$RTEMS_PREFIX/tools/bin:$PATH"
+COPY --chown=ppaqse:ppaqse ./examples "$HOME/examples"
+COPY --chown=ppaqse:ppaqse ./tools "$HOME/tools"

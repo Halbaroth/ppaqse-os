@@ -1,3 +1,6 @@
 [submodule "rtems/examples/hello_world/tools/rtems_waf"]
 	path = rtems/examples/hello_world/tools/rtems_waf
 	url = https://gitlab.rtems.org/rtems/tools/rtems_waf.git
+[submodule "rtems/tools/rtems_waf"]
+	path = rtems/tools/rtems_waf
+	url = https://gitlab.rtems.org/rtems/tools/rtems_waf.git

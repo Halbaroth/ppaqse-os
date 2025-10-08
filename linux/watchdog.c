@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -13,11 +14,13 @@ int main(void) {
   int timeout = 20;
   if (ioctl(fd, WDIOC_SETTIMEOUT, &timeout) == -1)
     goto failed;
+  printf("Watchdog initialisé\n");
 
   // Réinitialise le watchdog toutes les 10 secondes.
   while (1) {
     if (write(fd, "\0", 1) != 1)
       goto failed;
+    printf("Watchdog rechargé\n");
     sleep(10);
   }
 
