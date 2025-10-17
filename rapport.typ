@@ -1263,7 +1263,63 @@ pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interf
 
 == Perte du flux d'exécution
 
+La perte du flux d'exécution (_control flow hijacking_) est une vulnérabilité
+majeure dans les systèmes d'exploitation, où un attaquant modifie le flux
+d'exécution normal d'un programme pour exécuter du code malveillant. Cette attaque
+exploite généralement des dépassements de tampon ou d'autres corruptions mémoire
+pour modifier les adresses de retour ou les pointeurs de fonction.
+
+Les mécanismes de _Control-Flow Integrity_ (CFI) constituent une famille de
+défenses contre ces attaques @cfi_survey_embedded. Le CFI vise à garantir que le
+flux d'exécution d'un programme suit uniquement les chemins d'exécution légitimes
+définis par le graphe de flot de contrôle du programme.
+
+Dans les systèmes embarqués et temps-réel, l'application du CFI présente des défis
+particuliers liés aux contraintes de ressources (taille, poids, puissance, coût)
+et aux exigences temporelles strictes. Les mécanismes de CFI doivent minimiser
+leur surcoût en temps d'exécution tout en offrant des garanties de sécurité robustes.
+
+_Linux_ peut bénéficier de plusieurs mécanismes de protection du flux d'exécution,
+notamment via les extensions matérielles modernes comme _Intel CET_ (_Control-flow
+Enforcement Technology_) sur _x86_ ou _ARM BTI_ (_Branch Target Identification_)
+sur _ARM_. Ces mécanismes matériels offrent une protection efficace avec un surcoût
+minimal.
+
 == Monitoring <linux_monitoring>
+
+_Linux_ dispose d'un écosystème riche et mature d'outils de monitoring et
+d'observabilité @linux_perf_brendan @linux_monitoring_tools_2024. Ces outils
+permettent de surveiller les performances, l'état du système et d'identifier les
+problèmes en temps-réel.
+
+Parmi les outils de monitoring les plus utilisés:
+
+- *top/htop*: Moniteurs système interactifs affichant l'utilisation du CPU, de
+  la mémoire et des processus en temps réel.
+
+- *netdata*: Solution de monitoring temps-réel légère et performante, collectant
+  automatiquement plus de 5000 métriques sans configuration. Particulièrement
+  adaptée aux environnements embarqués grâce à sa faible empreinte.
+
+- *eBPF* (_Extended Berkeley Packet Filter_): Technologie moderne permettant
+  l'exécution de code personnalisé dans le noyau sans modification ni ajout de
+  modules. _eBPF_ offre une observabilité en temps réel avec un impact minimal
+  sur les performances, devenant l'outil de référence pour le monitoring avancé
+  en 2024.
+
+- *perf*: Outil d'analyse de performance basé sur les compteurs de performance
+  matériels (_PMU_), permettant un profilage détaillé avec un faible surcoût.
+
+- *SystemTap*: Permet l'instrumentation dynamique du noyau pour l'analyse
+  approfondie du comportement système.
+
+- *Prometheus/Grafana*: Solutions d'observabilité distribuée largement adoptées
+  pour le monitoring de systèmes critiques.
+
+Pour les systèmes embarqués, la simplicité et la légèreté des outils sont
+prioritaires. _Monitorix_ est particulièrement adapté à ces contraintes, ayant
+été conçu pour les serveurs mais utilisable sur dispositifs embarqués grâce à
+sa taille réduite.
 
 == Profilage <linux_profiling>
 
@@ -1894,6 +1950,31 @@ matériel ancien, des API obsolètes et des fonctionnalités inutilisées.
 
 == SpaceOS <mirageos_spaceos>
 
+_SpaceOS_ est un système d'exploitation basé sur _MirageOS_ développé par _Tarides_
+pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satellite.
+Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
+et multi-missions, construite sur la technologie des _unikernels_.
+
+_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial
+incluant l'_ESA_ (_European Space Agency_), le _CNES_, _Thales Alenia Space_, _OHB_,
+_Eutelsat_ et le _Singapore Space Agency_.
+
+Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
+_DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
+a déployé un logiciel basé sur _OCaml 5_ sur le satellite. Cette mission a démontré
+la viabilité des _unikernels_ _MirageOS_ pour les applications spatiales en conditions
+réelles.
+
+Les principaux avantages de _SpaceOS_ incluent:
+- Une réduction de taille d'un facteur 20 par rapport à un déploiement basé sur
+  des conteneurs _Linux_
+- Une sécurité accrue grâce à l'utilisation d'un langage à gestion mémoire sûre (_OCaml_)
+- Une architecture modulaire permettant de compiler uniquement les fonctionnalités
+  nécessaires du système d'exploitation
+
+Ces résultats ont valu à _SpaceOS_ une reconnaissance industrielle significative,
+notamment le prestigieux _Airbus Innovation Award_ lors de la _Paris Space Week_ 2024.
+
 = PikeOS <pikeos>
 
 _PikeOS_ est un _RTOS_ et un hyperviseur de type 1 développé par l'entreprise
@@ -2300,6 +2381,12 @@ disponibles sur leur site @sel4_supported_platforms.
 Lorsqu'il est utilisé en tant qu'hyperviseur, _seL4_ s'exécute dans le mode
 d'exécution _hyperviseur_.
 
+_seL4_ présente l'avantage de supporter les partitions mixtes @vanderleest2016open,
+permettant d'exécuter simultanément des applications de différents niveaux de
+criticité sur le même système tout en maintenant l'isolation entre ces applications.
+Cette capacité est particulièrement importante pour les systèmes embarqués critiques
+où des composants de différentes niveaux de criticité doivent cohabiter.
+
 === Capabilities
 
 Les #definition[capabilities] de _seL4_ sont des jetons donnant à leur
@@ -2318,30 +2405,35 @@ ressource qu'il pointe.
 
 == Vérification formelle <sel4_formal_verification>
 
-Le noyau _seL4_ a fait l'objet d'une vérification formelle profonde. L'approche
-suppose la correction du compilateur, du code assembleur et du matériel mais
-démontre la conformité du code C avec ses spécifications.
+Le noyau _seL4_ a fait l'objet d'une spécification et d'une vérification formelle
+approfondie à l'aide de l'assistant de preuve _Isabelle/HOL_ @sel4_verification.
+La correction#footnote[La correction d'un algorithme signifie qu'il a été démontré
+que cet algorithme respecte sa spécification.] de l'implémentation a été démontrée
+pour plusieurs configurations.
+
+L'approche suppose la correction du compilateur, du code assembleur et du matériel,
+mais démontre rigoureusement la conformité du code C avec ses spécifications. Cette
+vérification a également été étendue au niveau du code binaire pour les architectures
+_ARM_ et _RISC-V_, garantissant que le code machine exécuté correspond bien aux
+spécifications formelles.
+
+Cette vérification formelle implique en particulier que _seL4_ est dépourvu de
+certaines erreurs de programmation classiques @sel4_implication. Le système est
+notamment exempt de:
+- Débordements de tampon (_buffer overflows_)
+- Déréférencements de pointeurs nuls
+- Fuites mémoire (_memory leaks_)
+- Dépassements d'entier (_integer overflows_)
+
+Ces garanties formelles font de _seL4_ l'un des systèmes d'exploitation les plus
+sûrs disponibles, particulièrement adapté aux applications critiques où la fiabilité
+et la sécurité sont primordiales.
 
 == Licences & brevets <sel4_licenses>
 
 Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
 `GNU General Public License version 2 only (GPL-2.0)`. Le code utilisateur et
 les pilotes peuvent être distribués sous n'importe quelle licence @sel4_licensing.
-
-== draft
-
-Il a l'avantage de supporté les partitions mixtes @vanderleest2016open.
-
-`seL4` a fait l'objet d'une spécification et d'une vérification formelle à
-l'aide de l'assistant de preuve _Isabelle/HOL_. La correction
-#footnote[La correction d'un algorithme signifie qu'il a été démontré que cet
-algorithme respecte sa spécification.] de l'implémentation
-a été démontrée pour plusieurs configurations et il a été également démontré
-que le code binaire est correct pour les architectures _ARM_ et _RISC-V_ @sel4_verification.
-Cette vérification formelle implique en particulier que `seL4` est dépourvu de
-certaines erreurs de programmation classiques @sel4_implication. Il est notamment
-dépourvu de débordements de tampon, de déréférencements de pointeurs nuls, de
-fuites mémoire et de dépassements d'entier.
 
 = Xen <xen>
 
@@ -2468,14 +2560,45 @@ OS invités. Il existe deux types de tels domaines. Les domaines de paravirtuali
 et les domaines _HVM_.]
 - #box[_dom0less_.]
 
-
-== Corruption de la mémoire <xen_memory_corruption>
-
 == Perte du flux d'exécution
+
+Comme pour les autres systèmes d'exploitation, _Xen_ est susceptible aux attaques
+visant à détourner le flux d'exécution. La protection contre ces attaques repose
+principalement sur:
+
+- L'utilisation de langages de programmation sûrs pour certaines composantes
+- Les mécanismes de protection matériels (_Intel CET_, _ARM BTI_) lorsqu'ils sont
+  disponibles sur la plateforme cible
+- Les pratiques de développement sécurisé et les revues de code approfondies
+
+La nature critique de l'hyperviseur _Xen_ en fait une cible privilégiée pour les
+attaquants. Une compromission du flux d'exécution au niveau de l'hyperviseur peut
+potentiellement affecter tous les domaines hébergés, d'où l'importance cruciale
+de ces mécanismes de protection @cfi_survey_embedded.
 
 == Monitoring <xen_monitoring>
 
-== Profilage <xen_profiling>
+_Xen_ propose plusieurs outils pour le monitoring des performances et de l'état
+du système @xen_monitoring_tools @xenserver_monitor_performance:
+
+- *xentop*: Utilitaire similaire à _top_ pour afficher des informations sur tous
+  les domaines s'exécutant sur un système _Xen_. Il permet d'identifier les domaines
+  responsables des charges les plus élevées en I/O ou en traitement.
+
+- *xenmon*: Outil utile pour surveiller les performances des domaines _Xen_,
+  particulièrement pour identifier les domaines responsables des charges I/O ou
+  processeur les plus importantes.
+
+- *RRD (_Round Robin Databases_)*: _Xen_ expose des métriques de performance via
+  des bases de données RRD. Ces métriques peuvent être interrogées via HTTP ou
+  à travers l'outil _RRD2CSV_. _XenCenter_ utilise ces données pour produire des
+  graphes de performance système affichant l'utilisation du CPU, de la mémoire,
+  du réseau et des I/O disque.
+
+- *Intégration avec des outils tiers*: _Xen_ supporte l'intégration avec des outils
+  de monitoring via _NRPE_ (_Nagios Remote Plugin Executor_) et _SNMP_ (_Simple
+  Network Management Protocol_), permettant l'utilisation de solutions de monitoring
+  tierces.
 
 === Support de langages de programmation en @baremetal <xen_baremetal>
 
@@ -2854,7 +2977,22 @@ ECSS-Qualified?
 _lithOS_ est un système d'exploitation temps réel conçu pour être exécuté dans
 une partition de _XtratuM_.
 
-== Qualifications
+== Qualifications <xtratum_qualifications>
+
+_XtratuM_ est qualifié selon la norme _ECSS_ (_European Cooperation for Space Standardization_)
+catégorie B @xtratum_ecss_qualification. Cette qualification en fait un hyperviseur
+adapté aux missions spatiales critiques.
+
+L'hyperviseur a été qualifié initialement pour les processeurs _SPARC-Leon_ et
+_ARM Cortex-R4/R5_ et _A9_. L'entreprise _fentISS_ continue de travailler sur la
+qualification de nouvelles versions, notamment _XtratuM Next Generation_ pour
+lequel un processus de qualification ECSS niveau B est en cours.
+
+Le succès de _XtratuM_ dans le spatial est remarquable: son hyperviseur temps-réel
+est désormais déployé dans plus de 1000 satellites et engins spatiaux
+@xtratum_milestone_1000, en faisant l'un des logiciels système les plus largement
+adoptés en orbite. Cette présence massive témoigne de la maturité et de la fiabilité
+du système dans des environnements opérationnels critiques.
 
 == Licences & brevets <xtratum_licenses>
 
