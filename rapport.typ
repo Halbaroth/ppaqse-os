@@ -45,30 +45,115 @@
   fill: (x, y) =>
     if x == 0 or y == 0 { rgb("#e5e5e5") })
 
-#page(margin: (left: 2in))[
-  #align(horizon + left)[
-    #line(start: (0%, 5%), end: (8.5in, 5%), stroke: (thickness: 2pt))
-    #text(
-      size: 20pt,
-      [Étude comparative de systèmes d'exploitations dans un
-      contexte critique et temps-réel]
+// Page de garde
+#page(margin: 2cm)[
+  // Logos en haut - alignés et centrés
+  #align(center)[
+    #grid(
+      columns: (auto, 3cm, auto),
+      align: (center + horizon, center, center + horizon),
+      image("imgs/Logo_OCamlPro_officiel_transparent (Bleu).png", height: 2cm, fit: "contain"),
+      [],
+      image("imgs/Logo carré bleu - fond transparent.png", height: 2cm, fit: "contain")
     )
-
   ]
 
-  #align(bottom + left)[#datetime.today().display()]
+  #v(3cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(1cm)
+
+  // Titre au centre avec style moderne
+  #set par(justify: false)
+  #align(center)[
+    #text(size: 26pt, weight: "bold", fill: rgb("#003366"))[Étude comparative de systèmes d'exploitations]
+
+    #v(0.5cm)
+
+    #text(size: 20pt, weight: "regular", fill: rgb("#0066CC"))[dans un contexte critique et temps-réel]
+  ]
+
+  #v(1cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(2cm)
+
+  // Boîte d'informations avec style moderne
+  #align(center)[
+    #box(
+      fill: rgb("#0066CC").lighten(95%),
+      stroke: 2pt + rgb("#0066CC"),
+      radius: 8pt,
+      inset: 1.5em,
+      width: 70%,
+      [
+        #grid(
+          columns: (auto),
+          row-gutter: 0.8em,
+          align: center,
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Version :] #text(size: 12pt, fill: rgb("#0066CC"))[git-3181113]],
+          [],
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Référence CNES :] #text(size: 12pt, fill: rgb("#0066CC"))[DLA-SF-0000000-211-QGP]],
+          [#text(size: 11pt, fill: rgb("#003366"))[Édition 2 - Révision 0]],
+          [],
+          [#text(size: 11pt, style: "italic", fill: rgb("#003366"))[#datetime.today().display()]]
+        )
+      ]
+    )
+  ]
+
+  #v(1fr)
+
+  // Logo de licence en bas
+  #align(center + bottom)[
+    #image("imgs/by.png", width: 12%)
+  ]
 ]
 
-#set page(paper: "a4", margin: (y: 4em), numbering: "1", header: context {
-  if calc.odd(here().page()) {
-    align(right, emph(hydra(1)))
-  } else {
-    align(left, emph(hydra(2)))
+#set page(
+  paper: "a4",
+  margin: (top: 6em, bottom: 4em, left: 3.5cm, right: 3.5cm),
+  numbering: "1",
+  header: context {
+    // Header avec logos à gauche et titre à droite
+    set block(spacing: 0pt)
+    grid(
+      columns: (auto, auto, 1fr),
+      align: (left + horizon, left + horizon, right + horizon),
+      column-gutter: 0.8em,
+      row-gutter: 0pt,
+      image("imgs/Logo_OCamlPro_officiel_transparent (Bleu).png", height: 0.9cm),
+      image("imgs/Logo carré bleu - fond transparent.png", height: 0.9cm),
+      align(right, emph(hydra(1)))
+    )
+    v(0.1em)
+    line(length: 100%)
+  },
+  footer: context {
+    // Footer avec numéro de page
+    line(length: 100%)
+    v(0.3em)
+    align(center)[
+      Page #counter(page).display("1") / #counter(page).final().first()
+    ]
   }
-  line(length: 100%)
-})
+)
 
 #set heading(numbering: "1.1", supplement: [])
+
+// Aération des titres de section
+#show heading: it => {
+  set block(spacing: 1.5em)
+  it
+}
 
 #let definition(t) = {
   text(style: "oblique")[#t]
@@ -110,7 +195,10 @@
       raw(lang:lang, block: true, read(file))))
 }
 
+// Table des matières sur une page dédiée
+#pagebreak()
 #outline(depth: 1)
+#pagebreak()
 
 #show link: set text(blue)
 #show ref: set text(blue)
@@ -3250,6 +3338,7 @@ pertinents pour les applications critiques et temps-réel.
 
 = Tableaux comparitifs<comp>
 
+#align(center)[
 #table(
   columns: 3,
   table.header[Type d'OS][Avantages][Inconvénients],
@@ -3272,6 +3361,7 @@ pertinents pour les applications critiques et temps-réel.
   ], [
   ],
 )
+]
 
 - #box[_KVM_ est un hyperviseur de type 1 intégré dans le noyau Linux. Il fait de
 la virtualisation assistée par le matériel.]
@@ -3289,6 +3379,7 @@ Le tableau suivant résume le support de ces architectures de processeur pour le
 systèmes d'exploitation de cette étude. Lorsque l'OS est un hyperviseur, il
 s'agit du support pour le matériel surlequel est exécuté l'hyperviseur.
 
+#align(center)[
 #table(
   columns: 9,
   align: (center, center, center, center, center, center, center, center, center, center),
@@ -3312,6 +3403,7 @@ s'agit du support pour le matériel surlequel est exécuté l'hyperviseur.
   [XtratuM],
         [Non],    [Non],    [Oui],     [Non],     [Oui],     [Non],  [Non],    [Non],
 )
+]
 
 == Linux & KVM
 
@@ -3336,6 +3428,7 @@ données concernant le _SLOC_ pour ces OS, nous les excluons de cette section.
 
 Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_website pour effectuer ces mesures. Cet outil ne compte pas les commentaires.
 
+#align(center)[
 #table(
   columns: 4,
   align: (center, center, center, center),
@@ -3349,6 +3442,7 @@ Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_webs
   [Xen],         [581 193],       [45 220],         [C (93%)],
   [XtratuM],     [?],             [?],              [C (?)],
 )
+]
 
 == Partitionnement temps et/ou mémoire
 
