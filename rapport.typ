@@ -45,30 +45,115 @@
   fill: (x, y) =>
     if x == 0 or y == 0 { rgb("#e5e5e5") })
 
-#page(margin: (left: 2in))[
-  #align(horizon + left)[
-    #line(start: (0%, 5%), end: (8.5in, 5%), stroke: (thickness: 2pt))
-    #text(
-      size: 20pt,
-      [Étude comparative de systèmes d'exploitations dans un
-      contexte critique et temps-réel]
+// Page de garde
+#page(margin: 2cm)[
+  // Logos en haut - alignés et centrés
+  #align(center)[
+    #grid(
+      columns: (auto, 3cm, auto),
+      align: (center + horizon, center, center + horizon),
+      image("imgs/Logo_OCamlPro_officiel_transparent (Bleu).png", height: 2cm, fit: "contain"),
+      [],
+      image("imgs/Logo carré bleu - fond transparent.png", height: 2cm, fit: "contain")
     )
-
   ]
 
-  #align(bottom + left)[#datetime.today().display()]
+  #v(3cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(1cm)
+
+  // Titre au centre avec style moderne
+  #set par(justify: false)
+  #align(center)[
+    #text(size: 26pt, weight: "bold", fill: rgb("#003366"))[Étude comparative de systèmes d'exploitations]
+
+    #v(0.5cm)
+
+    #text(size: 20pt, weight: "regular", fill: rgb("#0066CC"))[dans un contexte critique et temps-réel]
+  ]
+
+  #v(1cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(2cm)
+
+  // Boîte d'informations avec style moderne
+  #align(center)[
+    #box(
+      fill: rgb("#0066CC").lighten(95%),
+      stroke: 2pt + rgb("#0066CC"),
+      radius: 8pt,
+      inset: 1.5em,
+      width: 70%,
+      [
+        #grid(
+          columns: (auto),
+          row-gutter: 0.8em,
+          align: center,
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Version :] #text(size: 12pt, fill: rgb("#0066CC"))[git-3181113]],
+          [],
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Référence CNES :] #text(size: 12pt, fill: rgb("#0066CC"))[DLA-SF-0000000-211-QGP]],
+          [#text(size: 11pt, fill: rgb("#003366"))[Édition 2 - Révision 0]],
+          [],
+          [#text(size: 11pt, style: "italic", fill: rgb("#003366"))[#datetime.today().display()]]
+        )
+      ]
+    )
+  ]
+
+  #v(1fr)
+
+  // Logo de licence en bas
+  #align(center + bottom)[
+    #image("imgs/by.png", width: 12%)
+  ]
 ]
 
-#set page(paper: "a4", margin: (y: 4em), numbering: "1", header: context {
-  if calc.odd(here().page()) {
-    align(right, emph(hydra(1)))
-  } else {
-    align(left, emph(hydra(2)))
+#set page(
+  paper: "a4",
+  margin: (top: 6em, bottom: 4em, left: 3.5cm, right: 3.5cm),
+  numbering: "1",
+  header: context {
+    // Header avec logos à gauche et titre à droite
+    set block(spacing: 0pt)
+    grid(
+      columns: (auto, auto, 1fr),
+      align: (left + horizon, left + horizon, right + horizon),
+      column-gutter: 0.8em,
+      row-gutter: 0pt,
+      image("imgs/Logo_OCamlPro_officiel_transparent (Bleu).png", height: 0.9cm),
+      image("imgs/Logo carré bleu - fond transparent.png", height: 0.9cm),
+      align(right, emph(hydra(1)))
+    )
+    v(0.1em)
+    line(length: 100%)
+  },
+  footer: context {
+    // Footer avec numéro de page
+    line(length: 100%)
+    v(0.3em)
+    align(center)[
+      Page #counter(page).display("1") / #counter(page).final().first()
+    ]
   }
-  line(length: 100%)
-})
+)
 
 #set heading(numbering: "1.1", supplement: [])
+
+// Aération des titres de section
+#show heading: it => {
+  set block(spacing: 1.5em)
+  it
+}
 
 #let definition(t) = {
   text(style: "oblique")[#t]
@@ -110,7 +195,10 @@
       raw(lang:lang, block: true, read(file))))
 }
 
+// Table des matières sur une page dédiée
+#pagebreak()
 #outline(depth: 1)
+#pagebreak()
 
 #show link: set text(blue)
 #show ref: set text(blue)
@@ -191,12 +279,14 @@ un système d'exploitation et nous adoptons ici l'approche retenue dans
 définir ce concept. Nous appelons donc #definition[système d'exploitation]#footnote[En anglais
 _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
-privilégié du processeur. Le système en question
-peut être un serveur, un ordinateur personnel ou un système embarqué. Le rôle
-principal du système d'exploitation est de fournir une couche d'abstraction logicielle entre le
-matériel et les logiciels applicatifs. Il permet ainsi de masquer la complexité
-et la diversité des interfaces matérielles en fournissant des interfaces stables,
-unifiées et parfois standardisées.
+privilégié du processeur.
+
+Le système en question peut être un serveur, un ordinateur personnel ou un
+système embarqué. Le rôle principal du système d'exploitation est de fournir une
+couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
+Il permet ainsi de masquer la complexité et la diversité des interfaces
+matérielles en fournissant des interfaces stables, unifiées et parfois
+standardisées.
 
 == Pourquoi utiliser un système d'exploitation? <why_os>
 
@@ -259,7 +349,7 @@ d'une base de données bancaire.]
 qui peuvent subvenir dans une centrale nucléaire ou une usine.]
 - #box[Dans les cas les plus graves, elles peuvent engendrer des pertes humaines,
 comme dans un accident d'avions ou la défaillance d'un système médical.]
-La criticité d'un système est généralement évalué lors de sa conception et le
+La criticité d'un système est généralement évaluée lors de sa conception et le
 choix d'une solution informatique adaptée en est une étape importante.
 
 Un système informatique est qualifié de #definition[temps-réel] lorsque
@@ -403,8 +493,12 @@ intéressé au support d'architectures @smp et notamment le support des processe
 multi-cœur qui sont très répandu. Il était aussi pertinent d'examiner le support
 d'architectures @amp et notamment les @soc.
 
-TODO: Dans le cadre @smp, le masquage des interruptions seuls ne suffit pas à
-garantir l'isolation d'une section critique.
+Dans le cadre @smp, le masquage des interruptions seul ne suffit pas à
+garantir l'isolation d'une section critique. En effet, plusieurs cœurs peuvent
+exécuter du code en parallèle et accéder simultanément aux ressources partagées.
+Des mécanismes supplémentaires comme les _spinlocks_ ou les verrous atomiques
+sont nécessaires pour synchroniser l'accès aux ressources partagées entre les cœurs
+@love2010linux @mckenney2017parallel.
 
 === Partitionnement
 
@@ -510,7 +604,7 @@ Les deux approches ont des avantages et inconvénients:
 - #box[L'approche monolithique
 est souvent de conception plus simple. Elle offre de très bonnes performances
 en permettant une communication rapide entre les différents services, évitant
-notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
+notamment les coûteuses commutations de contexte nécessaires lorsqu'on passe
 d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
 souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
 à la taille nettement plus importante de leur base de code. Leur vérification et
@@ -550,9 +644,11 @@ raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fi
 et sûre, une première solution consiste
 à héberger chaque service sur une machine individuelle. On obtient ainsi une
 isolation totale des différents services. Cette solution présente
-toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
-maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
-besoins à moindre frais.
+toutefois deux inconvénients majeurs :
+- Le coût prohibitif
+- Une maintenance plus complexe
+
+Les _hyperviseurs_ ont été créés pour répondre à ces besoins à moindre frais.
 
 Les _hyperviseurs_ se divisent généralement en deux catégories:
 - #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
@@ -599,6 +695,29 @@ les systèmes critiques.]
 Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
 d'un programme informatique sur une plateforme matérielle donnée.
 
+== Tutoriels
+
+L'étude contient un certain nombres de tutoriels et exemples illustrant
+le fonctionnement des différents systèmes étudiés. Pour que ces exemples
+puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+
+=== Xen & MirageOS
+Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
+d'un support pour l'hyperviseur _Xen_.
+
+#howto[mise en place d'un pont virtuel][
+  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
+  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
+  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
+  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
+  vous pouvez mettre en place un tel pont ainsi:
+  ```console
+  sudo ip link add br0 type bridge
+  sudo ip link set br0 up
+  sudo ip addr 10.0.0.1/24 dev br0
+  ```
+]
+
 = Notions générales <general_notions>
 
 Cette section contient des notions générales autour des systèmes
@@ -607,6 +726,22 @@ notions ne sont qu'effleurées étant donné d'une part la complexité des
 architectures et des OS actuels, et d'autre part le foisonnement des solutions
 existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
 au fil de la section.
+
+== Modes d'exécution
+
+On distingue le plus souvent trois modes d'exécution sur les processeurs modernes:
+- #box[Le #definition[mode noyau] (_kernel mode_) est un mode
+d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
+instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
+d'exploitations.]
+- #box[Le #definition[mode utilisateur] (_user mode_)
+est a contrario un mode d'exécution qui n'a pas accès à toutes les
+instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
+et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
+nécessitant des privilèges plus élevés.]
+- #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
+est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
+tels systèmes d'exploitation dans cette étude.]
 
 == Partitionnement des ressources
 
@@ -720,7 +855,8 @@ cœur appelés _Local APIC_ qui gèrent les interruptions entre les cœurs.]
 (_Generic Interrupt Controller_).]
 L'émetteur de l'interruption envoie une requête d'interruption
 (_IRQ_ pour _Interrupt ReQuest_) à l'une de ces puces qui décide ensuite d'envoyer ou non
-l'interruption au destinataire (TODO: vérifier).
+l'interruption au destinataire en fonction de la configuration de routage et de la priorité
+@intel_sdm_apic @arm_gic_spec.
 
 === Masquage des interruptions
 
@@ -814,6 +950,12 @@ on n'effectue un échantillonnage de ces mesures en espérant que les échantill
 collectés seront représentatifs des caractéristiques de performances du programme
 étudié.
 
+Après avoir exposé les notions générales et les concepts fondamentaux des systèmes
+d'exploitation, nous présentons maintenant en détail les huit systèmes retenus
+pour cette étude comparative. Pour chaque système, nous examinons son architecture,
+ses fonctionnalités clés, ses domaines d'application et ses caractéristiques en
+matière de sûreté et de temps réel.
+
 = Linux <linux>
 
 Le noyau _Linux_ est un système d'exploitation généraliste de type UNIX développé par une
@@ -826,6 +968,23 @@ _GPOS_, _Linux_ intègre un hyperviseur et est depuis 2024 un _RTOS_.
 
 De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 (Intel, Google, Samsung, AMD, ...).
+
+#showybox(
+  title: "Linux en bref",
+  frame: (
+    border-color: blue.darken(20%),
+    title-color: blue.lighten(80%),
+    body-color: blue.lighten(95%)
+  )
+)[
+  - *Type* : GPOS, noyau modulaire + Hyperviseur (KVM) + RTOS (PREEMPT_RT)
+  - *Langage* : C (98%)
+  - *Architectures* : 30+ architectures (x86, ARM, RISC-V, PowerPC, MIPS, SPARC, ...)
+  - *Usage principal* : Serveurs, embarqué, supercalculateurs, desktop
+  - *Points forts* : Maturité, large écosystème, flexibilité, support matériel étendu
+  - *Limitations* : Complexité élevée, surface d'attaque importante, déterminisme limité (sans PREEMPT_RT)
+  - *Licences* : GPL v2
+]
 
 == KVM <linux_kvm>
 
@@ -893,14 +1052,23 @@ _cokernel_. Cette architecture est illustrée dans la figure
     height: 100%,
     inset: 1em))
 
+#aside[Qu'est-ce qu'un cokernel?][
+  Un #definition[cokernel] est une architecture où un système d'exploitation
+  généraliste (comme Linux) et des tâches temps-réel s'exécutent côte à côte
+  au-dessus d'un micronoyau temps-réel. Le micronoyau gère l'ordonnancement
+  et donne la priorité aux tâches temps-réel, tandis que le GPOS s'exécute
+  comme une tâche de faible priorité.
+]
+
 Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
 toujours activement développé.] adoptèrent cette approche avec succès.
 L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
 des _deadlines_ et une latence faible. En contrepartie, le développeur
 d'applications temps réel ne peut pas utiliser l'écosystème et les
-bibliothèques UNIX, rendant le développement plus ardu et coûteux. Ce défaut
-majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
-d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
+bibliothèques UNIX, rendant le développement plus ardu et coûteux.
+
+Ce défaut majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo
+Molnár et d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
 l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
 le rendre préemptible, voir la figure @architecture_preempt_rt. Le projet a
 débuté en 2005 et s'est étalé sur une vingtaine d'années sous la forme d'une
@@ -987,6 +1155,15 @@ aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
 conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
 === Les _control croups_
+
+#aside[Qu'est-ce que les cgroups?][
+  Les #definition[cgroups] (_control groups_) sont un mécanisme du noyau Linux
+  permettant de limiter, comptabiliser et isoler l'utilisation des ressources
+  (CPU, mémoire, I/O disque, réseau) pour des groupes de processus. Ils forment
+  la base technologique des conteneurs modernes (_Docker_, _Kubernetes_, etc.)
+  et permettent par exemple de garantir qu'une application ne consomme pas plus
+  de 50% du CPU ou 2 Go de RAM.
+]
 
 Les _cgroups_ (_control groups_) sont un mécanisme du noyau _Linux_
 qui permet une gestion fine et configurable des ressources.
@@ -1088,6 +1265,15 @@ _namespaces_ abordés dans la section @linux_namespaces.
 
 === Les namespaces <linux_namespaces>
 
+#aside[Qu'est-ce que les namespaces?][
+  Les #definition[namespaces] sont un mécanisme du noyau Linux permettant
+  d'isoler et de virtualiser des ressources système pour un groupe de processus.
+  Chaque namespace crée une vue isolée d'une ressource spécifique : par exemple,
+  un processus dans un _PID namespace_ ne voit que les processus de son namespace,
+  créant l'illusion qu'il est seul sur le système. Les namespaces sont essentiels
+  pour créer des conteneurs légers (_Docker_, _LXC_) sans nécessiter de virtualisation complète.
+]
+
 Les _namespaces_ sont des outils permettant d'isoler des ressources pour des processus.
 Cette isolation permet de créer des environnements sécurisés et indépendants.
 
@@ -1101,8 +1287,8 @@ interfaces, tables de routage et règles de pare-feu.]
 
 ==== Exemple d'utilisation avec `systemd`
 Le gestionnaire de services `systemd` intègre l'outil `systemd-nspawn` pour faciliter
-l'utilisation des _namespaces_. Il consistue une alternative à `chroot` plus sûre.
-En plus d'isoler l'aborescence des fichiers, cette commande isole celle des
+l'utilisation des _namespaces_. Il constitue une alternative à `chroot` plus sûre.
+En plus d'isoler l'arborescence des fichiers, cette commande isole celle des
 processus, le réseau et les utilisateurs. Par exemple, considérons le
 programme _C_ suivant:
 
@@ -1193,6 +1379,16 @@ systèmes avec les privilèges `root` dans un processus. Or exécuter un program
 avec les droits `root` constitue un risque de sécurité car s'il présente une
 faille exploitable, un intrus pourrait obtenir les droits `root` à travers lui.
 
+#aside[Qu'est-ce que les capabilities?][
+  Les #definition[capabilities] sont un mécanisme de sécurité Linux qui divise
+  les privilèges traditionnels de `root` en unités distinctes et granulaires.
+  Au lieu d'avoir un processus totalement privilégié ou non privilégié, on peut
+  lui accorder uniquement les capabilities spécifiques dont il a besoin
+  (par exemple `CAP_NET_BIND_SERVICE` pour écouter sur les ports < 1024, ou
+  `CAP_SYS_TIME` pour modifier l'horloge système). Cela réduit considérablement
+  la surface d'attaque en appliquant le principe du moindre privilège.
+]
+
 ==== SetUID
 Les processus peuvent être privilégiés parce qu'ils ont été lancé par
 l'utilisateur _root_ ou via le mécanisme du _setUID_ qui permet à processus
@@ -1219,7 +1415,63 @@ pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interf
 
 == Perte du flux d'exécution
 
+La perte du flux d'exécution (_control flow hijacking_) est une vulnérabilité
+majeure dans les systèmes d'exploitation, où un attaquant modifie le flux
+d'exécution normal d'un programme pour exécuter du code malveillant. Cette attaque
+exploite généralement des dépassements de tampon ou d'autres corruptions mémoire
+pour modifier les adresses de retour ou les pointeurs de fonction.
+
+Les mécanismes de _Control-Flow Integrity_ (CFI) constituent une famille de
+défenses contre ces attaques @cfi_survey_embedded. Le CFI vise à garantir que le
+flux d'exécution d'un programme suit uniquement les chemins d'exécution légitimes
+définis par le graphe de flot de contrôle du programme.
+
+Dans les systèmes embarqués et temps-réel, l'application du CFI présente des défis
+particuliers liés aux contraintes de ressources (taille, poids, puissance, coût)
+et aux exigences temporelles strictes. Les mécanismes de CFI doivent minimiser
+leur surcoût en temps d'exécution tout en offrant des garanties de sécurité robustes.
+
+_Linux_ peut bénéficier de plusieurs mécanismes de protection du flux d'exécution,
+notamment via les extensions matérielles modernes comme _Intel CET_ (_Control-flow
+Enforcement Technology_) sur _x86_ ou _ARM BTI_ (_Branch Target Identification_)
+sur _ARM_. Ces mécanismes matériels offrent une protection efficace avec un surcoût
+minimal.
+
 == Monitoring <linux_monitoring>
+
+_Linux_ dispose d'un écosystème riche et mature d'outils de monitoring et
+d'observabilité @linux_perf_brendan @linux_monitoring_tools_2024. Ces outils
+permettent de surveiller les performances, l'état du système et d'identifier les
+problèmes en temps-réel.
+
+Parmi les outils de monitoring les plus utilisés:
+
+- *top/htop*: Moniteurs système interactifs affichant l'utilisation du CPU, de
+  la mémoire et des processus en temps réel.
+
+- *netdata*: Solution de monitoring temps-réel légère et performante, collectant
+  automatiquement plus de 5000 métriques sans configuration. Particulièrement
+  adaptée aux environnements embarqués grâce à sa faible empreinte.
+
+- *eBPF* (_Extended Berkeley Packet Filter_): Technologie moderne permettant
+  l'exécution de code personnalisé dans le noyau sans modification ni ajout de
+  modules. _eBPF_ offre une observabilité en temps réel avec un impact minimal
+  sur les performances, devenant l'outil de référence pour le monitoring avancé
+  en 2024.
+
+- *perf*: Outil d'analyse de performance basé sur les compteurs de performance
+  matériels (_PMU_), permettant un profilage détaillé avec un faible surcoût.
+
+- *SystemTap*: Permet l'instrumentation dynamique du noyau pour l'analyse
+  approfondie du comportement système.
+
+- *Prometheus/Grafana*: Solutions d'observabilité distribuée largement adoptées
+  pour le monitoring de systèmes critiques.
+
+Pour les systèmes embarqués, la simplicité et la légèreté des outils sont
+prioritaires. _Monitorix_ est particulièrement adapté à ces contraintes, ayant
+été conçu pour les serveurs mais utilisable sur dispositifs embarqués grâce à
+sa taille réduite.
 
 == Profilage <linux_profiling>
 
@@ -1446,10 +1698,10 @@ créer sa distribution _Linux_ dédiée à l'embarqué.
 
 = MirageOS <mirageos>
 
-_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux et
+_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux,
 le _cloud computing_#footnote[Le _cloud computing_ est une pratique consistant à
 utiliser des serveurs chez un tiers pour héberger des services plutôt
-que sur un serveur local.]. Le projet est initié en 2009 au sein du laboratoire
+que sur un serveur local.] et les systèmes embarqués. Le projet est initié en 2009 au sein du laboratoire
 _Computer Laboratory_ de l'université de Cambridge sous la houlette de
 Anil Madhavapeddy @mirageos_unikernels. Il est de nos jours maintenu par la
 _MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé
@@ -1464,14 +1716,14 @@ partie de la maintenance via le concept de _cloud computing_. À cette époque,
 la majorité des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette
 approche présente l'avantage de circonscrire au système d'exploitation les
 modifications requises pour la virtualisation. En contre partie, la pile
-logicielle est grandement complexifié comme
-l'illustre la @comparison_unikernel_gpos. En particulier, certains mécanismes
-d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
-le noyau exécuté dans la VM. De plus, l'introduction d'un _GPOS_ augmente
-considérablement la surface d'attaque et les sources de bugs. Ce dernier est
-souvent écrit dans un langage de programmation n'offrant que peu
-de garantie du point de vue des types et de la mémoire. C'est de ces deux
-constats que naît le projet _MirageOS_.
+logicielle est grandement complexifié comme l'illustre la @comparison_unikernel_gpos.
+
+En particulier, certains mécanismes d'isolation comme l'ordonnanceur de tâches
+sont dupliqués entre l'hyperviseur et le noyau exécuté dans la VM. De plus,
+l'introduction d'un _GPOS_ augmente considérablement la surface d'attaque et les
+sources de bugs. Ce dernier est souvent écrit dans un langage de programmation
+n'offrant que peu de garantie du point de vue des types et de la mémoire. C'est
+de ces deux constats que naît le projet _MirageOS_.
 
 #figure(
 grid(
@@ -1552,6 +1804,24 @@ code source et l'utilisation d'un langage de programmation sûr.]
 - #box[Une réduction de la taille des exécutables produits.]
 - #box[Un profilage simplifié par la suppression d'une couche logicielle.]
 
+#showybox(
+  title: "MirageOS en bref",
+  frame: (
+    border-color: purple.darken(20%),
+    title-color: purple.lighten(80%),
+    body-color: purple.lighten(95%)
+  )
+)[
+  - *Type* : LibOS / Unikernel
+  - *Langage* : OCaml (99%)
+  - *Architectures* : x86, ARM v7/v8, RISC-V, PowerPC, SPARC, MIPS
+  - *Usage principal* : Cloud computing, applications réseau, systèmes embarqués, spatial
+  - *Points forts* : Sécurité renforcée (surface d'attaque réduite, langage sûr), taille minimale, temps de démarrage rapide, modularité
+  - *Limitations* : Portabilité limitée sans hyperviseur, débogage complexe, pas d'interface POSIX
+  - *Licences* : ISC (majoritaire) + LGPLv2 (certaines parties)
+  - *Projet notable* : SpaceOS (déployé dans l'espace en 2025)
+]
+
 == Image docker <mirageos_imagedocker>
 Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
 disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
@@ -1568,6 +1838,12 @@ make -C mirageos shell
 
 Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
 hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-metal_.
+
+Les _LibOS_ souffrent généralement d'un problème de portabilité car elles doivent
+être adaptées à chaque environnement matériel spécifique. Cette problématique est
+largement atténuée par l'usage d'un hyperviseur qui offre une couche d'abstraction
+matérielle standardisée, facilitant ainsi le déploiement des _unikernels_ sur
+différentes plateformes.
 
 #figure(
   table(
@@ -1786,6 +2062,10 @@ particulier son ramasse-miette,]
 en OCaml est théorique possible mais nécessiterait un effort considérable en pratique,]
 - #box[Les pilotes doivent être écrit dans un langage bas niveau.]
 
+_MirageOS_ utilise un _runtime_ OCaml _freestanding_ spécialement conçu pour
+l'exécution sans système d'exploitation @ocamlsolo5github. Par souci de minimalité
+et de clarté des API, _MirageOS_ ne cherche pas à proposer une interface _POSIX_.
+
 À ce jour le dépôt https://github.com/mirage/mirage est constitué à 99% de code
 OCaml pour un total de 9075 _SLOC_.
 
@@ -1813,44 +2093,62 @@ sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
 avec les bibliothèques. En particulier, vous n'avez pas l'obligation de distribuer
 les sources de l'application lorsque vous distribuez le binaire de l'_unikernel_.
 
-== Draft
+== Avantages et inconvénients <mirageos_pros_cons>
 
-Les bibliothèques d'OS souffrent d'un problème de portabilité. Cette situation
-est amendée par l'usage d'un hyperviseur plutôt qu'un exécution bare-metal.
+L'objectif principal de _MirageOS_ est de réduire la complexité des systèmes
+actuels en supprimant les couches logicielles volumineuses et superflues. En tant
+qu'_unikernel_, _MirageOS_ offre plusieurs avantages significatifs:
 
-Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
-Une particularité importante de _MirageOS_ est d'être écrit dans le langage
-_OCaml_. Ce langage est de haut niveau et sûr. La majorité des systèmes
-d'exploitations sont écrit en langage C. C'est un langage de programmation bas
-niveau offrant peu de garantie de sûreté, notamment vis-à-vis de la mémoire.
+- *Sécurité renforcée* : La surface d'attaque est considérablement réduite par
+  rapport à un système d'exploitation complet. L'_unikernel_ ne contient que le
+  code strictement nécessaire à l'application.
+- *Empreinte réduite* : Les exécutables produits sont de petite taille et
+  l'empreinte mémoire est minimale. Cela permet un déploiement efficace dans
+  des environnements aux ressources limitées.
+- *Temps de démarrage optimisés* : L'absence de couches logicielles superflues
+  permet d'obtenir des temps de démarrage très courts, un atout pour les systèmes
+  embarqués et le _cloud computing_.
+- *Vérification et certification modulaire* : La modularité de l'architecture
+  facilite la vérification formelle et la certification de composants spécifiques
+  du système.
 
-En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
-taille et avec une empreinte mémoire minimale. Il offre également des temps de
-démarrage réduit.
-
-Une des motivations d'exécuter un unikernel dans un hyperviseur plutôt qu'un
-système d'exploitation classique est de supprimer une couche logicielle volumineuse
-qui contient beaucoup de fonctionnalité inutile comme le support pour du matériel
-ancien, le support d'anciennes API, l'ordonnanceur pour les processus/threads en
-plus de celui de l'hyperviseur.
-
-_MirageOS_ ne cherche pas à proposer une interface _POSIX_ dans un souci
-de minimalité et de clarté des _API_.
-
-La majorité du code est écrit en OCaml. Toutefois il subsiste plusieurs parties
-qui sont toujours en langage C. Il y a le runtime OCaml lui-même (ce qui inclut
-le ramasse miette d'OCaml), un certain nombres de pilotes et quelques bibliothèques
-(notamment GMP) dont la réécriture en OCaml est possible mais très laborieuse.
-
-_MirageOS_ utilise un freestanding runtime pour OCaml @ocamlsolo5github.
-
-Objectif réduire la complexité des systèmes actuels.
-
-Quelques avantages:
-- surface d'attaque réduite
-- vérification et certification modulaire
+L'approche _unikernel_ via hyperviseur permet également d'éliminer les redondances
+présentes dans une architecture classique. En particulier, on supprime :
+- La duplication des mécanismes d'isolation (comme les ordonnanceurs de tâches présents à la fois dans l'hyperviseur et dans le noyau de la VM)
+- Le support pour du matériel ancien
+- Les API obsolètes
+- Les fonctionnalités inutilisées
 
 == SpaceOS <mirageos_spaceos>
+
+_SpaceOS_ est un système d'exploitation basé sur _MirageOS_ développé par _Tarides_
+pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satellite.
+Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
+et multi-missions, construite sur la technologie des _unikernels_.
+
+_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial :
+- L'_ESA_ (_European Space Agency_)
+- Le _CNES_
+- _Thales Alenia Space_
+- _OHB_
+- _Eutelsat_
+- Le _Singapore Space Agency_
+
+Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
+_DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
+a déployé un logiciel basé sur _OCaml 5_ sur le satellite. Cette mission a démontré
+la viabilité des _unikernels_ _MirageOS_ pour les applications spatiales en conditions
+réelles.
+
+Les principaux avantages de _SpaceOS_ incluent:
+- Une réduction de taille d'un facteur 20 par rapport à un déploiement basé sur
+  des conteneurs _Linux_
+- Une sécurité accrue grâce à l'utilisation d'un langage à gestion mémoire sûre (_OCaml_)
+- Une architecture modulaire permettant de compiler uniquement les fonctionnalités
+  nécessaires du système d'exploitation
+
+Ces résultats ont valu à _SpaceOS_ une reconnaissance industrielle significative,
+notamment le prestigieux _Airbus Innovation Award_ lors de la _Paris Space Week_ 2024.
 
 = PikeOS <pikeos>
 
@@ -1862,6 +2160,24 @@ _SYSGO_ depuis 2005. En 2012, l'entreprise _SYSGO_ est rachetée par _Thalès_.
 Dès sa conception, _PikeOS_ a été pensé pour faciliter la certification de
 logiciels. Les différents kit de certifications disponibles sont exposés dans la
 section @pikeos_licenses.
+
+#showybox(
+  title: "PikeOS en bref",
+  frame: (
+    border-color: orange.darken(20%),
+    title-color: orange.lighten(80%),
+    body-color: orange.lighten(95%)
+  )
+)[
+  - *Type* : RTOS + Hyperviseur type 1 (basé sur micronoyau L4)
+  - *Langage* : C
+  - *Architectures* : x86-64, ARM v7/v8, PowerPC, RISC-V, SPARC
+  - *Usage principal* : Systèmes critiques (aéronautique, automobile, défense, médical)
+  - *Points forts* : Conçu pour la certification, paravirtualisation + HVM, support multi-criticité
+  - *Limitations* : Propriétaire, coût de licence
+  - *Licences* : Propriétaire (SYSGO/Thalès)
+  - *Certifications* : Kits disponibles pour DO-178B/C, IEC 61508, ISO 26262
+]
 
 == Architectures supportées <pikeos_architectures>
 
@@ -1915,6 +2231,24 @@ fait l'objet d'une vérification formelle @lescuyer2015provencore.
 
 _ProvenVisor_ est développé par l'entreprise _ProvenRun_ qui est spécialisée
 dans la sécurité et les systèmes embarqués critiques.
+
+#showybox(
+  title: "ProvenVisor en bref",
+  frame: (
+    border-color: green.darken(20%),
+    title-color: green.lighten(80%),
+    body-color: green.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur type 1 vérifié formellement (+ micronoyau ProvenCore)
+  - *Langage* : C
+  - *Architectures* : ARM v8-A (avec support MMU)
+  - *Usage principal* : Systèmes embarqués critiques, IoT sécurisé, isolation forte
+  - *Points forts* : TCB minimal, vérification formelle, intégration ProvenCore (micronoyau prouvé), conteneurs sécurisés
+  - *Limitations* : Propriétaire, ARM uniquement
+  - *Licences* : Propriétaire (ProvenRun)
+  - *Certifications* : Processus de certification en cours
+]
 
 #figure(
   diagram(
@@ -2004,12 +2338,31 @@ des missiles#footnote[Le sigle _RTEMS_ signifiait alors _Real-Time Executive
 for Missile Systems_.]. En 1993, une première version du projet est rendue
 publique. À partir de 1995, la gestion du projet est entièrement confiée à
 _OAR_ qui assure la maintenance et le développement de _RTEMS_, ainsi que la
-maintenance de son infrastructure web. Pendant les années 90, _RTEMS_ commence
-à être utilisé dans le civil, notamment par la _NASA_ et l'@esa. Le projet est
-alors renommé _Real-Time Executive for Multiprocessor Systems_ pour souligner
-ce changement ainsi que le support des systèmes multiprocesseurs. De nos jours,
-il est utilisé dans des missions spatiales et notamment la constellation de
-satellites _Galileo_.
+maintenance de son infrastructure web.
+
+Pendant les années 90, _RTEMS_ commence à être utilisé dans le civil, notamment
+par la _NASA_ et l'@esa. Le projet est alors renommé _Real-Time Executive for
+Multiprocessor Systems_ pour souligner ce changement ainsi que le support des
+systèmes multiprocesseurs. De nos jours, il est utilisé dans des missions
+spatiales et notamment la constellation de satellites _Galileo_.
+
+#showybox(
+  title: "RTEMS en bref",
+  frame: (
+    border-color: red.darken(20%),
+    title-color: red.lighten(80%),
+    body-color: red.lighten(95%)
+  )
+)[
+  - *Type* : RTOS libre
+  - *Langage* : C (97.7%)
+  - *Architectures* : 20+ architectures (ARM, PowerPC, RISC-V, SPARC, x86, MIPS, ...)
+  - *Usage principal* : Systèmes embarqués temps-réel (spatial, militaire, médical, industriel)
+  - *Points forts* : Libre (GPL/BSD), API POSIX, support SMP, modulaire, mature, utilisé par NASA/ESA
+  - *Limitations* : Documentation parfois limitée, configuration complexe
+  - *Licences* : GPL v2 + exceptions (permettant code propriétaire)
+  - *Missions notables* : Galileo, James Webb Space Telescope, Mars rovers
+]
 
 == Architectures supportées <rtems_architectures>
 
@@ -2028,47 +2381,49 @@ Cette section aborde le support d'architectures multi-processeur sous _RTEMS_.
 === Architectures @smp
 
 _RTEMS_ offre un support pour les architectures @smp des processeurs
-_x86_, _ARM_, _PowerPC_, _RISC-V_ et _SPARC_. Ce support est toutefois relatif
-à chaque @bsp.
+_AArch64_, _ARMv7-A_, _i386_, _PowerPC_, _RISC-V_ et _SPARC_ @rtems_smp.
+Ce support est toutefois relatif à chaque @bsp.
+
+L'utilisation d'un processeur SMP augmente significativement le risque d'accès
+concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
+Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
 
 Le support @smp n'est pas activé par défaut. Il requière d'être activé durant
-la phase de compilation du noyau.
+la phase de compilation du noyau via l'option `--enable-smp`. Ce support est
+disponible depuis la version 4.11.0.
+
+_RTEMS_ offre également un support pour les processeurs @smp LEON3 et LEON4
+(_SPARC v8_), des processeurs 32 bits libres développés par l'@esa.
+
+Le système propose un support d'affinité des tâches, permettant de spécifier
+sur quel sous-ensemble de cœurs une tâche peut s'exécuter. Il existe également
+un support pour la migration de tâches entre cœurs.
 
 === Architectures @amp
+
+_RTEMS_ offre également un support pour les architectures @amp.
 
 == Temps de démarrage <rtems_booting_time>
 
 == Maintenance <rtems_maintening>
+
+_RTEMS_ permet le cross-développement via d'autres systèmes d'exploitation :
+distributions GNU/Linux, Windows, BSD, Solaris et MacOS.
+
+Le système est largement utilisé dans l'industrie spatiale, notamment chez
+les acteurs européens comme l'@esa.
+
+_RTEMS_ offre un support d'ARINC 653, un standard de l'industrie aéronautique
+pour les systèmes avioniques à partitionnement spatial et temporel.
+
+Il existe un support commercial pour les entreprises européennes et américaines.
+La communauté offre également un support gratuit sans garantie.
 
 == Licences <rtems_licenses>
 
 _RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
 et open-sources avec pour licence principale BSD-2. Le noyau peut être utilisé ou
 être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
-
-== Draft
-- Il offre un support pour les architectures @smp et @amp.
-- Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
-- Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
-- ARINC 653 RTEMS
-- Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
-
-== Support multi-processeur
-
-_RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
-mais également pour les architectures @amp.
-
-L'utilisation d'un processeur SMP augmente significativement le risque d'accès
-concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
-
-Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
-
-- Le support concerne un sous ensemble des architectures cibles et de bps? Lesquelles? faire un tableau?
-- Les architectures supportées: AArch64, ARMv7-A, i386, PowerPC, RSIC-V et SPARC.
-- Le support est disponible depuis la version 4.11.0 et doit être activé explicitement lors de la configuration via l'option `--enable-smp`.
-- Support pour les processeurs @smp LEON3 et LEON4. Ce sont des processeurs _SPARC v8_. LEON est un processeur 32bits libre développé par @esa.
-- Il existe un support affinité des tâches. Autrement dit on peut spécifier sur quel sous-ensemble de cœur une tâche peut s'exécuter.
-- Il y a un support pour la migration de tâche.
 
 == Tutoriel <rtems_tutoriel>
 
@@ -2103,12 +2458,13 @@ Le nom de l'interface _TTY_ peut varier suivant l'adaptateur utilisé.
 == Partionnement <rtems_partioning>
 
 _RTEMS_ est un système à espace d'adressage unique. Le noyau et les tâches partagent
-le même espace d'adressage et s'exécute en mode noyau (vérifier). Par conséquent _RTEMS_
-n'offre pas les mêmes niveaux de sûreté qu'un noyau de séparation comme un hyperviseur.
+le même espace d'adressage et toutes les tâches s'exécutent en mode noyau (mode superviseur),
+avec le niveau de privilège le plus élevé du processeur @rtems_cpu_supplement @rtems_task_background.
+Par conséquent _RTEMS_ n'offre pas les mêmes niveaux de sûreté qu'un noyau de séparation comme un hyperviseur.
 C'est la raison pour laquelle il est parfois exécuté au-dessus d'un hyperviseur.
 
-Il y a un support pour les MPU (memory protection unit) qui sont des version simplifiées
-des MMU. Vérifier si cette info est valable.
+_RTEMS_ offre un support pour les MPU (_Memory Protection Unit_), qui sont des versions simplifiées
+des MMU, notamment sur les architectures ARM (ARMv7-M, ARMv8-M) @rtems_mpu_gedare.
 
 _RTEMS_ propose aussi des mécanismes de partitionnement en mémoire.
 
@@ -2197,15 +2553,33 @@ Le noyau _seL4_ est un micronoyau de troisième génération. Il inclut un
 hyperviseur de type 1 et un _RTOS_. Sa conception a débuté en 2006 à
 l'institut de recherche _NICTA_ #footnote[Acronyme pour _National Information
 and Communications Technology Autralia_)]. L'objectif était de créer un
-système d'exploitation capable de satisfaire les
-exigences de sécurité et de sûreté des @cc. À ce titre, les
-contraintes induites par la vérification formelle du noyau ont été prises
-en compte dès le départ du projet. Comme son nom le suggère, dans son design,
-_seL4_ est fortement inspiré du micronoyau de seconde génération _L4_. Ainsi, il
-fournit des abstractions pour la mémoire virtuelle, les _threads_ et
-la communication inter-processus. Toutefois, contrairement à la majorité des
-autres micronoyaux de la famille _L4_, il fournit également des _capabilities_
-pour gérer les autorisations.
+système d'exploitation capable de satisfaire les exigences de sécurité et de
+sûreté des @cc. À ce titre, les contraintes induites par la vérification
+formelle du noyau ont été prises en compte dès le départ du projet.
+
+Comme son nom le suggère, dans son design, _seL4_ est fortement inspiré du
+micronoyau de seconde génération _L4_. Ainsi, il fournit des abstractions pour
+la mémoire virtuelle, les _threads_ et la communication inter-processus.
+Toutefois, contrairement à la majorité des autres micronoyaux de la famille _L4_,
+il fournit également des _capabilities_ pour gérer les autorisations.
+
+#showybox(
+  title: "seL4 en bref",
+  frame: (
+    border-color: teal.darken(20%),
+    title-color: teal.lighten(80%),
+    body-color: teal.lighten(95%)
+  )
+)[
+  - *Type* : Micronoyau temps-réel + Hyperviseur type 1 (3ème génération L4)
+  - *Langage* : C
+  - *Architectures* : ARM (32/64-bit), x86 (32/64-bit), RISC-V
+  - *Usage principal* : Systèmes critiques (défense, médical, automobile, aérospatial)
+  - *Points forts* : Vérifié formellement (Isabelle/HOL), capabilities, partitions mixtes, certifiable Critères Communs EAL7, absence prouvée de bugs critiques
+  - *Limitations* : Courbe d'apprentissage élevée, écosystème limité, documentation technique avancée
+  - *Licences* : GPL v2 (noyau), code utilisateur sous licence libre au choix
+  - *Caractéristique unique* : Seul OS avec correction prouvée formellement du code C au binaire
+]
 
 == Installation <sel4_installation>
 
@@ -2255,6 +2629,12 @@ disponibles sur leur site @sel4_supported_platforms.
 Lorsqu'il est utilisé en tant qu'hyperviseur, _seL4_ s'exécute dans le mode
 d'exécution _hyperviseur_.
 
+_seL4_ présente l'avantage de supporter les partitions mixtes @vanderleest2016open,
+permettant d'exécuter simultanément des applications de différents niveaux de
+criticité sur le même système tout en maintenant l'isolation entre ces applications.
+Cette capacité est particulièrement importante pour les systèmes embarqués critiques
+où des composants de différentes niveaux de criticité doivent cohabiter.
+
 === Capabilities
 
 Les #definition[capabilities] de _seL4_ sont des jetons donnant à leur
@@ -2273,9 +2653,29 @@ ressource qu'il pointe.
 
 == Vérification formelle <sel4_formal_verification>
 
-Le noyau _seL4_ a fait l'objet d'une vérification formelle profonde. L'approche
-suppose la correction du compilateur, du code assembleur et du matériel mais
-démontre la conformité du code C avec ses spécifications.
+Le noyau _seL4_ a fait l'objet d'une spécification et d'une vérification formelle
+approfondie à l'aide de l'assistant de preuve _Isabelle/HOL_ @sel4_verification.
+La correction#footnote[La correction d'un algorithme signifie qu'il a été démontré
+que cet algorithme respecte sa spécification.] de l'implémentation a été démontrée
+pour plusieurs configurations.
+
+L'approche suppose la correction du compilateur, du code assembleur et du matériel,
+mais démontre rigoureusement la conformité du code C avec ses spécifications. Cette
+vérification a également été étendue au niveau du code binaire pour les architectures
+_ARM_ et _RISC-V_, garantissant que le code machine exécuté correspond bien aux
+spécifications formelles.
+
+Cette vérification formelle implique en particulier que _seL4_ est dépourvu de
+certaines erreurs de programmation classiques @sel4_implication. Le système est
+notamment exempt de:
+- Débordements de tampon (_buffer overflows_)
+- Déréférencements de pointeurs nuls
+- Fuites mémoire (_memory leaks_)
+- Dépassements d'entier (_integer overflows_)
+
+Ces garanties formelles font de _seL4_ l'un des systèmes d'exploitation les plus
+sûrs disponibles, particulièrement adapté aux applications critiques où la fiabilité
+et la sécurité sont primordiales.
 
 == Licences & brevets <sel4_licenses>
 
@@ -2283,25 +2683,10 @@ Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
 `GNU General Public License version 2 only (GPL-2.0)`. Le code utilisateur et
 les pilotes peuvent être distribués sous n'importe quelle licence @sel4_licensing.
 
-== draft
-
-Il a l'avantage de supporté les partitions mixtes @vanderleest2016open.
-
-`seL4` a fait l'objet d'une spécification et d'une vérification formelle à
-l'aide de l'assistant de preuve _Isabelle/HOL_. La correction
-#footnote[La correction d'un algorithme signifie qu'il a été démontré que cet
-algorithme respecte sa spécification.] de l'implémentation
-a été démontrée pour plusieurs configurations et il a été également démontré
-que le code binaire est correct pour les architectures _ARM_ et _RISC-V_ @sel4_verification.
-Cette vérification formelle implique en particulier que `seL4` est dépourvu de
-certaines erreurs de programmation classiques @sel4_implication. Il est notamment
-dépourvu de débordements de tampon, de déréférencements de pointeurs nuls, de
-fuites mémoire et de dépassements d'entier.
-
 = Xen <xen>
 
 _Xen_ est un hyperviseur de type 1 développé par le consortium d'entreprises
-#link("https://xenproject.org")[Xen Project]. Ces un pionnier de la
+#link("https://xenproject.org")[Xen Project]. C'est un pionnier de la
 @paravirtualization mais il offre aussi un support étendu pour la
 virtualisation assistée par le matériel. Il est aujourd'hui très utilisé
 dans le monde de l'hébergement et du cloud computing.
@@ -2319,7 +2704,7 @@ libre. Contrairement à son prédécesseur _XenoServers_, il permet d'exécuter
 n'importe quelle application dans une machine virtuelle tournant sur un noyau
 _Linux_ modifié. Ces modifications contournent les limites
 de performances de la virtualisation complète sur architecture _x86_ en permettant
-au noyau virtualisé de collaboré avec l'hyperviseur. C'est la naissance de la
+au noyau virtualisé de collaborer avec l'hyperviseur. C'est la naissance de la
 @paravirtualization.
 
 En 2005, le support pour la virtualisation assistée par le matériel est ajoutée
@@ -2337,6 +2722,24 @@ architectures que _x86_, et notamment _ARM_ (voir la sous-section
 @xen_architectures) et l'utilisation combinée de la @paravirtualization et
 de la virtualisation assistée par le matériel (voir la sous-section
 @xen_partitioning).
+
+#showybox(
+  title: "Xen en bref",
+  frame: (
+    border-color: aqua.darken(20%),
+    title-color: aqua.lighten(80%),
+    body-color: aqua.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur type 1
+  - *Langage* : C (majoritaire)
+  - *Architectures* : x86 (32/64-bit), ARM (32/64-bit)
+  - *Usage principal* : Cloud computing, hébergement, data centers, virtualisation d'entreprise
+  - *Points forts* : Mature et éprouvé, paravirtualisation + HVM, largement adopté (AWS, Citrix), dom0less pour boot rapide, stub domains pour sécurité
+  - *Limitations* : TCB important, complexité, dépendance au dom0 (Linux)
+  - *Licences* : GPL v2 (majoritaire) avec exceptions pour compatibilité
+  - *Utilisateurs notables* : Amazon AWS, Citrix, OVH, Rackspace
+]
 
 == Tutoriel <xen_tutoriel>
 
@@ -2423,14 +2826,45 @@ OS invités. Il existe deux types de tels domaines. Les domaines de paravirtuali
 et les domaines _HVM_.]
 - #box[_dom0less_.]
 
-
-== Corruption de la mémoire <xen_memory_corruption>
-
 == Perte du flux d'exécution
+
+Comme pour les autres systèmes d'exploitation, _Xen_ est susceptible aux attaques
+visant à détourner le flux d'exécution. La protection contre ces attaques repose
+principalement sur:
+
+- L'utilisation de langages de programmation sûrs pour certaines composantes
+- Les mécanismes de protection matériels (_Intel CET_, _ARM BTI_) lorsqu'ils sont
+  disponibles sur la plateforme cible
+- Les pratiques de développement sécurisé et les revues de code approfondies
+
+La nature critique de l'hyperviseur _Xen_ en fait une cible privilégiée pour les
+attaquants. Une compromission du flux d'exécution au niveau de l'hyperviseur peut
+potentiellement affecter tous les domaines hébergés, d'où l'importance cruciale
+de ces mécanismes de protection @cfi_survey_embedded.
 
 == Monitoring <xen_monitoring>
 
-== Profilage <xen_profiling>
+_Xen_ propose plusieurs outils pour le monitoring des performances et de l'état
+du système @xen_monitoring_tools @xenserver_monitor_performance:
+
+- *xentop*: Utilitaire similaire à _top_ pour afficher des informations sur tous
+  les domaines s'exécutant sur un système _Xen_. Il permet d'identifier les domaines
+  responsables des charges les plus élevées en I/O ou en traitement.
+
+- *xenmon*: Outil utile pour surveiller les performances des domaines _Xen_,
+  particulièrement pour identifier les domaines responsables des charges I/O ou
+  processeur les plus importantes.
+
+- *RRD (_Round Robin Databases_)*: _Xen_ expose des métriques de performance via
+  des bases de données RRD. Ces métriques peuvent être interrogées via HTTP ou
+  à travers l'outil _RRD2CSV_. _XenCenter_ utilise ces données pour produire des
+  graphes de performance système affichant l'utilisation du CPU, de la mémoire,
+  du réseau et des I/O disque.
+
+- *Intégration avec des outils tiers*: _Xen_ supporte l'intégration avec des outils
+  de monitoring via _NRPE_ (_Nagios Remote Plugin Executor_) et _SNMP_ (_Simple
+  Network Management Protocol_), permettant l'utilisation de solutions de monitoring
+  tierces.
 
 === Support de langages de programmation en @baremetal <xen_baremetal>
 
@@ -2495,11 +2929,67 @@ sont disponibles dans le fichier `COPYING` du dépôt git @xen_licensing.
 
 == Temps de démarrage <xen_booting>
 
-== Draft
+=== Stub domains <xen_stubdomains>
 
-- C'est quoi un stubdomain?
-- Il semble que les dom0less permettent d'accélérer le temps de démarrage
-des domaines.
+#aside[Qu'est-ce qu'un stub domain?][
+  Un #definition[stub domain] (ou _stubdomain_) est une mini-machine virtuelle
+  légère dédiée à exécuter un seul service isolé dans Xen (comme l'émulateur
+  QEMU pour un invité). Au lieu d'exécuter ces services dans le dom0 privilégié
+  où une faille compromettrait tout le système, on les isole dans des stub
+  domains avec des privilèges minimaux. Cela améliore considérablement la sécurité.
+]
+
+Un _stub domain_ (ou _stubdomain_) est un domaine système spécialisé utilisé
+pour désagréger le domaine de contrôle (_dom0_) @xen_stubdomain
+@xen_device_model_stubdomains. Il s'agit d'un domaine léger dédié à l'exécution
+de services ou de pilotes spécifiques, notamment le modèle de périphérique _QEMU_
+associé à un domaine HVM.
+
+L'avantage principal des _stub domains_ réside dans l'amélioration de la sécurité
+par isolation. Traditionnellement, _QEMU_ et d'autres services critiques s'exécutent
+dans le _dom0_ avec des privilèges élevés. En cas de vulnérabilité de sécurité
+dans _QEMU_, un attaquant pourrait obtenir un accès privilégié au _dom0_ et
+compromettre l'ensemble du système. En exécutant _QEMU_ dans un _stub domain_, ce
+dernier est automatiquement déprivilégié (via `XEN_DOMCTL_set_target`) de sorte qu'il
+n'a de privilèges que sur le domaine HVM spécifique auquel il est associé.
+
+La plupart des _stub domains_ sont basés sur le système d'exploitation minimaliste
+_Mini-OS_ @xen_minios, bien que des travaux aient été menés sur des _stub domains_
+basés sur _Linux_.
+
+=== Dom0less <xen_dom0less>
+
+#aside[Qu'est-ce que dom0less?][
+  Le mode #definition[dom0less] est une fonctionnalité Xen permettant de démarrer
+  des machines virtuelles invitées directement depuis l'hyperviseur, sans attendre
+  que le dom0 (domaine de contrôle) soit complètement initialisé. Cela réduit
+  drastiquement le temps de démarrage (de plusieurs secondes à moins d'une seconde)
+  pour les systèmes embarqués et temps-réel où chaque milliseconde compte.
+]
+
+Le mode _dom0less_ est une fonctionnalité de _Xen_ permettant d'accélérer
+significativement le démarrage des domaines @xen_dom0less_doc
+@xen_dom0less_partitioning. Cette optimisation répond à un besoin critique dans
+les systèmes embarqués et temps-réel où le temps de démarrage est déterminant.
+
+Traditionnellement, le démarrage d'un domaine depuis l'initialisation du système
+nécessite plusieurs étapes séquentielles prenant plusieurs secondes:
+1. Démarrage de l'hyperviseur _Xen_
+2. Démarrage du noyau _dom0_
+3. Initialisation de l'espace utilisateur du _dom0_
+4. Disponibilité de l'outil `xl` pour créer les domaines
+
+Avec _dom0less_, _Xen_ démarre les domaines sélectionnés directement depuis
+l'hyperviseur au moment du boot, en parallèle sur différents cœurs physiques.
+Cette approche permet d'obtenir des temps de démarrage sous-secondes pour les
+systèmes temps-réel. Le temps de démarrage total devient approximativement égal
+à: temps_xen + temps_domU, éliminant ainsi le surcoût du démarrage du _dom0_ et
+de son espace utilisateur.
+
+Cette fonctionnalité est particulièrement adaptée aux systèmes à partitionnement
+statique où plusieurs domaines doivent démarrer rapidement lors de l'initialisation
+de l'hôte. Elle s'intègre désormais dans le projet _Hyperlaunch_ qui généralise
+cette approche.
 
 == Mise en place d'une machine virtuelle Alpine
 
@@ -2660,42 +3150,18 @@ l'embarqué critique en donnant de fortes garanties quant à l'isolation
 spatiale et temporaire de ses partitions @masmano2005overview. L'entreprise
 _fentISS_ propose deux versions de _XtratuM_:
 - Une version libre,
-- Une version propriétaire appelée _Xtratum/NG_ (abrégé _XNG_).
+- Une version propriétaire appelée _Xtratum/NG_ (abrégé _XNG_), qui offre un meilleur
+support multi-cœur.
 
-développé à l'origine
-par une équipe de recherche de l'_Universidad Politécnica_ de Valence et
-maintenant maintenu par l'entreprise _fentISS_ @fentiss_website.
-
-_XtratuM_ est un hyperviseur temps-réel de type 1 qualifié pour l'usage dans
-le spatial. Le projet est initié en 2004. Il est développé par l'entreprise
-_fentISS_.
-
-_XtratuM_ virtualises la mémoire, les timers et les interruptions.
-
-Il est conçu pour permettre l'isolation temporelle et spatiale
-d'applications critiques sur une même plateforme physique grâce à l'usage
-des technologies de virtualisation matérielle.
+_XtratuM_ virtualise la mémoire, les timers et les interruptions.
 
 _XtratuM_ fait parti du projet _SAFEST_ @safest_project. Il s'agit d'un projet
 visant à faire collaborer différents acteurs du secteur aérospatial européen
 afin d'améliorer les performances et de réduire les coûts.
 
-Tools:
-- XPM est un pluging Eclipse pour la gestion d'un projet sur XtratuM
-- Xoncrete (schedule analysis and generation)
-- Xcparser (hypervisor configuration)
-- Xtraceview (observability support)
-- SKE (XtratuM simulator on servers)
-
 _IMA_ (_Integrated Modular Avionics_) est une tendance dans l'avionique à ramener
 au niveau de calculateurs modulaires identiques des fonctions logicielles
-auparavant prises en charge par des calculateurs dédiés.
-
-TODO:
-- C'est quoi `cyclic scheduling policy`?
-- `inter-partition communication` avec sampling et queuing ARINC-653-like ports
-- health monitoring service
-
+auparavant prises en charge par des calculateurs dédiés. _XtratuM_ répond à ce besoin.
 
 L'hyperviseur a déjà été utilisé dans le spatial avec notamment les missions
 suivantes:
@@ -2705,8 +3171,93 @@ suivantes:
 - SWOT (XtratuM + RTEMS) 2021
 - JUICE (XtratuM + lithOS) 2022
 
-_XtratuM/NG_(abrégé _XNG_) est une version plus récente de l'hyperviseur qui offre un meilleur
-support multi-cœur.
+#showybox(
+  title: "XtratuM en bref",
+  frame: (
+    border-color: maroon.darken(20%),
+    title-color: maroon.lighten(80%),
+    body-color: maroon.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur temps-réel type 1 qualifié ECSS
+  - *Langage* : C
+  - *Architectures* : x86-32, SPARC/LEON (LEON2/3/4), ARM v7/v8
+  - *Usage principal* : Spatial, aéronautique (IMA - Integrated Modular Avionics)
+  - *Points forts* : Qualifié ECSS catégorie B, 1000+ satellites déployés, ordonnancement cyclique ARINC-653, isolation temporelle et spatiale forte, health monitoring
+  - *Limitations* : Version NG propriétaire, écosystème limité, principalement orienté spatial/aéro
+  - *Licences* : GPL v2 (version libre) + version propriétaire XtratuM/NG (fentISS)
+  - *Missions spatiales* : Galileo, JUICE, SWOT, PLATiNO, MERLIN, SVOM
+]
+
+== Outils de développement <xtratum_tools>
+
+_fentISS_ propose une suite d'outils pour faciliter le développement avec _XtratuM_:
+- *XPM* : plugin Eclipse pour la gestion de projets _XtratuM_
+- *Xoncrete* : analyse et génération d'ordonnancement
+- *Xcparser* : configuration de l'hyperviseur
+- *Xtraceview* : support d'observabilité
+- *SKE* : simulateur _XtratuM_ sur serveurs
+
+== Ordonnancement cyclique <xtratum_scheduling>
+
+_XtratuM_ implémente une politique d'ordonnancement cyclique conforme à la norme
+_ARINC-653_. Dans le domaine temporel, _XtratuM_ alloue le CPU aux partitions
+selon un plan défini lors de la configuration @lithos_arinc653_xtratum. Il s'agit
+d'un ordonnancement cyclique statique (_static cyclic scheduling_) où tous les
+intervalles d'exécution des partitions sont déterminés avant l'exécution.
+
+Chaque partition est ordonnancée pour un créneau temporel (_time slot_) défini
+par un temps de démarrage et une durée. Durant ce créneau, _XtratuM_ alloue les
+ressources système à la partition. Lorsque le créneau de la partition est écoulé,
+_XtratuM_ force un changement de contexte vers la partition suivante selon le plan
+cyclique défini.
+
+Le système utilise un ordonnancement hiérarchique à deux niveaux: _XtratuM_ gère
+l'ordonnancement des partitions au niveau supérieur, tandis que chaque partition
+peut exécuter son propre ordonnanceur pour ses tâches internes.
+
+== Communication inter-partition <xtratum_ipc>
+
+_XtratuM_ fournit un mécanisme de communication inter-partition (_IPC_) conforme
+à la norme _ARINC-653_ @xtratum_arinc653_ipc @lithos_arinc653_xtratum. Ce
+mécanisme permet l'échange de messages entre les partitions _ARINC_ s'exécutant
+sur la même carte.
+
+Un _canal_ (_channel_) est un lien logique entre une partition source et une ou
+plusieurs partitions de destination. Les partitions peuvent envoyer et recevoir
+des messages via plusieurs canaux à travers des points d'accès définis appelés
+_ports_. _XtratuM_ utilise deux interruptions virtuelles pour notifier les
+partitions de la disponibilité de nouveaux messages dans les ports de destination.
+
+La norme _ARINC-653_ définit deux modes de transfert de messages:
+
+- *Mode échantillonnage* (_sampling mode_): Supporte les messages multicast
+  envoyés d'une seule source vers plusieurs destinations. La transmission d'un
+  message sur un canal copie le message du port d'échantillonnage source vers
+  les tampons de tous les ports d'échantillonnage de destination. Ce mode convient
+  aux données périodiques où seule la dernière valeur est pertinente.
+
+- *Mode file d'attente* (_queuing mode_): Ne supporte que les messages unicast.
+  Les messages sont mis en file d'attente et traités séquentiellement. Ce mode
+  convient aux événements sporadiques qui nécessitent un traitement ordonné.
+
+== Health Monitoring <xtratum_health_monitoring>
+
+_XtratuM_ intègre un service de _health monitoring_ conforme à la norme _ARINC-653_
+@lithos_arinc653_xtratum. Ce service permet la détection et la gestion des
+défaillances des partitions.
+
+Lorsqu'un événement de _health monitoring_ est déclenché, le système peut entreprendre
+des actions correctives telles que des changements de mode. Par défaut, le Plan 1
+(mode maintenance) est le plan exécuté lorsqu'un événement sélectionne un changement
+de mode comme action.
+
+Le principe d'isolation des partitions garantit que la défaillance d'une partition
+n'affecte pas les autres partitions. Cependant, bien qu'une partition ne puisse
+pas affecter les autres partitions, la défaillance peut toujours se produire et
+potentiellement conduire à une défaillance du système global. Le service de _health
+monitoring_ permet de limiter ces risques par une détection précoce et des actions
+de récupération appropriées.
 
 == Architectures supportées <xtratum_architectures>
 
@@ -2726,7 +3277,22 @@ ECSS-Qualified?
 _lithOS_ est un système d'exploitation temps réel conçu pour être exécuté dans
 une partition de _XtratuM_.
 
-== Qualifications
+== Qualifications <xtratum_qualifications>
+
+_XtratuM_ est qualifié selon la norme _ECSS_ (_European Cooperation for Space Standardization_)
+catégorie B @xtratum_ecss_qualification. Cette qualification en fait un hyperviseur
+adapté aux missions spatiales critiques.
+
+L'hyperviseur a été qualifié initialement pour les processeurs _SPARC-Leon_ et
+_ARM Cortex-R4/R5_ et _A9_. L'entreprise _fentISS_ continue de travailler sur la
+qualification de nouvelles versions, notamment _XtratuM Next Generation_ pour
+lequel un processus de qualification ECSS niveau B est en cours.
+
+Le succès de _XtratuM_ dans le spatial est remarquable: son hyperviseur temps-réel
+est désormais déployé dans plus de 1000 satellites et engins spatiaux
+@xtratum_milestone_1000, en faisant l'un des logiciels système les plus largement
+adoptés en orbite. Cette présence massive témoigne de la maturité et de la fiabilité
+du système dans des environnements opérationnels critiques.
 
 == Licences & brevets <xtratum_licenses>
 
@@ -2764,8 +3330,15 @@ distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
 //
 // == Les OS classiques
 
+Après avoir présenté en détail chacun des huit systèmes d'exploitation étudiés,
+nous proposons dans ce chapitre une série de tableaux comparatifs synthétisant
+leurs caractéristiques principales. Ces comparaisons permettent d'identifier
+rapidement les forces et faiblesses de chaque système selon différents critères
+pertinents pour les applications critiques et temps-réel.
+
 = Tableaux comparitifs<comp>
 
+#align(center)[
 #table(
   columns: 3,
   table.header[Type d'OS][Avantages][Inconvénients],
@@ -2788,6 +3361,7 @@ distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
   ], [
   ],
 )
+]
 
 - #box[_KVM_ est un hyperviseur de type 1 intégré dans le noyau Linux. Il fait de
 la virtualisation assistée par le matériel.]
@@ -2805,6 +3379,7 @@ Le tableau suivant résume le support de ces architectures de processeur pour le
 systèmes d'exploitation de cette étude. Lorsque l'OS est un hyperviseur, il
 s'agit du support pour le matériel surlequel est exécuté l'hyperviseur.
 
+#align(center)[
 #table(
   columns: 9,
   align: (center, center, center, center, center, center, center, center, center, center),
@@ -2828,6 +3403,7 @@ s'agit du support pour le matériel surlequel est exécuté l'hyperviseur.
   [XtratuM],
         [Non],    [Non],    [Oui],     [Non],     [Oui],     [Non],  [Non],    [Non],
 )
+]
 
 == Linux & KVM
 
@@ -2852,6 +3428,7 @@ données concernant le _SLOC_ pour ces OS, nous les excluons de cette section.
 
 Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_website pour effectuer ces mesures. Cet outil ne compte pas les commentaires.
 
+#align(center)[
 #table(
   columns: 4,
   align: (center, center, center, center),
@@ -2865,6 +3442,7 @@ Pour les OS open-sources, nous avons utilisé l'outil `SLOCCount`@sloccount_webs
   [Xen],         [581 193],       [45 220],         [C (93%)],
   [XtratuM],     [?],             [?],              [C (?)],
 )
+]
 
 == Partitionnement temps et/ou mémoire
 
@@ -2923,70 +3501,6 @@ les interruptions matérielles sont capturées par un système d'exploitation in
 tournant dans le domaine privilégié _Dom0_ et transmises aux domaines concernés via
 un méchanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
-
-= Introduction2 <introduction2>
-
-Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
-souvent abrégé _OS_.] est un ensemble de routines gérant les ressources
-matérielles d'un système informatique, qu'il s'agisse d'ordinateurs de bureau,
-de serveurs ou de systèmes embarqués. Son rôle principal est de servir de
-couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
-Il permet ainsi de masquer la complexité et la diversité des interfaces matérielles en
-fournissant des _API_ (_Application Programming Interface_) stables, unifiées et
-parfois standardisées. Les systèmes d'exploitation se distinguent aussi bien
-par les mécanismes d'abstraction qu'ils offrent, que leur organisation ou
-leur modularité. Ainsi, un tâche gérée par un OS peut être dans une autre
-configuration déléguée à une autre couche logicielle, voire au matériel.
-Il est donc difficile de caractériser rigoureusement ce qu'est un système
-d'exploitation autrement que par le fait qu'il s'exécute en
-#definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
-d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. A contrario, les logiciels applicatifs s'exécutent en
-#definition[mode utilisateur] (_user mode_) et interagissent avec l'OS
-lorsqu'ils ont besoin d'accéder au matériel.
-
-Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
-le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
-commençons par préciser ces deux termes.
-
-On distingue le plus souvent trois modes d'exécutions sur les processeurs modernes:
-- #box[Le #definition[mode noyau] (_kernel mode_) est un mode
-d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
-d'exploitations.]
-- #box[Le #definition[mode utilisateur] (_user mode_)
-est a contrario un mode d'exécution qui n'a pas accès à toutes les
-instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
-et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
-nécessitant des privilèges plus élevés.]
-- #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
-est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
-tels systèmes d'exploitation dans cette étude.]
-
-=== Tutoriels
-
-L'étude contient un certain nombres de tutoriels et exemples illustrant
-le fonctionnement des différents systèmes étudiés. Pour que ces exemples
-puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
-
-=== Xen & MirageOS
-Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
-d'un support pour l'hyperviseur _Xen_.
-
-#howto[mise en place d'un pont virtuel][
-  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
-  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
-  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
-  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
-  vous pouvez mettre en place un tel pont ainsi:
-  ```console
-  sudo ip link add br0 type bridge
-  sudo ip link set br0 up
-  sudo ip addr 10.0.0.1/24 dev br0
-  ```
-]
-
-
 
 #glossary(
   title: "Glossaire",
