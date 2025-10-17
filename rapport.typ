@@ -191,12 +191,14 @@ un système d'exploitation et nous adoptons ici l'approche retenue dans
 définir ce concept. Nous appelons donc #definition[système d'exploitation]#footnote[En anglais
 _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
-privilégié du processeur. Le système en question
-peut être un serveur, un ordinateur personnel ou un système embarqué. Le rôle
-principal du système d'exploitation est de fournir une couche d'abstraction logicielle entre le
-matériel et les logiciels applicatifs. Il permet ainsi de masquer la complexité
-et la diversité des interfaces matérielles en fournissant des interfaces stables,
-unifiées et parfois standardisées.
+privilégié du processeur.
+
+Le système en question peut être un serveur, un ordinateur personnel ou un
+système embarqué. Le rôle principal du système d'exploitation est de fournir une
+couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
+Il permet ainsi de masquer la complexité et la diversité des interfaces
+matérielles en fournissant des interfaces stables, unifiées et parfois
+standardisées.
 
 == Pourquoi utiliser un système d'exploitation? <why_os>
 
@@ -554,9 +556,11 @@ raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fi
 et sûre, une première solution consiste
 à héberger chaque service sur une machine individuelle. On obtient ainsi une
 isolation totale des différents services. Cette solution présente
-toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
-maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
-besoins à moindre frais.
+toutefois deux inconvénients majeurs :
+- Le coût prohibitif
+- Une maintenance plus complexe
+
+Les _hyperviseurs_ ont été créés pour répondre à ces besoins à moindre frais.
 
 Les _hyperviseurs_ se divisent généralement en deux catégories:
 - #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
@@ -858,6 +862,12 @@ on n'effectue un échantillonnage de ces mesures en espérant que les échantill
 collectés seront représentatifs des caractéristiques de performances du programme
 étudié.
 
+Après avoir exposé les notions générales et les concepts fondamentaux des systèmes
+d'exploitation, nous présentons maintenant en détail les huit systèmes retenus
+pour cette étude comparative. Pour chaque système, nous examinons son architecture,
+ses fonctionnalités clés, ses domaines d'application et ses caractéristiques en
+matière de sûreté et de temps réel.
+
 = Linux <linux>
 
 Le noyau _Linux_ est un système d'exploitation généraliste de type UNIX développé par une
@@ -967,9 +977,10 @@ toujours activement développé.] adoptèrent cette approche avec succès.
 L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
 des _deadlines_ et une latence faible. En contrepartie, le développeur
 d'applications temps réel ne peut pas utiliser l'écosystème et les
-bibliothèques UNIX, rendant le développement plus ardu et coûteux. Ce défaut
-majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
-d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
+bibliothèques UNIX, rendant le développement plus ardu et coûteux.
+
+Ce défaut majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo
+Molnár et d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
 l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
 le rendre préemptible, voir la figure @architecture_preempt_rt. Le projet a
 débuté en 2005 et s'est étalé sur une vingtaine d'années sous la forme d'une
@@ -1617,14 +1628,14 @@ partie de la maintenance via le concept de _cloud computing_. À cette époque,
 la majorité des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette
 approche présente l'avantage de circonscrire au système d'exploitation les
 modifications requises pour la virtualisation. En contre partie, la pile
-logicielle est grandement complexifié comme
-l'illustre la @comparison_unikernel_gpos. En particulier, certains mécanismes
-d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
-le noyau exécuté dans la VM. De plus, l'introduction d'un _GPOS_ augmente
-considérablement la surface d'attaque et les sources de bugs. Ce dernier est
-souvent écrit dans un langage de programmation n'offrant que peu
-de garantie du point de vue des types et de la mémoire. C'est de ces deux
-constats que naît le projet _MirageOS_.
+logicielle est grandement complexifié comme l'illustre la @comparison_unikernel_gpos.
+
+En particulier, certains mécanismes d'isolation comme l'ordonnanceur de tâches
+sont dupliqués entre l'hyperviseur et le noyau exécuté dans la VM. De plus,
+l'introduction d'un _GPOS_ augmente considérablement la surface d'attaque et les
+sources de bugs. Ce dernier est souvent écrit dans un langage de programmation
+n'offrant que peu de garantie du point de vue des types et de la mémoire. C'est
+de ces deux constats que naît le projet _MirageOS_.
 
 #figure(
 grid(
@@ -2014,10 +2025,11 @@ qu'_unikernel_, _MirageOS_ offre plusieurs avantages significatifs:
   du système.
 
 L'approche _unikernel_ via hyperviseur permet également d'éliminer les redondances
-présentes dans une architecture classique. En particulier, on supprime la duplication
-des mécanismes d'isolation (comme les ordonnanceurs de tâches présents à la fois
-dans l'hyperviseur et dans le noyau de la VM), ainsi que le support pour du
-matériel ancien, des API obsolètes et des fonctionnalités inutilisées.
+présentes dans une architecture classique. En particulier, on supprime :
+- La duplication des mécanismes d'isolation (comme les ordonnanceurs de tâches présents à la fois dans l'hyperviseur et dans le noyau de la VM)
+- Le support pour du matériel ancien
+- Les API obsolètes
+- Les fonctionnalités inutilisées
 
 == SpaceOS <mirageos_spaceos>
 
@@ -2026,9 +2038,13 @@ pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satel
 Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
 et multi-missions, construite sur la technologie des _unikernels_.
 
-_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial
-incluant l'_ESA_ (_European Space Agency_), le _CNES_, _Thales Alenia Space_, _OHB_,
-_Eutelsat_ et le _Singapore Space Agency_.
+_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial :
+- L'_ESA_ (_European Space Agency_)
+- Le _CNES_
+- _Thales Alenia Space_
+- _OHB_
+- _Eutelsat_
+- Le _Singapore Space Agency_
 
 Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
 _DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
@@ -2234,12 +2250,13 @@ des missiles#footnote[Le sigle _RTEMS_ signifiait alors _Real-Time Executive
 for Missile Systems_.]. En 1993, une première version du projet est rendue
 publique. À partir de 1995, la gestion du projet est entièrement confiée à
 _OAR_ qui assure la maintenance et le développement de _RTEMS_, ainsi que la
-maintenance de son infrastructure web. Pendant les années 90, _RTEMS_ commence
-à être utilisé dans le civil, notamment par la _NASA_ et l'@esa. Le projet est
-alors renommé _Real-Time Executive for Multiprocessor Systems_ pour souligner
-ce changement ainsi que le support des systèmes multiprocesseurs. De nos jours,
-il est utilisé dans des missions spatiales et notamment la constellation de
-satellites _Galileo_.
+maintenance de son infrastructure web.
+
+Pendant les années 90, _RTEMS_ commence à être utilisé dans le civil, notamment
+par la _NASA_ et l'@esa. Le projet est alors renommé _Real-Time Executive for
+Multiprocessor Systems_ pour souligner ce changement ainsi que le support des
+systèmes multiprocesseurs. De nos jours, il est utilisé dans des missions
+spatiales et notamment la constellation de satellites _Galileo_.
 
 #showybox(
   title: "RTEMS en bref",
@@ -2448,15 +2465,15 @@ Le noyau _seL4_ est un micronoyau de troisième génération. Il inclut un
 hyperviseur de type 1 et un _RTOS_. Sa conception a débuté en 2006 à
 l'institut de recherche _NICTA_ #footnote[Acronyme pour _National Information
 and Communications Technology Autralia_)]. L'objectif était de créer un
-système d'exploitation capable de satisfaire les
-exigences de sécurité et de sûreté des @cc. À ce titre, les
-contraintes induites par la vérification formelle du noyau ont été prises
-en compte dès le départ du projet. Comme son nom le suggère, dans son design,
-_seL4_ est fortement inspiré du micronoyau de seconde génération _L4_. Ainsi, il
-fournit des abstractions pour la mémoire virtuelle, les _threads_ et
-la communication inter-processus. Toutefois, contrairement à la majorité des
-autres micronoyaux de la famille _L4_, il fournit également des _capabilities_
-pour gérer les autorisations.
+système d'exploitation capable de satisfaire les exigences de sécurité et de
+sûreté des @cc. À ce titre, les contraintes induites par la vérification
+formelle du noyau ont été prises en compte dès le départ du projet.
+
+Comme son nom le suggère, dans son design, _seL4_ est fortement inspiré du
+micronoyau de seconde génération _L4_. Ainsi, il fournit des abstractions pour
+la mémoire virtuelle, les _threads_ et la communication inter-processus.
+Toutefois, contrairement à la majorité des autres micronoyaux de la famille _L4_,
+il fournit également des _capabilities_ pour gérer les autorisations.
 
 #showybox(
   title: "seL4 en bref",
@@ -3224,6 +3241,12 @@ distribuée par l'entreprise fentISS. Il s'agit d'un logiciel propriétaire.]
 // sur la couche matérielle sans l'intermédiaire d'un système d'exploitation.]
 //
 // == Les OS classiques
+
+Après avoir présenté en détail chacun des huit systèmes d'exploitation étudiés,
+nous proposons dans ce chapitre une série de tableaux comparatifs synthétisant
+leurs caractéristiques principales. Ces comparaisons permettent d'identifier
+rapidement les forces et faiblesses de chaque système selon différents critères
+pertinents pour les applications critiques et temps-réel.
 
 = Tableaux comparitifs<comp>
 
