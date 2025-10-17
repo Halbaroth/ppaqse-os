@@ -954,6 +954,14 @@ _cokernel_. Cette architecture est illustrée dans la figure
     height: 100%,
     inset: 1em))
 
+#aside[Qu'est-ce qu'un cokernel?][
+  Un #definition[cokernel] est une architecture où un système d'exploitation
+  généraliste (comme Linux) et des tâches temps-réel s'exécutent côte à côte
+  au-dessus d'un micronoyau temps-réel. Le micronoyau gère l'ordonnancement
+  et donne la priorité aux tâches temps-réel, tandis que le GPOS s'exécute
+  comme une tâche de faible priorité.
+]
+
 Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
 toujours activement développé.] adoptèrent cette approche avec succès.
 L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
@@ -1048,6 +1056,15 @@ aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
 conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
 === Les _control croups_
+
+#aside[Qu'est-ce que les cgroups?][
+  Les #definition[cgroups] (_control groups_) sont un mécanisme du noyau Linux
+  permettant de limiter, comptabiliser et isoler l'utilisation des ressources
+  (CPU, mémoire, I/O disque, réseau) pour des groupes de processus. Ils forment
+  la base technologique des conteneurs modernes (_Docker_, _Kubernetes_, etc.)
+  et permettent par exemple de garantir qu'une application ne consomme pas plus
+  de 50% du CPU ou 2 Go de RAM.
+]
 
 Les _cgroups_ (_control groups_) sont un mécanisme du noyau _Linux_
 qui permet une gestion fine et configurable des ressources.
@@ -1148,6 +1165,15 @@ D'autre part cet appel n'offre pas le même degré d'isolation que les
 _namespaces_ abordés dans la section @linux_namespaces.
 
 === Les namespaces <linux_namespaces>
+
+#aside[Qu'est-ce que les namespaces?][
+  Les #definition[namespaces] sont un mécanisme du noyau Linux permettant
+  d'isoler et de virtualiser des ressources système pour un groupe de processus.
+  Chaque namespace crée une vue isolée d'une ressource spécifique : par exemple,
+  un processus dans un _PID namespace_ ne voit que les processus de son namespace,
+  créant l'illusion qu'il est seul sur le système. Les namespaces sont essentiels
+  pour créer des conteneurs légers (_Docker_, _LXC_) sans nécessiter de virtualisation complète.
+]
 
 Les _namespaces_ sont des outils permettant d'isoler des ressources pour des processus.
 Cette isolation permet de créer des environnements sécurisés et indépendants.
@@ -1253,6 +1279,16 @@ granularité. Il est fréquent de ne vouloir exécuter que quelques appels
 systèmes avec les privilèges `root` dans un processus. Or exécuter un programme
 avec les droits `root` constitue un risque de sécurité car s'il présente une
 faille exploitable, un intrus pourrait obtenir les droits `root` à travers lui.
+
+#aside[Qu'est-ce que les capabilities?][
+  Les #definition[capabilities] sont un mécanisme de sécurité Linux qui divise
+  les privilèges traditionnels de `root` en unités distinctes et granulaires.
+  Au lieu d'avoir un processus totalement privilégié ou non privilégié, on peut
+  lui accorder uniquement les capabilities spécifiques dont il a besoin
+  (par exemple `CAP_NET_BIND_SERVICE` pour écouter sur les ports < 1024, ou
+  `CAP_SYS_TIME` pour modifier l'horloge système). Cela réduit considérablement
+  la surface d'attaque en appliquant le principe du moindre privilège.
+]
 
 ==== SetUID
 Les processus peuvent être privilégiés parce qu'ils ont été lancé par
@@ -2790,6 +2826,14 @@ sont disponibles dans le fichier `COPYING` du dépôt git @xen_licensing.
 
 === Stub domains <xen_stubdomains>
 
+#aside[Qu'est-ce qu'un stub domain?][
+  Un #definition[stub domain] (ou _stubdomain_) est une mini-machine virtuelle
+  légère dédiée à exécuter un seul service isolé dans Xen (comme l'émulateur
+  QEMU pour un invité). Au lieu d'exécuter ces services dans le dom0 privilégié
+  où une faille compromettrait tout le système, on les isole dans des stub
+  domains avec des privilèges minimaux. Cela améliore considérablement la sécurité.
+]
+
 Un _stub domain_ (ou _stubdomain_) est un domaine système spécialisé utilisé
 pour désagréger le domaine de contrôle (_dom0_) @xen_stubdomain
 @xen_device_model_stubdomains. Il s'agit d'un domaine léger dédié à l'exécution
@@ -2809,6 +2853,14 @@ _Mini-OS_ @xen_minios, bien que des travaux aient été menés sur des _stub dom
 basés sur _Linux_.
 
 === Dom0less <xen_dom0less>
+
+#aside[Qu'est-ce que dom0less?][
+  Le mode #definition[dom0less] est une fonctionnalité Xen permettant de démarrer
+  des machines virtuelles invitées directement depuis l'hyperviseur, sans attendre
+  que le dom0 (domaine de contrôle) soit complètement initialisé. Cela réduit
+  drastiquement le temps de démarrage (de plusieurs secondes à moins d'une seconde)
+  pour les systèmes embarqués et temps-réel où chaque milliseconde compte.
+]
 
 Le mode _dom0less_ est une fonctionnalité de _Xen_ permettant d'accélérer
 significativement le démarrage des domaines @xen_dom0less_doc
