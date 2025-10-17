@@ -1,3 +1,79 @@
+runtime:
+  short: runtime
+  description:
+    Environnement d'exécution. Dans le cas d'un langage de programmation managé,
+    cela inclut son garbage collector.
+
+dram:
+  short: DRAM
+  long: Dynamic Random Access Memory
+  description: >
+    Type de barette de mémoire utilisée massivement comme mémoire principale
+    sur les serveurs et ordinateurs personnels.
+
+ecc:
+  short: ECC
+  long: Error correction code
+  description: >
+    Code utilisé pour permettre la détection et la correction d'erreur dans
+    des données.
+
+soft_error:
+  short: soft error
+  description: >
+    Corruption de la mémoire due à un événement exceptionnel et transitoire.
+    Par exemple le rayonnement de fond peut produire un basculement de bits.
+
+hard_error:
+  short: hard error
+  description: >
+    Corruption de la mémoire due à un dysfonctionnement matériel au niveau
+    de la puce mémoire.
+
+scrubbing:
+  short: scrubbing
+  description: >
+    Méthode de correction de la mémoire qui consiste à balayer régulièrement
+    des plages mémoire afin d'y appliquer un code correctif.
+
+vm:
+  short: VM
+  long: Virtual Machine
+  description: >
+    todo
+
+paravirtualization:
+  short: paravirtualisation
+  description: >
+    todo
+
+hvm:
+  short: HVM
+  long: Hardware Virtual Machine
+  description: >
+    todo
+
+cots:
+  short: COTS
+  long: Commercial off-the-shelf
+  description: >
+    todo
+
+cc:
+  short: CC
+  long: Critères communs
+  description: >
+    Ensemble de normes internationales spécifiant des critères à suivre
+    pour évaluer la sécurité de systèmes d'information. Les certificats
+    suivant ces normes distinguent sept niveaux d'assurance de EAL1 à EAL7.
+
+baremetal:
+  short: bare-metal
+  description: >
+    Un environnement d'exécution bare-metal est un environnement dépourvu de
+    système d'exploitation. On parle également de logiciel bare-metal lorsqu'il
+    est possible de l'exécuter dans un tel environnement.
+
 tee:
   short: TEE
   long: Trusted execution environment

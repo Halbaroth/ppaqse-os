@@ -3,13 +3,6 @@
 #include <stdlib.h>
 #include <bsp/watchdog.h>
 
-#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
-#define CONFIGURE_MAXIMUM_TASKS 1
-#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
-#define CONFIGURE_INIT
-#include <rtems/confdefs.h>
-
 rtems_task Init(rtems_task_argument ignored) {
   raspberrypi_watchdog_init();
 
@@ -21,6 +14,13 @@ rtems_task Init(rtems_task_argument ignored) {
   while (1) {
     raspberrypi_watchdog_reload();
     printf("Watchdog rechargé\n");
-    rtems_task_wake_after (RTEMS_MICROSECONDS_TO_TICKS (5 * 1000));
+    rtems_task_wake_after (5 * rtems_clock_get_ticks_per_second());
   }
 }
+
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+#define CONFIGURE_MAXIMUM_TASKS 1
+#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+#define CONFIGURE_INIT
+#include <rtems/confdefs.h>

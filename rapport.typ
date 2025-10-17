@@ -71,7 +71,7 @@
 #set heading(numbering: "1.1", supplement: [])
 
 #let definition(t) = {
-  text(style: "oblique", weight: "semibold")[#t]
+  text(style: "oblique")[#t]
 }
 
 #show raw.where(block: true): set text(font: "FiraCode Nerd Font Mono")
@@ -116,7 +116,23 @@
 #show ref: set text(blue)
 
 // Glossary
-#show: init-glossary.with(yaml("glossary.yaml"))
+#let emph-term(term-body) = { emph(term-body) }
+
+#let format-term(mode, short-form, long-form) = {
+  if mode == "short" {
+    short-form
+  } else if mode == "long" {
+    long-form
+  } else {
+    short-form
+  }
+}
+
+#show: init-glossary.with(
+  yaml("glossary.yaml"),
+  show-term: emph-term,
+  format-term: format-term
+)
 
 // Figures
 
@@ -129,33 +145,41 @@
 	..args,
 )
 
-
 = Introduction <introduction>
 
-L'usage de composants informatiques dans les systèmes critiques#footnote[Un
-système est dit critique si sa défaillance conduit à des dommages inacceptable.]
-est de nos jours monnaie courante. De tels composants se retrouvent dans de
-nombreuses industries comme l'aéronautique, l'automobile et le nucléaire. Ainsi,
-la sûreté des logiciels devient un enjeu crucial et en particulier celle du système
-d'exploitation. Le développement et la maintenance d'un système d'exploitation
-étant complexe et coûteux, il est souhaitable d'avoir recours à une solution
-informatique sur étagères #footnote[On parle parfois de _COTS_ pour
-_Commercial off-the-shelf_.], c'est-à-dire dans le cas présent
+L'usage de composants informatiques dans les systèmes critiques
+est de nos jours monnaie courante. De tels composants se retrouvent dans des
+systèmes critiques de nombreuses industries comme l'aéronautique, l'automobile et
+le nucléaire. Ainsi, la sûreté des logiciels devient un enjeu crucial et en
+particulier celle du système d'exploitation. Le développement et la maintenance
+d'un système d'exploitation étant complexe et coûteux, il est souhaitable
+d'utiliser une solution informatique sur étagères #footnote[On parle
+parfois de _COTS_ pour _Commercial off-the-shelf_.], c'est-à-dire dans le cas présent
 un système d'exploitation ayant été conçu pour les systèmes critiques.
-Le présent document est une étude comparative de systèmes d'exploitation utilisés
-dans un contexte critique et temps réel.
-Plus précisément, nous étudions les systèmes d'exploitation suivants: Linux,
-MirageOS, PikeOS, ProvenVisor, RTEMS, seL4, Xen et XtratuM.
 
-L'étude met l'accent sur l'aspect @safety de ces systèmes, c'est-à-dire sur
-leurs mécanismes de protection contre les incidents qu'ils soient dûs à un
-phénomène physique (rayonnement ambiant, ...) ou une erreur humaine (bug dans un
-pilote, ...). L'aspect @security, qui vise à prévenir les attaques d'origine
-humaine, n'est pas abordée en profondeur.
+Le document présent est une étude comparative de systèmes d'exploitation utilisés
+dans un contexte critique et temps réel.
+Plus précisément, nous étudions les systèmes d'exploitation suivants#footnote[
+Nous nous sommes efforcés de fournir des informations valables pour les
+versions spécifiées. Notez que les entreprises développant ProvenVisor et
+XtratuM ne communiquent pas de numéros de version pour leurs systèmes
+d'exploitation.]: Linux 6.15.2, MirageOS 4.9.0, PikeOS 5.1.3, ProvenVisor,
+RTEMS 6.1, seL4 13.0.0, Xen 4.20 et XtratuM.
+
+Les systèmes critiques sont exposés à deux types de menaces:
+- #box[_Les défaillances_: elles ne sont pas dues à un agent extérieur. L'ensemble
+des mesures prises pour y remédier relève de la @safety du système.]
+- #box[_Les attaques_: elles sont causées par une entité malveillante. L'ensemble
+des mesures prises pour les contrecarrer font parties de la @security du système.]
+
+L'étude met d'abord l'accent sur l'aspect @safety des systèmes d'exploitation,
+toutefois certains des systèmes listés ci-dessus sont dédiés à la @security
+informatique et des concepts liés à la sécurité seront donc abordés lorsque nous
+les examinerons.
 
 Avant de plonger plus avant dans les systèmes étudiés, il est important de
 cerner davantage le sujet et notamment certaines notions de base dans les
-sous-sections @kezako_os, @why_os qui seront utilisées tout au long de l'étude.
+sous-sections @kezako_os, @why_os et @criticity_real_time ci-dessous.
 
 == Qu'est-ce qu'un système d'exploitation? <kezako_os>
 
@@ -164,8 +188,7 @@ foisonnement de systèmes d'exploitation et en faire une zoologie complète sera
 hors sujet. Il est en fait difficile de caractériser rigoureusement ce qu'est
 un système d'exploitation et nous adoptons ici l'approche retenue dans
 @tanenbaum2015modern @tanenbaum1997operating @silberschatz2013operating pour
-définir ce concept. Nous appelons donc
-#definition[système d'exploitation]#footnote[En anglais
+définir ce concept. Nous appelons donc #definition[système d'exploitation]#footnote[En anglais
 _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
 privilégié du processeur. Le système en question
@@ -177,15 +200,17 @@ unifiées et parfois standardisées.
 
 == Pourquoi utiliser un système d'exploitation? <why_os>
 
-Au début de l'introduction, nous avons évoqué l'usage croissant des systèmes
-d'exploitation dans les systèmes critiques. L'usage d'un OS dans un tel contexte
-ne va pas de soi et une alternative viable est d'exécuter directement
-l'application sur la couche matérielle#footnote[On parle parfois de programme
-_bare metal_.]. Toutefois, l'utilisation d'un système d'exploitation procure un
-grand nombre de bénéfices essentiellement en facilitant la conception et la
-portabilité des applications. Le @compare_os_baremetal donne des éléments de
-comparaison entre la conception d'une application exécutée dans un OS ou dans
-un environnement _bare metal_.
+Bien que l'usage des systèmes d'exploitation dans les composants critiques se
+généralise, il n'est pas sans alternative. Une autre approche consiste à
+exécuter l'application directement sur la couche matérielle. On parle alors de
+programme @baremetal.
+
+Néanmoins, l'adoption d'un système d'exploitation procure des avantages considérables,
+principalement en facilitant la conception et la portabilité des applications.
+Le tableau @compare_os_baremetal livre quelques éléments de comparaison entre
+ces deux approches. Notez cependant que les bénéfices apportés par un OS varient
+considérablement d'un système. Comparer ces apports est l'un des enjeux de cette
+étude.
 
 #figure(
   table(
@@ -198,43 +223,67 @@ un environnement _bare metal_.
     [Élevée, grâce à des interfaces logicielles et des pilotes.],
     [Faible.],
 
-    [Débogage], [Facilité par de nombreux outils.], [Souvent plus complexe.],
+    [Débogage],
+    [Facilité par de nombreux outils, parfois intégrés dans l'OS.],
+    [Souvent plus complexe.],
 
     [Isolation en espace/temps],
     [Fourni par l'OS avec différents niveaux de garantie.],
-    [Absente.],
+    [Support absent.],
 
     [Multi-tâche],
     [Souvent supporté via le concept de processus/thread/partition.],
-    [Absent.],
+    [Support absent.],
 
     [Latence],
-    [Induite par l'exécution de routines.],
+    [Induite par l'exécution de routines et les basculement de contextes.],
     [Performance maximale offerte par le matériel.],
 
     [Certification],
     [Facilité dans le cas où l'OS a fait l'objet d'une certification. Dans le
     cas contraire la tâche peut-être plus complexe encore.],
-    [À refaire de zéro.]
+    [À refaire de zéro. Toutefois le code a certifié peut être considérablement
+    réduit par l'absence de l'OS.]
   ),
   caption: [Comparaison OS et _bare metal_.]
 ) <compare_os_baremetal>
 
-== Criticité et temps réel
+== Criticité et temps réel <criticity_real_time>
 
 Un système est dit #definition[critique] si sa défaillance peut
-entraîner des conséquences indésirables. Cela peut aller de la simple perte de
-données à la destruction matérielle, voire, dans les cas les plus graves, à la
-perte de vies humaines. La criticité d'un système est généralement évalué lors
-de sa conception et le choix d'une solutions informatique adaptée en est une
-étape importante, étant donné leur omniprésence dans les appareils modernes.
+entraîner des conséquences indésirables. Ses défaillances varient considérablement
+en nature et en gravité:
+- #box[Elles peuvent se limiter à la simple perte de données, comme dans le cas
+d'une base de données bancaire.]
+- #box[Elles peuvent aller jusqu'à des destructions matérielles, comme celles
+qui peuvent subvenir dans une centrale nucléaire ou une usine.]
+- #box[Dans les cas les plus graves, elles peuvent engendrer des pertes humaines,
+comme dans un accident d'avions ou la défaillance d'un système médical.]
+La criticité d'un système est généralement évalué lors de sa conception et le
+choix d'une solution informatique adaptée en est une étape importante.
 
-Un système informatique est dit #definition[temps-réel] lorsque
+Un système informatique est qualifié de #definition[temps-réel] lorsque
 celui-ci est capable de piloter un procédé physique à une vitesse adaptée à
-l'évolution de ce dernier. Un tel système doit donc respecter des limites et
-contraintes temporelles. Ils sont souvent présents dans des systèmes critiques.
+l'évolution de ce dernier. Un tel système doit donc impérativement respecter des
+limites et contraintes temporelles. Ils sont souvent présents dans des systèmes
+critiques.
 
-== Type de systèmes d'exploitation
+== Organisation et critères de comparaison
+
+Au travers de cette étude, les systèmes d'exploitation ont été étudiés et comparés
+suivant les critères détaillés ci-dessous. Il est noté que certains critères
+n'étaient pas pertinent pour l'ensemble des systèmes, auquel cas la section
+corresponde justifie son élision.
+
+L'étude est organisée suivant le plan suivant:
+- #box[Le chapitre @general_notions contient des généralités sur les systèmes
+d'exploitations et les interfaces matérielles. Les notions abordées sont ensuite
+librement utilisée dans les chapitres ultérieurs.]
+- #box[Les chapitres @linux, @mirageos, @pikeos, @provenvisor, @rtems, @sel4,
+@xen, @xtratum exposent chacun des OS étudiés.]
+- #box[Le chapitre @comp contient des tableaux comparatifs.]
+
+=== Type de systèmes d'exploitation
 Dans ce document, nous classons les systèmes d'exploitation étudiés en quatre
 grandes catégories:
 - #box[Les #definition[systèmes d'exploitation généralistes]
@@ -264,71 +313,168 @@ une image appelée un #definition[unikernel]. Celui-ci peut ensuite être exécu
 sur un hyperviseur ou en _bare-metal_, c'est-à-dire
 directement sur la couche matérielle.]
 
-== Systèmes d'exploitation étudiés
+=== Architectures supportées
+Pour chacun des systèmes d'exploitation étudiés, nous donnons une liste des
+différentes architectures supportées. Afin que cet effort soit tenable,
+nous avons sélectionné les architectures avec les critères suivants:
+- #box[L'architecture doit être utilisé dans de véritables systèmes critiques,]
+- #box[L'architecture doit être supportée nativement, c'est-à-dire que le
+système d'exploitation doit pourvoir s'exécuter sur une telle architecture
+sans avoir recourt à un mécanisme d'émulation,]
+- #box[Certain système ont une longue histoire rendant une documentation
+exhaustive en pratique très difficile. Nous nous bornons à un sous-ensemble
+des architectures et renvoyons le lecteur à la documentation officielle pour les
+architectures plus exotiques,]
 
-Il est important de noter que certains systèmes d'exploitations rentrent dans
-plusieurs catégories. Dans ce document nous examinons les systèmes
-d'exploitation suivants:
-- Linux 6.15.2 (_GPOS_, _hyperviseur_ et _RTOS_)
-- MirageOS 4.9.0 (_LibOS_)
-- PikeOS 5.1.3 (_hyperviseur_, _RTOS_)
-- ProvenVisor
-- RTEMS 6.1 (_RTOS_)
-- seL4 13.0.0
-- Xen 4.20 (_hyperviseur_)
-- XtratuM (_hyperviseur_, _RTOS_)
+Avec ces critères à l'esprit, nous avons retenu l'architectures
+suivantes: `ARM`, `x86`, `PowerPC`, `MIPS`, `RISC-V` et `SPARC`. Notez que
+ces dernières existent dans des versions 32 bits et 64 bits qui sont listées
+dans @architectures ci-dessous.
 
-Nous nous sommes efforcés de fournir des informations valables pour les
-versions spécifiées ci-dessus. Les entreprises développant ProvenVisor et
-XtratuM ne communiquent pas de numéros de version pour leurs systèmes
-d'exploitation.
+#figure(
+  table(
+    columns: (1fr, 2fr, 2fr),
+    stroke: 1pt + black,
+    align: left + horizon,
+    [Famille], [32 bits], [64 bits],
 
-== Tutoriels
+    [`ARM`],
+    [`ARMv7-A`],
+    [`ARMv8-A`],
 
-L'étude contient un certain nombres de tutoriels et exemples illustrant
-le fonctionnement des différents systèmes étudiés. Pour que ces exemples
-puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+    [`x86`],
+    [`x86-32`],
+    [`x86-64`],
 
-=== Xen & MirageOS
-Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
-d'un support pour l'hyperviseur _Xen_.
+    [`PowerPC`],
+    [`PPC 32 bits`],
+    [`PPC 64 bits`],
 
-#howto[mise en place d'un pont virtuel][
-  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
-  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
-  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
-  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
-  vous pouvez mettre en place un tel pont ainsi:
-  ```console
-  sudo ip link add br0 type bridge
-  sudo ip link set br0 up
-  sudo ip addr 10.0.0.1/24 dev br0
-  ```
+    [`MIPS`],
+    [`MIPS32`],
+    [`MIPS64`],
+
+    [`RISC-V`],
+    [`RV32`],
+    [`RV64`],
+
+    [`SPARC`],
+    [`SPARC v8`],
+    [`SPARC v9`]
+  ),
+  caption: [Architectures considérées dans l'étude.]
+) <architectures>
+
+#aside[][Le support d'une architecture donnée n'est en général pas suffisant pour
+que le système puisse s'exécuter sur une carte de cette architecture. Cela signifie
+en général que le programme peut être compilé vers le jeu d'instructions mais il
+reste un effort important à fournir si l'OS ne fournit pas un @bsp pour la carte
+considérée. Cet aspect n'est pas abordé en profondeur dans l'étude.]
+
+=== Support multi-tâche et temps-réel
+
+=== Support multi-processeur
+
+Au début du XXI#super[e] siècle, les architectures multi-processeurs se sont
+imposées dans l'ensemble des secteurs de l'informatique. Jusqu'au milieu des
+années 2000, la croissance exponentielle de la puissance de calcul était
+principalement soutenue par l'augmentation rapide des fréquences d'horloges
+des monoprocesseurs. Cette stratégie a cependant rencontré des limites physiques
+(mur thermique, courants de fuite, ...). L'industrie des
+microprocesseurs s'est alors tournée vers le parallélisme des architectures
+multi-processeurs pour maintenir la progression de la puissance de calcul.
+
+La diffusion de ces technologie dans les systèmes critiques a été freinée par
+d'importants défis @saidi2015shift. En effet, les architectures multi-processeur
+introduisent de nombreuses sources de non-déterminisme (interférences
+temporelles, prédiction de branche, ...). In fine, ce non-déterminisme rend
+les analyses statiques plus complexes et donc la certification de
+tels systèmes plus difficiles. Ces difficultés sont majorées dans les systèmes
+critiques mixtes @burns2017survey.
+
+Toutefois leur usage est désormais généralisé, principalement motivé par la
+nécessité d'accroître la puissance de calcul tout en permettant une meilleure
+intégration et une réduction de poids et de taille des systèmes embarqués,
+notamment dans les secteur de l'avionique et du spatial.
+
+Nous avons donc examiné le support de certaines architectures multi-processeur
+dans les systèmes d'exploitation étudié. Nous nous sommes en premier lieu
+intéressé au support d'architectures @smp et notamment le support des processeurs
+multi-cœur qui sont très répandu. Il était aussi pertinent d'examiner le support
+d'architectures @amp et notamment les @soc.
+
+TODO: Dans le cadre @smp, le masquage des interruptions seuls ne suffit pas à
+garantir l'isolation d'une section critique.
+
+=== Partitionnement
+
+=== Corruption de la mémoire
+
+Nous avons étudié le support logiciel des différents systèmes visant à prévenir
+la corruption de la mémoire. On distingue deux types d'erreurs:
+- #box[Les @soft_error:pl sont dues à un événement exceptionnel et transitoire qui
+corrompt des données. Par exemple le rayonnement de fond peut produire un basculement
+de bits (_bit flips_). Ces erreurs peuvent être souvent corrigées à condition
+de mettre en places des mesures préventives.]
+- #box[Les @hard_error:pl sont dues à un dysfonctionnement matériel au niveau de la
+puce mémoire. Ces erreurs ne peuvent pas être corrigées et nécessitent un remplaçant
+de la puce ou, à défaut, une isolation de celle-ci.]
+
+Dans cette étude nous nous sommes limités à la mémoire principale et plus
+précisément aux mémoires @dram équipées de
+puces supplémentaire pour gérer des codes correcteurs. On parle de mémoire @ecc.
+
+#aside[support matériel de l'ECC][
+  Les mémoires @ecc nécessitent un support spécifique par le contrôleur mémoire,
+  le _CPU_ et le _BIOS_. Si ce support est rare sur le matériel grand public,
+  il est en revanche commun dans celui destiné aux serveurs.
 ]
 
-== Critères de comparaison
+=== Support de watchdog
 
-- #box[Les architectures matérielles supportées. Afin que cette comparaison est
-un sens nous nous bornons ici aux architectures sur lesquelles il est possible
-d'exécuter nativement le système d'exploitation, c'est-à-dire sans avoir recourt
-à un mécanisme d'émulation.]
-- #box[Dans le cadre SMP, le masquage des interruptions seuls ne suffit pas à garantir
-l'isolation d'une section critique.]
-- #box[Le temps de démarrage. C'est un enjeu important à la fois dans l'hébergement
-lorsqu'on veut avoir recours à des techniques de grappe. C'est aussi un enjeu
-dans l'embarqué. C'est important car en cas de défaillance, on veut que la machine
-redémarre vite afin de réduire le temps où le service est indisponible et réduire
-les pertes engendrées.]
+Un #definition[watchdog] est un dispositif matériel ou logiciel conçu
+pour détecter le blocage d'un système informatique, et de réagir
+de manière autonome pour ramener ce système dans un état normal. Qu'il s'agisse
+d'un dispositif matériel ou logiciel, le principe du watchdog consiste le plus
+souvent à demander au système surveillé d'envoyer régulièrement un signal à
+un système surveillant. Le système surveillé dispose d'une fenêtre de temps
+pour cette action. S'il n'effectue pas la tâche dans le temps imparti, il est
+présumé dysfonctionnel. Le système surveillant peut alors tenter de remédier
+à la situation. Le plus souvent cela consiste à redémarrer la machine.
 
-== Organisation de l'étude
+Les appareils embarqués et les serveurs à haute disponibilité ont souvent
+recours aux _watchdogs_ pour améliorer leur fiabilité. Pour chacun des systèmes
+nous avons étudiés le support des _watchdog_ logiciels et matériels et avons
+fourni un exemple d'utilisation lorsque cela était possible.
 
-L'étude est organisée suivant le plan suivant:
-- #box[Le chapitre @general_notions contient des généralités sur les systèmes
-d'exploitations et les interfaces matérielles. Les notions abordées sont ensuite
-librement utilisée dans les chapitres ultérieurs.]
-- #box[Les chapitres @linux, @mirageos, @pikeos, @provenvisor, @rtems, @sel4,
-@xen, @xtratum exposent chacun des OS étudiés.]
-- #box[Le chapitre @comp contient des tableaux comparatifs.]
+=== Support de langages de programmation en @baremetal
+
+Dans l'étude PPAQSE 2024, nous avons proposé une comparaison de différents
+langages de programmation, notamment dans un contexte @baremetal. Porter une
+application conçue pour un environnement @baremetal vers une partition d'un
+hyperviseur est une question natuelle lorsqu'on souhaiter porter un ancien programme
+vers une nouvelle plateforme. Nous avons examiné la possibilité de faire un
+tel portage pour des programmes écrit dans les langages suivant:
+_OCaml_, _C_, _Rust_ et _Ada_.
+
+=== Temps de démarrage
+
+Pour les hyperviseurs, le temps de démarrage des @vm est une métrique importante
+de leur performance. En cas de défaillance d'une @vm, on espère
+que celle-ci soit relancée aussi rapidement que possible. Un autre usage
+courant, notamment dans le cloud computing, est de lancer des @vm à la demande
+pour s'adapter au mieux aux variations de la charge de travail. Ces @vm doivent
+se lancer rapidement pour garantir des temps de réponse acceptables.
+
+=== Maintenabilité
+
+L'usage d'un @cots présente le risque d'une rupture de la maintenance du système.
+
+La maintenabilité du système d'exploitation est évalué à travers différents
+sous-critères:
+- La taille du code source.
+- La modularité de la base de code et la complexité des invariants de celle-ci.
+- L'organisation et le nombres de développeurs.
 
 = Conceptions générales
 
@@ -596,16 +742,7 @@ sur les interruptions.
 == Corruption de la mémoire
 
 Dans cette section, on s'intéresse à la corruption de la mémoire et plus
-précisément à la détection et la correction de ces erreurs. On distingue
-deux types d'erreurs:
-- #box[Les _soft errors_ sont dues à un événement exceptionnel et transitoire qui
-corrompt des données. Par exemple le rayonnement de fond peut produire un basculement
-de bits (_bit flips_). Ces erreurs peuvent être souvent corrigées à condition
-de mettre en places des mesures préventives.]
-- #box[Les _hard errors_ sont dues à un dysfonctionnement matériel au niveau de la
-puce mémoire. Ces erreurs ne peuvent pas être corrigées et nécessitent un remplaçant
-de la puce ou, à défaut, une isolation de celle-ci.]
-
+précisément à la détection et la correction de ces erreurs.
 Une méthode communément utilisée pour détecter et corriger les erreurs consiste
 à recourir à un code correcteur d'erreurs (en anglais _Error Correcting Code_, abrégé _ECC_).
 Cette méthode permet de corriger la majorité des _soft errors_.
@@ -659,21 +796,6 @@ quelques unes d'entre elles ainsi que leurs caractéristiques clés.
   ),
   caption: [Interfaces de pilotage pour le _scrubbing_],
 ) <scrubbing_interfaces>
-
-== Watchdog <watchdog>
-
-Un #definition[watchdog] est un dispositif matériel ou logiciel conçu
-pour détecter le blocage d'un système informatique, et de réagir
-de manière autonome pour ramener ce système dans un état normal. Qu'il s'agisse
-d'un dispositif matériel ou logiciel, le principe du watchdog consiste le plus
-souvent à demander au système surveillé d'envoyer régulièrement un signal à
-un système surveillant. Le système surveillé dispose d'une fenêtre de temps
-pour cette action. S'il n'effectue pas la tâche dans le temps imparti, il est
-présumé dysfonctionnel. Le système surveillant peut alors tenter de remédier
-à la situation. Le plus souvent cela consiste à redémarrer la machine.
-
-Les appareils embarqués et les serveurs à haute disponibilité ont souvent
-recours aux _watchdogs_ pour améliorer leur fiabilité.
 
 == Profilage <profiling>
 
@@ -1862,26 +1984,76 @@ _ProvenCore_ est conçu pour fonctionner avec le @tee _TrustZone_ de l'architect
 
 = RTEMS <rtems>
 
-_RTEMS_ (_Real-Time Executive for Multiprocessor Systems_) est un _RTOS_ libre
-conçu pour les systèmes embarqués. Son développement débute à la fin des années 80
-et se poursuit jusqu'à nos jours. Il est aujourd'hui maintenu par une communauté
-de bénévoles. Le système propose une API _POSIX_ et une pile réseau _TCP/IP_ basée
-sur celle du projet _FreeBSD_.
+_RTEMS_ (_Real-Time Executive for Multiprocessor Systems_) est un _RTOS_ libre conçu
+pour les systèmes embarqués. L'ensemble des fonctionnalités
+offertes par _RTEMS_ inclut:
+- #box[Un ordonnanceur préemptif basé sur les priorités et les pilotés par les événements,]
+- #box[Un support pour le multitâche avec des mécanismes de communications et de
+synchronisation entre les tâches,]
+- #box[Le support pour des architectures multiprocesseurs, aussi bien homogènes que hétérogènes
+(voir la sous-section @rtems_multiprocessors),]
+- #box[Une modularité importante permettant de configurer statiquement l'image.]
+- #box[Une @api _POSIX_ et une pile réseau _TCP/IP_ basée sur celle du projet _FreeBSD_.]
 
+Le projet est initié en 1988 par l'entreprise _OAR_ (_On-Line Appications
+Research Corporaton_) sous contrat de l'_U.S. Army Missile Command_. Cette
+dernière voulait un système d'exploitation
+temps-réel basé sur des normes libres et exempt de redevances @rtems_oar. À
+cette époque, le système est destiné à un usage militaire, en particulier dans
+des missiles#footnote[Le sigle _RTEMS_ signifiait alors _Real-Time Executive
+for Missile Systems_.]. En 1993, une première version du projet est rendue
+publique. À partir de 1995, la gestion du projet est entièrement confiée à
+_OAR_ qui assure la maintenance et le développement de _RTEMS_, ainsi que la
+maintenance de son infrastructure web. Pendant les années 90, _RTEMS_ commence
+à être utilisé dans le civil, notamment par la _NASA_ et l'@esa. Le projet est
+alors renommé _Real-Time Executive for Multiprocessor Systems_ pour souligner
+ce changement ainsi que le support des systèmes multiprocesseurs. De nos jours,
+il est utilisé dans des missions spatiales et notamment la constellation de
+satellites _Galileo_.
+
+== Architectures supportées <rtems_architectures>
+
+Du fait de sa longue histoire, _RTEMS_ a supporté et supporte encore aujourd'hui
+un grand nombre d'architectures. Nous nous concentrons ici sur les architectures
+énumérées dans l'introduction de cette étude. D'après
+@rtems_architectures_website, _RTEMS_ supporte les familles d'architectures suivantes
+dans leur version 32bits et 64bits: _x86_, _ARM_, _PowerPC_, _MIPS_, _RISC-V_, _SPARC_.
+Le support se fait via des @bsp. Par exemple, le projet distribue un @bsp pour
+les processeurs _LEON2_ et _LEON3_ ayant pour architectures _SPARC v8_.
+
+== Support multi-processeur <rtems_multiprocessors>
+
+Cette section aborde le support d'architectures multi-processeur sous _RTEMS_.
+
+=== Architectures @smp
+
+_RTEMS_ offre un support pour les architectures @smp des processeurs
+_x86_, _ARM_, _PowerPC_, _RISC-V_ et _SPARC_. Ce support est toutefois relatif
+à chaque @bsp.
+
+Le support @smp n'est pas activé par défaut. Il requière d'être activé durant
+la phase de compilation du noyau.
+
+=== Architectures @amp
+
+== Temps de démarrage <rtems_booting_time>
+
+== Maintenance <rtems_maintening>
+
+== Licences <rtems_licenses>
+
+_RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
+et open-sources avec pour licence principale BSD-2. Le noyau peut être utilisé ou
+être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
+
+== Draft
 - Il offre un support pour les architectures @smp et @amp.
 - Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
 - Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
 - ARINC 653 RTEMS
 - Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
 
-== Architectures supportées <rtems_architectures>
-
-_RTEMS_ supporte les architectures suivantes @rtems_licenses_website:
-_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
-
-Le support se fait via des @bsp.
-
-== Support multi-processeur <rtems_multiprocessors>
+== Support multi-processeur
 
 _RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
 mais également pour les architectures @amp.
@@ -1897,6 +2069,36 @@ Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
 - Support pour les processeurs @smp LEON3 et LEON4. Ce sont des processeurs _SPARC v8_. LEON est un processeur 32bits libre développé par @esa.
 - Il existe un support affinité des tâches. Autrement dit on peut spécifier sur quel sous-ensemble de cœur une tâche peut s'exécuter.
 - Il y a un support pour la migration de tâche.
+
+== Tutoriel <rtems_tutoriel>
+
+Les exemples de ce chapitre ont été réalisés sur une carte _Raspberry PI 4_.
+En plus de cette carte, vous aurez sans doute besoin d'un adaptateur _UART_ vers
+_USB_ afin d'interagir avec le noyau installé sur la carte via ses pins `TX`,
+`RX` et `Ground`.
+
+#warning[][
+  Prenez garde à ce que l'adapteur fonctionne en 3,3V, sans quoi vous détruirez
+  votre _Raspberry_.
+]
+
+Un fichier _Docker_ pour générer la chaîne de compilation _RTEMS_ pour
+_Raspberry_ est disponible dans le dossier `./rtems/dockers/`.
+Vous pouvez lancer sa génération avec la commande suivante:
+```console
+make setup -C ./rtems
+```
+ce qui prend environ une demie heure pour terminer. Finalement, notez que
+les images produites par cette chaîne de compilation nécessite un @bootloader.
+Le plus simple est d'utiliser le @bootloader de _Raspberry OS lite_ et de remplacer
+le fichier `/boot/kernel8.img` par l'image produire.
+
+Après avoir branché le _Raspberry_ sur votre ordinateur et avant de le mettre
+sous tension, vous pouvez lancez la commande suivante afin d'interagir avec l'interface _UART_:
+```
+minicom -D /dev/ttyUSB0
+```
+Le nom de l'interface _TTY_ peut varier suivant l'adaptateur utilisé.
 
 == Partionnement <rtems_partioning>
 
@@ -1928,21 +2130,36 @@ les verrous et le thread dispatch. Cela produit une sortie XML. @rtems_test_suit
 
 == Watchdog <rtems_watchdog>
 
-_RTEMS_ ne fournit pas d'API unifié pour gérer les _watchdogs_ matériels.
-Le support est implémenté au niveau du _BSP_ (_Board Support Package_).
+_RTEMS_ ne fournit pas à notre connaissance d'API unifiée pour gérer les
+_watchdogs_ matériels. Le support est implémenté au niveau du
+@bsp. Ce support est disponible pour le _Raspberry PI 4_ comme nous l'illustrons
+dans la sous-section @rtems_watchdog_raspberry.
 
-===  Exemple avec un Raspberry PI
+=== Watchdog matériel avec un _Raspberry PI 4_ <rtems_watchdog_raspberry>
+
+Le dossier `./rtems/examples/watchdog` contient un exemple d'interaction avec
+le watchdog d'un Raspberry.
 
 #figure(
   snippet("./rtems/examples/watchdog/src/init.c", lang:"c"),
-  caption: [Exemple d'interaction avec un _watchdog_ sur un _Raspberry PI B 4_.]
+  caption: [Interaction avec un _watchdog_ sur un _Raspberry PI 4_.]
 ) <rtems_watchdog_example>
+
+La commande suivante compile et produit une image dans `./rtems/artifacts/watchdog.img`.
+```console
+make watchdog -C ./rtems/watchdog
+```
 
 === Time Manager
 
 Il est possible d'implémenter un _watchdog_ logiciel via le _Timer Manager_.
 Plus précisément, on peut mettre en place un timer avec la fonction
 `rtems_timer_fire_after`.
+
+#figure(
+  snippet("./rtems/examples/timer/src/init.c", lang:"c"),
+  caption: [Exemple d'interaction avec un _watchdog_ logiciel.]
+) <rtems_deadman_example>
 
 == Qualifications & certifications <rtems_certifications>
 
@@ -1965,20 +2182,23 @@ un model-checker. Edisoft a encore contribué sur cette version.
 
 - Promela est le langage de formalisation tandis que SPIN est le model checker.
 
-== Licences <rtems_licenses>
-
-`RTEMS` est un logiciel libre distribué sous une multitude de licences libres
-et open-sources avec pour licence principale BSD-2. Le noyau peut utiliser ou
-être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
-
 = seL4 <sel4>
+
+Le noyau _seL4_ est un micronoyau temps-réel de troisième génération de la
+famille _L4_. Il intègre également un hyperviseur de type 1. Sa conception
+débute en 2006 à l'institut de recherche _NICTA_#footnote[Acronyme pour
+_National Information and Communications Technology Australia_.], aujourd'hui
+connu sous le nom de Trustworthy Systems. C'est un noyau orienté sécurité dont
+l'un des premiers objectifs était d'être entièrement vérifié à l'aide de
+méthodes formelles. Grâce à ces efforts, il peut aujourd'hui être certifié avec
+le niveau le plus exigent dès Critères communs.
 
 Le noyau _seL4_ est un micronoyau de troisième génération. Il inclut un
 hyperviseur de type 1 et un _RTOS_. Sa conception a débuté en 2006 à
 l'institut de recherche _NICTA_ #footnote[Acronyme pour _National Information
 and Communications Technology Autralia_)]. L'objectif était de créer un
 système d'exploitation capable de satisfaire les
-exigences de sécurité et de sûreté des _Critères Communs_. À ce titre, les
+exigences de sécurité et de sûreté des @cc. À ce titre, les
 contraintes induites par la vérification formelle du noyau ont été prises
 en compte dès le départ du projet. Comme son nom le suggère, dans son design,
 _seL4_ est fortement inspiré du micronoyau de seconde génération _L4_. Ainsi, il
@@ -2063,6 +2283,10 @@ Le noyau de `seL4` est un logiciel libre distribué principalement sous licence
 `GNU General Public License version 2 only (GPL-2.0)`. Le code utilisateur et
 les pilotes peuvent être distribués sous n'importe quelle licence @sel4_licensing.
 
+== draft
+
+Il a l'avantage de supporté les partitions mixtes @vanderleest2016open.
+
 `seL4` a fait l'objet d'une spécification et d'une vérification formelle à
 l'aide de l'assistant de preuve _Isabelle/HOL_. La correction
 #footnote[La correction d'un algorithme signifie qu'il a été démontré que cet
@@ -2077,22 +2301,205 @@ fuites mémoire et de dépassements d'entier.
 = Xen <xen>
 
 _Xen_ est un hyperviseur de type 1 développé par le consortium d'entreprises
-#link("https://xenproject.org")[Xen Project]. Il offre à la fois des fonctionnalités
-de _paravirtualisation_ et de _HVM_.
+#link("https://xenproject.org")[Xen Project]. Ces un pionnier de la
+@paravirtualization mais il offre aussi un support étendu pour la
+virtualisation assistée par le matériel. Il est aujourd'hui très utilisé
+dans le monde de l'hébergement et du cloud computing.
 
-== Architectures supportées
+L'histoire de _Xen_ est étroitement liée à l'évolution de la virtualisation et
+du cloud computing. Son histoire débute en 1999 avec le projet de recherche
+_XenoServers_ à l'université de Cambridge. Le chercheur
+Ian Pratt, entouré de plusieurs étudiants, propose une infrastructure pour
+exécuter plusieurs services sur des machines virtuelles Java.
+L'idée fondatrice était de garantir l'isolation des services,
+même lorsque certains d'entre eux n'étaient pas dignes de confiance.
 
-L'hyperviseur _Xen_ supporte les architectures suivantes: _x86-32_, _x86-64_,
-_ARM v7_ et _ARM v8_.
+En 2003, une première version de l'hyperviseur _Xen_ est publié sous licence
+libre. Contrairement à son prédécesseur _XenoServers_, il permet d'exécuter
+n'importe quelle application dans une machine virtuelle tournant sur un noyau
+_Linux_ modifié. Ces modifications contournent les limites
+de performances de la virtualisation complète sur architecture _x86_ en permettant
+au noyau virtualisé de collaboré avec l'hyperviseur. C'est la naissance de la
+@paravirtualization.
 
-Il existe également un projet pour supporter _Xen_ sur _PowerPC_ mais il n'est plus
-activement maintenu.
+En 2005, le support pour la virtualisation assistée par le matériel est ajoutée
+en étroite collaboration avec Intel qui développe sa technologie _Intel VT-X_. Cette
+technologie permet la virtualisation de systèmes d'exploitation à sources fermées
+comme _Windows_.
 
-Il existe un projet pour le support de _RISC-V_.
+Cette même année, la société _XenSource Inc_ est fondée pour continuer le
+développement de _Xen_ et faire face à la concurrence. Elle est racheté en 2007
+par _Citrix_ qui propose toujours une version commerciale de _Xen_ baptisé
+_Citrix Hypervisor_.
 
-=== Support multi-cœur
+Aujourd'hui le développement de _Xen_ se concentre sur le support d'autres
+architectures que _x86_, et notamment _ARM_ (voir la sous-section
+@xen_architectures) et l'utilisation combinée de la @paravirtualization et
+de la virtualisation assistée par le matériel (voir la sous-section
+@xen_partitioning).
+
+== Tutoriel <xen_tutoriel>
+
+Les exemples de cette section ont été lancé sur une machine _x86_ avec _Xen_.
+L'installation de _Xen_ est grandement simplifié par son support dans certaine
+distribution _GNU/Linux_. Il vous suffit d'installer les paquets appropriés puis
+de redémarrer en choisissant l'hyperviseur _Xen_ au démarrage.
+
+== Architectures supportées <xen_architectures>
+
+#warning[][
+  Dans cette section nous utiliserons les abréviations _PV_, _HVM_ et _PVH_
+  qui désignent des types de partitions sous _Xen_. Ces notions sont détaillées
+  dans la section @xen_partitioning.
+]
+
+À l'origine _Xen_ ne supportait que l'architecture _x86_ pour des partitions de
+type _PV_. Par la suite, la virtualisation assistée par le matériel a été ajoutée
+pour les technologies _Intel VT-X_ puis _AMD V_ sous la forme de partitions de
+type _HVM_.
+
+L'hyperviseur _Xen_ supporte les architectures suivantes: _x86-32_ à partir de
+la version P6#footnote[Cette version correspond à l'introduction des processeurs
+_Intel Pro_ en 1995.], _x86-64_, _ARM v7_ et _ARM v8_. _Xen_ a également
+supporté l'architecture _IA64_ jusqu'à la version 4.2. Il existe des travaux en
+cours pour supporter les architectures _PowerPC_ et _RISC-V_. Un support
+préliminaire de ces architectures est disponibles depuis _Xen 4.20_ @xen_project_4_20.
+Quant à la virtualisation assistée par le matériel de type @hvm, elle nécessite les
+extensions de virtualisation _Intel VT-X_ ou _AMD-V_ sur _x86_ et les
+_Virtualization Extensions_ sur _ARM_ @xen_arm_hvm.
+
+#let scell(color: white, txt) = table.cell(fill: color.lighten(40%), [#txt])
+
+#let supported(txt) = scell(color:green, txt)
+#let notsupported(txt) = scell(color:red, txt)
+#let partiallysupported(txt) = scell(color:yellow, txt)
+#let deprecated(txt) = scell(color:black, txt)
+
+#figure(
+  table(
+    columns: 4,
+    align: (left, left, left, left),
+    [Architecture], [PV], [HVM], [PVH],
+    [_x86-32_],  partiallysupported([$gt.eq$ P6]), notsupported([]), [],
+    [_x86-64_],  supported([]), supported([$+$ _Intel VT-X_]), [],
+    [_ARMv7_],   deprecated([]), notsupported([]), supported([$+$ _Virtualization Extensions_]),
+    [_ARMv8_],   deprecated([]), notsupported([]), supported([$+$ _Virtualization Extensions_]),
+    [_PowerPC_], partiallysupported[_Xen_ $gt.eq$ 4.20], [], [],
+    [_RISC-V_],  partiallysupported[_Xen_ $gt.eq$ 4.20], [], []
+  ),
+  caption: [Récapitulatif des architectures supportées par l'hyperviseur _Xen_]
+)
+
+== Support multi-processeur <xen_multiprocessor>
 _Xen_ supporte les architectures multi-cœur. L'hyperviseur offre la possibilité
 d'allouer les cœurs à certains systèmes invités grâce au concept de _virtual CPU_.
+
+== Partitionnement <xen_partitioning>
+_Xen_ propose trois types de partitions différentes:
+- #box[Les partitions de type #definition[PV] permettent la @paravirtualization totale du
+système invité. Elles nécessitent une adaptation de ce dernier mais aucun support matériel
+n'est _a priori_ requis. Ces partitions offrent de bonnes performances. Il s'agit
+du mode originel de _Xen_ pour l'architecture _x86_.]
+- #box[Les partitions de type #definition[HVM] permettent la virtualisation assistée
+par le matériel. Elles nécessitent des extensions matérielles (voir la sous-section
+@xen_architectures) mais aucune modification du système d'exploitation
+hôte#footnote[Ce dernier point est crucial pour support des systèmes d'exploitation
+à sources fermées, comme par exemple _Windows_]. Les performances
+sont généralement moindre que pour les partitions de type _PV_.]
+- #box[Les partitions #definition[PVH] cherchent à offrir le meilleur des deux types
+de partitions décrits ci-dessus. Certaines parties du systèmes (les entrées/sorties par
+exemples) sont paravirtualisées et d'autres (comme le _CPU_) reposent sur de la
+virtualisation assisté par le matériel. Ce type de partition offre souvent de meilleures
+performances que les partitions _PV_ et _HVM_ sans avoir besoin de modifiant autant
+le noyau hôte.]
+
+_Xen_ utilise le terme de _domaine_ pour qualifier les conteneurs des machines
+virtuelles en cours d'exécution. Il existe trois types de domaines:
+- #box[Le domaine 0 (abrégé _dom0_) désigne un domaine privilégié qui est automatiquement
+lancé au démarrage de l'hyperviseur. Le système d'exploitation hôte est généralement
+une distribution _Linux_ modifiée (voir la section @xen_os).]
+- #box[Les domaines utilisateurs (abrégé _domU_) sont les domaines qui contiennent les
+OS invités. Il existe deux types de tels domaines. Les domaines de paravirtualisation
+et les domaines _HVM_.]
+- #box[_dom0less_.]
+
+
+== Corruption de la mémoire <xen_memory_corruption>
+
+== Perte du flux d'exécution
+
+== Monitoring <xen_monitoring>
+
+== Profilage <xen_profiling>
+
+=== Support de langages de programmation en @baremetal <xen_baremetal>
+
+== Watchdog <xen_watchdog>
+
+_Xen_ permet la mise en place d'un _watchdog_ dans _dom0_ ou dans des domaines
+utilisateurs. L'exemple ci-dessous met en place un _watchdog_ qui doit être
+réinitialisé d'en un laps de temps de 30 secondes:
+#figure(
+  snippet("./xen/examples/watchdog/init.c", lang:"c"),
+  caption: [Exemple d'interaction avec un _watchdog_ sous _Xen_.]
+) <xen_watchdog_example>
+
+Pour compiler ce programme, tapez:
+```console
+make watchdog -C ./xen
+```
+et pour lancer le programme dans le domaine utilisateur, tapez:
+```console
+./xen/artifacts/watchdog
+```
+Il suffit alors de fermer ce programme avec `CTRL-C` pour cesser de réinitialiser
+le _watchdog_. Par défaut, _Xen_ terminera le domaine utilisateur. Ce
+comportement peut être changé avec l'option `on_watchdog` du fichier de
+configuration de _xenlight_. Par exemple, l'option `on_watchdog='reboot'`
+provoquera le redémarrage du domaine.
+
+_Xen_ distribue un service _xenwatchdogd_ pour lancer les _watchdogs_
+@xen_watchdog_man_page. Le service est lancé en précisant un _timeout_ et un
+_sleep_ ainsi:
+```console
+xenwatchdogd 30 15
+```
+_Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
+implèmente l'API décrit dans la section @linux_watchdog_api.
+
+== Masquage des interruptions <xen_masking>
+
+Les interruptions matérielles sont virtualisées via le concept
+d'_event channels_. Il est possible de masquer ces évènements via des masques
+@xen_event_channel_internals.
+
+== Maintenabilité
+
+_Xen_ est réputé pour avoir un @tcb plus important que d'autres hyperviseurs,
+notamment dû à la taille importante de ces sources. Il est toutefois important
+de souligner que le volume de code varie d'un facteur 10 entre les des architectures
+les mieux supportées, à savoir _x86_ et _ARM_.
+
+Un autre facteur important qui augmente la @tcb est l'usage d'un noyau _Linux_
+dans le _dom0_. La compromission de ce système compromettant tout le système,
+il ne peut en être exclu.
+
+== Licences <xen_licenses>
+
+_Xen_ est un logiciel libre distribué majoritairement sous licence `GPLv2`.
+Toutefois certaines parties du projet sont distribuées sous des licences
+plus permissives afin de pas contraindre les licences des logiciels applicatifs
+ou des systèmes d'exploitation pouvant être portés sur _Xen_. Ces exceptions
+sont spécifiés dans les en-têtes des fichiers concernés. Plus d'informations
+sont disponibles dans le fichier `COPYING` du dépôt git @xen_licensing.
+
+== Temps de démarrage <xen_booting>
+
+== Draft
+
+- C'est quoi un stubdomain?
+- Il semble que les dom0less permettent d'accélérer le temps de démarrage
+des domaines.
 
 == Mise en place d'une machine virtuelle Alpine
 
@@ -2130,18 +2537,7 @@ sudo xl create alpine.cfg -c
 Le login par défaut est `root` sans mot de passe. Pour quitter la console de
 la VM, tapez `CTRL-]`.
 
-== Partitionnement
-
 === Domaines
-
-_Xen_ utilise le terme de _domaine_ pour qualifier les conteneurs des machines
-virtuelles en cours d'exécution. Il existe deux types de domaines:
-- #box[Le domaine 0 (abrégé _dom0_) désigne un domaine privilégié qui est automatiquement
-lancé au démarrage de l'hyperviseur. Le système d'exploitation hôte est généralement
-une distribution _Linux_ modifiée (voir la section @xen_os).]
-- #box[Les domaines utilisateurs (abrégé _domU_) sont les domaines qui contiennent les
-OS invités. Il existe deux types de tels domaines. Les domaines de paravirtualisation
-et les domaines _HVM_.]
 
 #figure(
   cetz.canvas({
@@ -2164,6 +2560,8 @@ Un _driver domain_ est un domaine utilisateur de _Xen_ qui a pour responsabilit�
 gérer un périphérique. Il exécute un noyau minimal avec uniquement le pilote pour
 ce périphérique. Ainsi, si le pilote plante, les autres domaines et en particulier
 _dom0_ continuent de fonctionner tandis que le _driver domain_ peut être relancé.
+
+Le noyau minimal peut être _Mini-OS_.
 
 == OS supportés <xen_os>
 
@@ -2247,44 +2645,6 @@ clés du code de _Xen_. Ils sont activés via  _xentrace_ lorsqu'il est exécut�
 dans le domaine _dom0_. Ce dernier produit alors un fichier binaire qui peut
 ensuite être analysé par _xenanalyze_#footnote[Contrairement à _xentrace_,
 _xenanalyze_ n'est pas distribué avec _Xen_.].
-
-== Watchdog <xen_watchdog>
-
-_Xen_ permet la mise en place d'un _watchdog_ dans _dom0_ ou dans des domaines
-utilisateurs. L'exemple ci-dessous met en place un _watchdog_ qui doit être
-réinitialisé d'en un laps de temps de 30 secondes:
-#figure(
-  snippet("./xen/watchdog.c", lang:"c"),
-  caption: [Exemple d'interaction avec un _watchdog_ sous _Xen_.]
-) <xen_watchdog_example>
-
-Pour compiler et lancer le programme dans le domaine utilisateur, tapez:
-```console
-gcc watchdog.c -o watchdog $(pkg-config --cflags --libs xencontrol)
-./watchdog
-```
-Il suffit alors de fermer ce programme avec `CTRL-C` pour cesser de réinitialiser
-le _watchdog_. Par défaut, _Xen_ terminera le domaine utilisateur. Ce
-comportement peut être changé avec l'option `on_watchdog` du fichier de
-configuration de _xenlight_. Par exemple, l'option `on_watchdog='reboot'`
-provoquera le redémarrage du domaine.
-
-_Xen_ distribue un service _xenwatchdogd_ pour lancer les _watchdogs_
-@xen_watchdog_man_page. Le service est lancé en précisant un _timeout_ et un
-_sleep_ ainsi:
-```console
-xenwatchdogd 30 15
-```
-
-_Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
-implèmente l'API décrit dans la section @linux_watchdog_api.
-
-== Licences & brevets <xen_licenses>
-
-L'hyperviseur `Xen` est un logiciel libre distribué principalement sous licence
-`GPL-2.0`. Certaines parties du projet sont distribués sous des licences libres
-plus permissives afin de pas contraindre les licences des logiciels
-utilisateurs @xen_licensing.
 
 = XtratuM <xtratum>
 
@@ -2440,18 +2800,6 @@ Les OS que nous étudions se répartissent ainsi dans cette classification:
 = Architectures supportées & multi-cœur
 
 == Architectures supportées
-Dans cette étude nous nous focalisons sur les architectures de processeur utilisées
-dans l'embarqué critique. Nous avons retenus les architectures suivantes:
-- L'architecture 32bits `ARMv7`.
-- L'architecture 64bits `ARMv8` qui propose deux modes d'exécution:
-  - `Aarch32` permettant l'exécution de programme compilé vers le jeu d'instructions de l'architecture `ARMv7`.
-  - `Aarch64` le mode d'exécution 64bits.
-- L'architecture 32bits `x86-32`.
-- L'architecture 64bits `x86-64`.
-- `PowerPC`
-- `MIPS`
-- `RISC-V`
-- `SPARC`
 
 Le tableau suivant résume le support de ces architectures de processeur pour les
 systèmes d'exploitation de cette étude. Lorsque l'OS est un hyperviseur, il
@@ -2614,6 +2962,31 @@ nécessitant des privilèges plus élevés.]
 - #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
 est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
 tels systèmes d'exploitation dans cette étude.]
+
+=== Tutoriels
+
+L'étude contient un certain nombres de tutoriels et exemples illustrant
+le fonctionnement des différents systèmes étudiés. Pour que ces exemples
+puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+
+=== Xen & MirageOS
+Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
+d'un support pour l'hyperviseur _Xen_.
+
+#howto[mise en place d'un pont virtuel][
+  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
+  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
+  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
+  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
+  vous pouvez mettre en place un tel pont ainsi:
+  ```console
+  sudo ip link add br0 type bridge
+  sudo ip link set br0 up
+  sudo ip addr 10.0.0.1/24 dev br0
+  ```
+]
+
+
 
 #glossary(
   title: "Glossaire",

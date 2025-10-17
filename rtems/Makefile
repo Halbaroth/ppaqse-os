@@ -1,11 +1,34 @@
 DOCKER:=docker
 
-setup-toolchain:
+setup:
 	$(DOCKER) build -t ppaqse-os/rtems-toolchain --file ./dockers/toolchain.dockerfile .
 
-toolchain: setup-toolchain
+shell: setup
 	$(DOCKER) run                                     \
 		--user ppaqse                                   \
-		-it ppaqse-os/rtems-toolchain /bin/bash
+		-v ./artifacts:/home/ppaqse/artifacts           \
+		-it ppaqse-os/rtems-toolchain                   \
+		/bin/bash
 
-.PHONY: setup-toolchain toolchain
+hello_world: setup
+	$(DOCKER) run                                     \
+		--user ppaqse                                   \
+		-v ./artifacts:/home/ppaqse/artifacts           \
+		-it ppaqse-os/rtems-toolchain                   \
+		/bin/bash -c "make -C /home/ppaqse/examples/hello_world/"
+
+watchdog: setup
+	$(DOCKER) run                                     \
+		--user ppaqse                                   \
+		-v ./artifacts:/home/ppaqse/artifacts           \
+		-it ppaqse-os/rtems-toolchain                   \
+		/bin/bash -c "make -C /home/ppaqse/examples/watchdog/"
+
+timer: setup
+	$(DOCKER) run                                     \
+		--user ppaqse                                   \
+		-v ./artifacts:/home/ppaqse/artifacts           \
+		-it ppaqse-os/rtems-toolchain                   \
+		/bin/bash -c "make -C /home/ppaqse/examples/timer/"
+
+.PHONY: setup shell hello_world

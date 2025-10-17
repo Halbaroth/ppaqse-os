@@ -7,8 +7,8 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    BRIDGE="br0"
-    IFACE=$(ip route | grep default | awk '{print $5}')
+    BRIDGE="xenbr"
+    IFACE=$(ip route | grep default | awk '{print $5}' | head -n 1)
     NETWORK="10.0.0.0"
     IP="10.0.0.1"
 

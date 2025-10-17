@@ -1,5 +1,5 @@
 WAF=./waf
-NAME=hello_world
+NAME=timer
 
 all: build
 
