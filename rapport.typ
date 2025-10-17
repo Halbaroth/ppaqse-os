@@ -871,6 +871,23 @@ _GPOS_, _Linux_ intègre un hyperviseur et est depuis 2024 un _RTOS_.
 De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
 (Intel, Google, Samsung, AMD, ...).
 
+#showybox(
+  title: "Linux en bref",
+  frame: (
+    border-color: blue.darken(20%),
+    title-color: blue.lighten(80%),
+    body-color: blue.lighten(95%)
+  )
+)[
+  - *Type* : GPOS, noyau modulaire + Hyperviseur (KVM) + RTOS (PREEMPT_RT)
+  - *Langage* : C (98%)
+  - *Architectures* : 30+ architectures (x86, ARM, RISC-V, PowerPC, MIPS, SPARC, ...)
+  - *Usage principal* : Serveurs, embarqué, supercalculateurs, desktop
+  - *Points forts* : Maturité, large écosystème, flexibilité, support matériel étendu
+  - *Limitations* : Complexité élevée, surface d'attaque importante, déterminisme limité (sans PREEMPT_RT)
+  - *Licences* : GPL v2
+]
+
 == KVM <linux_kvm>
 
 Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
@@ -1652,6 +1669,24 @@ code source et l'utilisation d'un langage de programmation sûr.]
 - #box[Une réduction de la taille des exécutables produits.]
 - #box[Un profilage simplifié par la suppression d'une couche logicielle.]
 
+#showybox(
+  title: "MirageOS en bref",
+  frame: (
+    border-color: purple.darken(20%),
+    title-color: purple.lighten(80%),
+    body-color: purple.lighten(95%)
+  )
+)[
+  - *Type* : LibOS / Unikernel
+  - *Langage* : OCaml (99%)
+  - *Architectures* : x86, ARM v7/v8, RISC-V, PowerPC, SPARC, MIPS
+  - *Usage principal* : Cloud computing, applications réseau, systèmes embarqués, spatial
+  - *Points forts* : Sécurité renforcée (surface d'attaque réduite, langage sûr), taille minimale, temps de démarrage rapide, modularité
+  - *Limitations* : Portabilité limitée sans hyperviseur, débogage complexe, pas d'interface POSIX
+  - *Licences* : ISC (majoritaire) + LGPLv2 (certaines parties)
+  - *Projet notable* : SpaceOS (déployé dans l'espace en 2025)
+]
+
 == Image docker <mirageos_imagedocker>
 Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
 disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
@@ -1986,6 +2021,24 @@ Dès sa conception, _PikeOS_ a été pensé pour faciliter la certification de
 logiciels. Les différents kit de certifications disponibles sont exposés dans la
 section @pikeos_licenses.
 
+#showybox(
+  title: "PikeOS en bref",
+  frame: (
+    border-color: orange.darken(20%),
+    title-color: orange.lighten(80%),
+    body-color: orange.lighten(95%)
+  )
+)[
+  - *Type* : RTOS + Hyperviseur type 1 (basé sur micronoyau L4)
+  - *Langage* : C
+  - *Architectures* : x86-64, ARM v7/v8, PowerPC, RISC-V, SPARC
+  - *Usage principal* : Systèmes critiques (aéronautique, automobile, défense, médical)
+  - *Points forts* : Conçu pour la certification, paravirtualisation + HVM, support multi-criticité
+  - *Limitations* : Propriétaire, coût de licence
+  - *Licences* : Propriétaire (SYSGO/Thalès)
+  - *Certifications* : Kits disponibles pour DO-178B/C, IEC 61508, ISO 26262
+]
+
 == Architectures supportées <pikeos_architectures>
 
 _PikeOS_ supporte les architectures suivantes: _x86-64_, _ARM v7_, _ARM v8_,
@@ -2038,6 +2091,24 @@ fait l'objet d'une vérification formelle @lescuyer2015provencore.
 
 _ProvenVisor_ est développé par l'entreprise _ProvenRun_ qui est spécialisée
 dans la sécurité et les systèmes embarqués critiques.
+
+#showybox(
+  title: "ProvenVisor en bref",
+  frame: (
+    border-color: green.darken(20%),
+    title-color: green.lighten(80%),
+    body-color: green.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur type 1 vérifié formellement (+ micronoyau ProvenCore)
+  - *Langage* : C
+  - *Architectures* : ARM v8-A (avec support MMU)
+  - *Usage principal* : Systèmes embarqués critiques, IoT sécurisé, isolation forte
+  - *Points forts* : TCB minimal, vérification formelle, intégration ProvenCore (micronoyau prouvé), conteneurs sécurisés
+  - *Limitations* : Propriétaire, ARM uniquement
+  - *Licences* : Propriétaire (ProvenRun)
+  - *Certifications* : Processus de certification en cours
+]
 
 #figure(
   diagram(
@@ -2133,6 +2204,24 @@ alors renommé _Real-Time Executive for Multiprocessor Systems_ pour souligner
 ce changement ainsi que le support des systèmes multiprocesseurs. De nos jours,
 il est utilisé dans des missions spatiales et notamment la constellation de
 satellites _Galileo_.
+
+#showybox(
+  title: "RTEMS en bref",
+  frame: (
+    border-color: red.darken(20%),
+    title-color: red.lighten(80%),
+    body-color: red.lighten(95%)
+  )
+)[
+  - *Type* : RTOS libre
+  - *Langage* : C (97.7%)
+  - *Architectures* : 20+ architectures (ARM, PowerPC, RISC-V, SPARC, x86, MIPS, ...)
+  - *Usage principal* : Systèmes embarqués temps-réel (spatial, militaire, médical, industriel)
+  - *Points forts* : Libre (GPL/BSD), API POSIX, support SMP, modulaire, mature, utilisé par NASA/ESA
+  - *Limitations* : Documentation parfois limitée, configuration complexe
+  - *Licences* : GPL v2 + exceptions (permettant code propriétaire)
+  - *Missions notables* : Galileo, James Webb Space Telescope, Mars rovers
+]
 
 == Architectures supportées <rtems_architectures>
 
@@ -2333,6 +2422,24 @@ la communication inter-processus. Toutefois, contrairement à la majorité des
 autres micronoyaux de la famille _L4_, il fournit également des _capabilities_
 pour gérer les autorisations.
 
+#showybox(
+  title: "seL4 en bref",
+  frame: (
+    border-color: teal.darken(20%),
+    title-color: teal.lighten(80%),
+    body-color: teal.lighten(95%)
+  )
+)[
+  - *Type* : Micronoyau temps-réel + Hyperviseur type 1 (3ème génération L4)
+  - *Langage* : C
+  - *Architectures* : ARM (32/64-bit), x86 (32/64-bit), RISC-V
+  - *Usage principal* : Systèmes critiques (défense, médical, automobile, aérospatial)
+  - *Points forts* : Vérifié formellement (Isabelle/HOL), capabilities, partitions mixtes, certifiable Critères Communs EAL7, absence prouvée de bugs critiques
+  - *Limitations* : Courbe d'apprentissage élevée, écosystème limité, documentation technique avancée
+  - *Licences* : GPL v2 (noyau), code utilisateur sous licence libre au choix
+  - *Caractéristique unique* : Seul OS avec correction prouvée formellement du code C au binaire
+]
+
 == Installation <sel4_installation>
 
 Le site de _seL4_ fournit un tutoriel détaillé et une image _docker_ contenant
@@ -2474,6 +2581,24 @@ architectures que _x86_, et notamment _ARM_ (voir la sous-section
 @xen_architectures) et l'utilisation combinée de la @paravirtualization et
 de la virtualisation assistée par le matériel (voir la sous-section
 @xen_partitioning).
+
+#showybox(
+  title: "Xen en bref",
+  frame: (
+    border-color: aqua.darken(20%),
+    title-color: aqua.lighten(80%),
+    body-color: aqua.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur type 1
+  - *Langage* : C (majoritaire)
+  - *Architectures* : x86 (32/64-bit), ARM (32/64-bit)
+  - *Usage principal* : Cloud computing, hébergement, data centers, virtualisation d'entreprise
+  - *Points forts* : Mature et éprouvé, paravirtualisation + HVM, largement adopté (AWS, Citrix), dom0less pour boot rapide, stub domains pour sécurité
+  - *Limitations* : TCB important, complexité, dépendance au dom0 (Linux)
+  - *Licences* : GPL v2 (majoritaire) avec exceptions pour compatibilité
+  - *Utilisateurs notables* : Amazon AWS, Citrix, OVH, Rackspace
+]
 
 == Tutoriel <xen_tutoriel>
 
@@ -2888,6 +3013,24 @@ suivantes:
 - SVOM (XtratuM + lithOS) 2021
 - SWOT (XtratuM + RTEMS) 2021
 - JUICE (XtratuM + lithOS) 2022
+
+#showybox(
+  title: "XtratuM en bref",
+  frame: (
+    border-color: maroon.darken(20%),
+    title-color: maroon.lighten(80%),
+    body-color: maroon.lighten(95%)
+  )
+)[
+  - *Type* : Hyperviseur temps-réel type 1 qualifié ECSS
+  - *Langage* : C
+  - *Architectures* : x86-32, SPARC/LEON (LEON2/3/4), ARM v7/v8
+  - *Usage principal* : Spatial, aéronautique (IMA - Integrated Modular Avionics)
+  - *Points forts* : Qualifié ECSS catégorie B, 1000+ satellites déployés, ordonnancement cyclique ARINC-653, isolation temporelle et spatiale forte, health monitoring
+  - *Limitations* : Version NG propriétaire, écosystème limité, principalement orienté spatial/aéro
+  - *Licences* : GPL v2 (version libre) + version propriétaire XtratuM/NG (fentISS)
+  - *Missions spatiales* : Galileo, JUICE, SWOT, PLATiNO, MERLIN, SVOM
+]
 
 == Outils de développement <xtratum_tools>
 
