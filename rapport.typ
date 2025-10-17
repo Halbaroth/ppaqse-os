@@ -259,7 +259,7 @@ d'une base de données bancaire.]
 qui peuvent subvenir dans une centrale nucléaire ou une usine.]
 - #box[Dans les cas les plus graves, elles peuvent engendrer des pertes humaines,
 comme dans un accident d'avions ou la défaillance d'un système médical.]
-La criticité d'un système est généralement évalué lors de sa conception et le
+La criticité d'un système est généralement évaluée lors de sa conception et le
 choix d'une solution informatique adaptée en est une étape importante.
 
 Un système informatique est qualifié de #definition[temps-réel] lorsque
@@ -403,8 +403,12 @@ intéressé au support d'architectures @smp et notamment le support des processe
 multi-cœur qui sont très répandu. Il était aussi pertinent d'examiner le support
 d'architectures @amp et notamment les @soc.
 
-TODO: Dans le cadre @smp, le masquage des interruptions seuls ne suffit pas à
-garantir l'isolation d'une section critique.
+Dans le cadre @smp, le masquage des interruptions seul ne suffit pas à
+garantir l'isolation d'une section critique. En effet, plusieurs cœurs peuvent
+exécuter du code en parallèle et accéder simultanément aux ressources partagées.
+Des mécanismes supplémentaires comme les _spinlocks_ ou les verrous atomiques
+sont nécessaires pour synchroniser l'accès aux ressources partagées entre les cœurs
+@love2010linux @mckenney2017parallel.
 
 === Partitionnement
 
@@ -510,7 +514,7 @@ Les deux approches ont des avantages et inconvénients:
 - #box[L'approche monolithique
 est souvent de conception plus simple. Elle offre de très bonnes performances
 en permettant une communication rapide entre les différents services, évitant
-notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
+notamment les coûteuses commutations de contexte nécessaires lorsqu'on passe
 d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
 souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
 à la taille nettement plus importante de leur base de code. Leur vérification et
@@ -599,6 +603,29 @@ les systèmes critiques.]
 Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
 d'un programme informatique sur une plateforme matérielle donnée.
 
+== Tutoriels
+
+L'étude contient un certain nombres de tutoriels et exemples illustrant
+le fonctionnement des différents systèmes étudiés. Pour que ces exemples
+puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+
+=== Xen & MirageOS
+Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
+d'un support pour l'hyperviseur _Xen_.
+
+#howto[mise en place d'un pont virtuel][
+  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
+  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
+  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
+  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
+  vous pouvez mettre en place un tel pont ainsi:
+  ```console
+  sudo ip link add br0 type bridge
+  sudo ip link set br0 up
+  sudo ip addr 10.0.0.1/24 dev br0
+  ```
+]
+
 = Notions générales <general_notions>
 
 Cette section contient des notions générales autour des systèmes
@@ -607,6 +634,22 @@ notions ne sont qu'effleurées étant donné d'une part la complexité des
 architectures et des OS actuels, et d'autre part le foisonnement des solutions
 existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
 au fil de la section.
+
+== Modes d'exécution
+
+On distingue le plus souvent trois modes d'exécution sur les processeurs modernes:
+- #box[Le #definition[mode noyau] (_kernel mode_) est un mode
+d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
+instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
+d'exploitations.]
+- #box[Le #definition[mode utilisateur] (_user mode_)
+est a contrario un mode d'exécution qui n'a pas accès à toutes les
+instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
+et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
+nécessitant des privilèges plus élevés.]
+- #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
+est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
+tels systèmes d'exploitation dans cette étude.]
 
 == Partitionnement des ressources
 
@@ -720,7 +763,8 @@ cœur appelés _Local APIC_ qui gèrent les interruptions entre les cœurs.]
 (_Generic Interrupt Controller_).]
 L'émetteur de l'interruption envoie une requête d'interruption
 (_IRQ_ pour _Interrupt ReQuest_) à l'une de ces puces qui décide ensuite d'envoyer ou non
-l'interruption au destinataire (TODO: vérifier).
+l'interruption au destinataire en fonction de la configuration de routage et de la priorité
+@intel_sdm_apic @arm_gic_spec.
 
 === Masquage des interruptions
 
@@ -1101,8 +1145,8 @@ interfaces, tables de routage et règles de pare-feu.]
 
 ==== Exemple d'utilisation avec `systemd`
 Le gestionnaire de services `systemd` intègre l'outil `systemd-nspawn` pour faciliter
-l'utilisation des _namespaces_. Il consistue une alternative à `chroot` plus sûre.
-En plus d'isoler l'aborescence des fichiers, cette commande isole celle des
+l'utilisation des _namespaces_. Il constitue une alternative à `chroot` plus sûre.
+En plus d'isoler l'arborescence des fichiers, cette commande isole celle des
 processus, le réseau et les utilisateurs. Par exemple, considérons le
 programme _C_ suivant:
 
@@ -2028,47 +2072,49 @@ Cette section aborde le support d'architectures multi-processeur sous _RTEMS_.
 === Architectures @smp
 
 _RTEMS_ offre un support pour les architectures @smp des processeurs
-_x86_, _ARM_, _PowerPC_, _RISC-V_ et _SPARC_. Ce support est toutefois relatif
-à chaque @bsp.
+_AArch64_, _ARMv7-A_, _i386_, _PowerPC_, _RISC-V_ et _SPARC_ @rtems_smp.
+Ce support est toutefois relatif à chaque @bsp.
+
+L'utilisation d'un processeur SMP augmente significativement le risque d'accès
+concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
+Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
 
 Le support @smp n'est pas activé par défaut. Il requière d'être activé durant
-la phase de compilation du noyau.
+la phase de compilation du noyau via l'option `--enable-smp`. Ce support est
+disponible depuis la version 4.11.0.
+
+_RTEMS_ offre également un support pour les processeurs @smp LEON3 et LEON4
+(_SPARC v8_), des processeurs 32 bits libres développés par l'@esa.
+
+Le système propose un support d'affinité des tâches, permettant de spécifier
+sur quel sous-ensemble de cœurs une tâche peut s'exécuter. Il existe également
+un support pour la migration de tâches entre cœurs.
 
 === Architectures @amp
+
+_RTEMS_ offre également un support pour les architectures @amp.
 
 == Temps de démarrage <rtems_booting_time>
 
 == Maintenance <rtems_maintening>
+
+_RTEMS_ permet le cross-développement via d'autres systèmes d'exploitation :
+distributions GNU/Linux, Windows, BSD, Solaris et MacOS.
+
+Le système est largement utilisé dans l'industrie spatiale, notamment chez
+les acteurs européens comme l'@esa.
+
+_RTEMS_ offre un support d'ARINC 653, un standard de l'industrie aéronautique
+pour les systèmes avioniques à partitionnement spatial et temporel.
+
+Il existe un support commercial pour les entreprises européennes et américaines.
+La communauté offre également un support gratuit sans garantie.
 
 == Licences <rtems_licenses>
 
 _RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
 et open-sources avec pour licence principale BSD-2. Le noyau peut être utilisé ou
 être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
-
-== Draft
-- Il offre un support pour les architectures @smp et @amp.
-- Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
-- Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
-- ARINC 653 RTEMS
-- Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
-
-== Support multi-processeur
-
-_RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
-mais également pour les architectures @amp.
-
-L'utilisation d'un processeur SMP augmente significativement le risque d'accès
-concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
-
-Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
-
-- Le support concerne un sous ensemble des architectures cibles et de bps? Lesquelles? faire un tableau?
-- Les architectures supportées: AArch64, ARMv7-A, i386, PowerPC, RSIC-V et SPARC.
-- Le support est disponible depuis la version 4.11.0 et doit être activé explicitement lors de la configuration via l'option `--enable-smp`.
-- Support pour les processeurs @smp LEON3 et LEON4. Ce sont des processeurs _SPARC v8_. LEON est un processeur 32bits libre développé par @esa.
-- Il existe un support affinité des tâches. Autrement dit on peut spécifier sur quel sous-ensemble de cœur une tâche peut s'exécuter.
-- Il y a un support pour la migration de tâche.
 
 == Tutoriel <rtems_tutoriel>
 
@@ -2103,12 +2149,13 @@ Le nom de l'interface _TTY_ peut varier suivant l'adaptateur utilisé.
 == Partionnement <rtems_partioning>
 
 _RTEMS_ est un système à espace d'adressage unique. Le noyau et les tâches partagent
-le même espace d'adressage et s'exécute en mode noyau (vérifier). Par conséquent _RTEMS_
-n'offre pas les mêmes niveaux de sûreté qu'un noyau de séparation comme un hyperviseur.
+le même espace d'adressage et toutes les tâches s'exécutent en mode noyau (mode superviseur),
+avec le niveau de privilège le plus élevé du processeur @rtems_cpu_supplement @rtems_task_background.
+Par conséquent _RTEMS_ n'offre pas les mêmes niveaux de sûreté qu'un noyau de séparation comme un hyperviseur.
 C'est la raison pour laquelle il est parfois exécuté au-dessus d'un hyperviseur.
 
-Il y a un support pour les MPU (memory protection unit) qui sont des version simplifiées
-des MMU. Vérifier si cette info est valable.
+_RTEMS_ offre un support pour les MPU (_Memory Protection Unit_), qui sont des versions simplifiées
+des MMU, notamment sur les architectures ARM (ARMv7-M, ARMv8-M) @rtems_mpu_gedare.
 
 _RTEMS_ propose aussi des mécanismes de partitionnement en mémoire.
 
@@ -2301,7 +2348,7 @@ fuites mémoire et de dépassements d'entier.
 = Xen <xen>
 
 _Xen_ est un hyperviseur de type 1 développé par le consortium d'entreprises
-#link("https://xenproject.org")[Xen Project]. Ces un pionnier de la
+#link("https://xenproject.org")[Xen Project]. C'est un pionnier de la
 @paravirtualization mais il offre aussi un support étendu pour la
 virtualisation assistée par le matériel. Il est aujourd'hui très utilisé
 dans le monde de l'hébergement et du cloud computing.
@@ -2319,7 +2366,7 @@ libre. Contrairement à son prédécesseur _XenoServers_, il permet d'exécuter
 n'importe quelle application dans une machine virtuelle tournant sur un noyau
 _Linux_ modifié. Ces modifications contournent les limites
 de performances de la virtualisation complète sur architecture _x86_ en permettant
-au noyau virtualisé de collaboré avec l'hyperviseur. C'est la naissance de la
+au noyau virtualisé de collaborer avec l'hyperviseur. C'est la naissance de la
 @paravirtualization.
 
 En 2005, le support pour la virtualisation assistée par le matériel est ajoutée
@@ -2660,42 +2707,18 @@ l'embarqué critique en donnant de fortes garanties quant à l'isolation
 spatiale et temporaire de ses partitions @masmano2005overview. L'entreprise
 _fentISS_ propose deux versions de _XtratuM_:
 - Une version libre,
-- Une version propriétaire appelée _Xtratum/NG_ (abrégé _XNG_).
+- Une version propriétaire appelée _Xtratum/NG_ (abrégé _XNG_), qui offre un meilleur
+support multi-cœur.
 
-développé à l'origine
-par une équipe de recherche de l'_Universidad Politécnica_ de Valence et
-maintenant maintenu par l'entreprise _fentISS_ @fentiss_website.
-
-_XtratuM_ est un hyperviseur temps-réel de type 1 qualifié pour l'usage dans
-le spatial. Le projet est initié en 2004. Il est développé par l'entreprise
-_fentISS_.
-
-_XtratuM_ virtualises la mémoire, les timers et les interruptions.
-
-Il est conçu pour permettre l'isolation temporelle et spatiale
-d'applications critiques sur une même plateforme physique grâce à l'usage
-des technologies de virtualisation matérielle.
+_XtratuM_ virtualise la mémoire, les timers et les interruptions.
 
 _XtratuM_ fait parti du projet _SAFEST_ @safest_project. Il s'agit d'un projet
 visant à faire collaborer différents acteurs du secteur aérospatial européen
 afin d'améliorer les performances et de réduire les coûts.
 
-Tools:
-- XPM est un pluging Eclipse pour la gestion d'un projet sur XtratuM
-- Xoncrete (schedule analysis and generation)
-- Xcparser (hypervisor configuration)
-- Xtraceview (observability support)
-- SKE (XtratuM simulator on servers)
-
 _IMA_ (_Integrated Modular Avionics_) est une tendance dans l'avionique à ramener
 au niveau de calculateurs modulaires identiques des fonctions logicielles
-auparavant prises en charge par des calculateurs dédiés.
-
-TODO:
-- C'est quoi `cyclic scheduling policy`?
-- `inter-partition communication` avec sampling et queuing ARINC-653-like ports
-- health monitoring service
-
+auparavant prises en charge par des calculateurs dédiés. _XtratuM_ répond à ce besoin.
 
 L'hyperviseur a déjà été utilisé dans le spatial avec notamment les missions
 suivantes:
@@ -2705,8 +2728,19 @@ suivantes:
 - SWOT (XtratuM + RTEMS) 2021
 - JUICE (XtratuM + lithOS) 2022
 
-_XtratuM/NG_(abrégé _XNG_) est une version plus récente de l'hyperviseur qui offre un meilleur
-support multi-cœur.
+== Outils de développement <xtratum_tools>
+
+_fentISS_ propose une suite d'outils pour faciliter le développement avec _XtratuM_:
+- *XPM* : plugin Eclipse pour la gestion de projets _XtratuM_
+- *Xoncrete* : analyse et génération d'ordonnancement
+- *Xcparser* : configuration de l'hyperviseur
+- *Xtraceview* : support d'observabilité
+- *SKE* : simulateur _XtratuM_ sur serveurs
+
+TODO:
+- C'est quoi `cyclic scheduling policy`?
+- `inter-partition communication` avec sampling et queuing ARINC-653-like ports
+- health monitoring service
 
 == Architectures supportées <xtratum_architectures>
 
@@ -2923,70 +2957,6 @@ les interruptions matérielles sont capturées par un système d'exploitation in
 tournant dans le domaine privilégié _Dom0_ et transmises aux domaines concernés via
 un méchanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
-
-= Introduction2 <introduction2>
-
-Un #definition[système d'exploitation]#footnote[En anglais _Operating System_,
-souvent abrégé _OS_.] est un ensemble de routines gérant les ressources
-matérielles d'un système informatique, qu'il s'agisse d'ordinateurs de bureau,
-de serveurs ou de systèmes embarqués. Son rôle principal est de servir de
-couche d'abstraction logicielle entre le matériel et les logiciels applicatifs.
-Il permet ainsi de masquer la complexité et la diversité des interfaces matérielles en
-fournissant des _API_ (_Application Programming Interface_) stables, unifiées et
-parfois standardisées. Les systèmes d'exploitation se distinguent aussi bien
-par les mécanismes d'abstraction qu'ils offrent, que leur organisation ou
-leur modularité. Ainsi, un tâche gérée par un OS peut être dans une autre
-configuration déléguée à une autre couche logicielle, voire au matériel.
-Il est donc difficile de caractériser rigoureusement ce qu'est un système
-d'exploitation autrement que par le fait qu'il s'exécute en
-#definition[mode noyau] (_kernel mode_), c'est-à-dire dans un mode
-d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. A contrario, les logiciels applicatifs s'exécutent en
-#definition[mode utilisateur] (_user mode_) et interagissent avec l'OS
-lorsqu'ils ont besoin d'accéder au matériel.
-
-Ce document est une étude comparative de plusieurs systèmes d'exploitation dans
-le contexte de systèmes critiques ou temps réels. Afin de mieux cerner le sujet,
-commençons par préciser ces deux termes.
-
-On distingue le plus souvent trois modes d'exécutions sur les processeurs modernes:
-- #box[Le #definition[mode noyau] (_kernel mode_) est un mode
-d'exécution privilégié donnant accès à l'ensemble de la mémoire et des
-instructions. C'est dans ce mode que sont exécutés la majorité des systèmes
-d'exploitations.]
-- #box[Le #definition[mode utilisateur] (_user mode_)
-est a contrario un mode d'exécution qui n'a pas accès à toutes les
-instructions. Les logiciels applicatifs sont généralement exécutés dans ce mode
-et interagissent avec l'OS lorsqu'ils ont besoin d'exécuter des instructions
-nécessitant des privilèges plus élevés.]
-- #box[Le #definition[mode hyperviseur] (_hypervisor mode_)
-est lui aussi un mode privilégié utilisé par les hyperviseurs. Nous verrons de
-tels systèmes d'exploitation dans cette étude.]
-
-=== Tutoriels
-
-L'étude contient un certain nombres de tutoriels et exemples illustrant
-le fonctionnement des différents systèmes étudiés. Pour que ces exemples
-puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
-
-=== Xen & MirageOS
-Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant
-d'un support pour l'hyperviseur _Xen_.
-
-#howto[mise en place d'un pont virtuel][
-  Certains exemples nécessitent de pouvoir communiquer via le réseau entre
-  le domaine _dom0_ et le domaine _domU_. Ces exemples partent du principe
-  qu'un pont virtuel nommé `br0` existe avec comme adresse de sous-réseau
-  `10.0.0.0` et comme gateway `10.0.0.1`. Si votre distribution utilise `systemd`,
-  vous pouvez mettre en place un tel pont ainsi:
-  ```console
-  sudo ip link add br0 type bridge
-  sudo ip link set br0 up
-  sudo ip addr 10.0.0.1/24 dev br0
-  ```
-]
-
-
 
 #glossary(
   title: "Glossaire",
