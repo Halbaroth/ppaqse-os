@@ -1490,10 +1490,10 @@ créer sa distribution _Linux_ dédiée à l'embarqué.
 
 = MirageOS <mirageos>
 
-_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux et
+_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux,
 le _cloud computing_#footnote[Le _cloud computing_ est une pratique consistant à
 utiliser des serveurs chez un tiers pour héberger des services plutôt
-que sur un serveur local.]. Le projet est initié en 2009 au sein du laboratoire
+que sur un serveur local.] et les systèmes embarqués. Le projet est initié en 2009 au sein du laboratoire
 _Computer Laboratory_ de l'université de Cambridge sous la houlette de
 Anil Madhavapeddy @mirageos_unikernels. Il est de nos jours maintenu par la
 _MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé
@@ -1612,6 +1612,12 @@ make -C mirageos shell
 
 Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
 hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-metal_.
+
+Les _LibOS_ souffrent généralement d'un problème de portabilité car elles doivent
+être adaptées à chaque environnement matériel spécifique. Cette problématique est
+largement atténuée par l'usage d'un hyperviseur qui offre une couche d'abstraction
+matérielle standardisée, facilitant ainsi le déploiement des _unikernels_ sur
+différentes plateformes.
 
 #figure(
   table(
@@ -1830,6 +1836,10 @@ particulier son ramasse-miette,]
 en OCaml est théorique possible mais nécessiterait un effort considérable en pratique,]
 - #box[Les pilotes doivent être écrit dans un langage bas niveau.]
 
+_MirageOS_ utilise un _runtime_ OCaml _freestanding_ spécialement conçu pour
+l'exécution sans système d'exploitation @ocamlsolo5github. Par souci de minimalité
+et de clarté des API, _MirageOS_ ne cherche pas à proposer une interface _POSIX_.
+
 À ce jour le dépôt https://github.com/mirage/mirage est constitué à 99% de code
 OCaml pour un total de 9075 _SLOC_.
 
@@ -1857,42 +1867,30 @@ sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
 avec les bibliothèques. En particulier, vous n'avez pas l'obligation de distribuer
 les sources de l'application lorsque vous distribuez le binaire de l'_unikernel_.
 
-== Draft
+== Avantages et inconvénients <mirageos_pros_cons>
 
-Les bibliothèques d'OS souffrent d'un problème de portabilité. Cette situation
-est amendée par l'usage d'un hyperviseur plutôt qu'un exécution bare-metal.
+L'objectif principal de _MirageOS_ est de réduire la complexité des systèmes
+actuels en supprimant les couches logicielles volumineuses et superflues. En tant
+qu'_unikernel_, _MirageOS_ offre plusieurs avantages significatifs:
 
-Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
-Une particularité importante de _MirageOS_ est d'être écrit dans le langage
-_OCaml_. Ce langage est de haut niveau et sûr. La majorité des systèmes
-d'exploitations sont écrit en langage C. C'est un langage de programmation bas
-niveau offrant peu de garantie de sûreté, notamment vis-à-vis de la mémoire.
+- *Sécurité renforcée* : La surface d'attaque est considérablement réduite par
+  rapport à un système d'exploitation complet. L'_unikernel_ ne contient que le
+  code strictement nécessaire à l'application.
+- *Empreinte réduite* : Les exécutables produits sont de petite taille et
+  l'empreinte mémoire est minimale. Cela permet un déploiement efficace dans
+  des environnements aux ressources limitées.
+- *Temps de démarrage optimisés* : L'absence de couches logicielles superflues
+  permet d'obtenir des temps de démarrage très courts, un atout pour les systèmes
+  embarqués et le _cloud computing_.
+- *Vérification et certification modulaire* : La modularité de l'architecture
+  facilite la vérification formelle et la certification de composants spécifiques
+  du système.
 
-En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
-taille et avec une empreinte mémoire minimale. Il offre également des temps de
-démarrage réduit.
-
-Une des motivations d'exécuter un unikernel dans un hyperviseur plutôt qu'un
-système d'exploitation classique est de supprimer une couche logicielle volumineuse
-qui contient beaucoup de fonctionnalité inutile comme le support pour du matériel
-ancien, le support d'anciennes API, l'ordonnanceur pour les processus/threads en
-plus de celui de l'hyperviseur.
-
-_MirageOS_ ne cherche pas à proposer une interface _POSIX_ dans un souci
-de minimalité et de clarté des _API_.
-
-La majorité du code est écrit en OCaml. Toutefois il subsiste plusieurs parties
-qui sont toujours en langage C. Il y a le runtime OCaml lui-même (ce qui inclut
-le ramasse miette d'OCaml), un certain nombres de pilotes et quelques bibliothèques
-(notamment GMP) dont la réécriture en OCaml est possible mais très laborieuse.
-
-_MirageOS_ utilise un freestanding runtime pour OCaml @ocamlsolo5github.
-
-Objectif réduire la complexité des systèmes actuels.
-
-Quelques avantages:
-- surface d'attaque réduite
-- vérification et certification modulaire
+L'approche _unikernel_ via hyperviseur permet également d'éliminer les redondances
+présentes dans une architecture classique. En particulier, on supprime la duplication
+des mécanismes d'isolation (comme les ordonnanceurs de tâches présents à la fois
+dans l'hyperviseur et dans le noyau de la VM), ainsi que le support pour du
+matériel ancien, des API obsolètes et des fonctionnalités inutilisées.
 
 == SpaceOS <mirageos_spaceos>
 
@@ -2542,11 +2540,51 @@ sont disponibles dans le fichier `COPYING` du dépôt git @xen_licensing.
 
 == Temps de démarrage <xen_booting>
 
-== Draft
+=== Stub domains <xen_stubdomains>
 
-- C'est quoi un stubdomain?
-- Il semble que les dom0less permettent d'accélérer le temps de démarrage
-des domaines.
+Un _stub domain_ (ou _stubdomain_) est un domaine système spécialisé utilisé
+pour désagréger le domaine de contrôle (_dom0_) @xen_stubdomain
+@xen_device_model_stubdomains. Il s'agit d'un domaine léger dédié à l'exécution
+de services ou de pilotes spécifiques, notamment le modèle de périphérique _QEMU_
+associé à un domaine HVM.
+
+L'avantage principal des _stub domains_ réside dans l'amélioration de la sécurité
+par isolation. Traditionnellement, _QEMU_ et d'autres services critiques s'exécutent
+dans le _dom0_ avec des privilèges élevés. En cas de vulnérabilité de sécurité
+dans _QEMU_, un attaquant pourrait obtenir un accès privilégié au _dom0_ et
+compromettre l'ensemble du système. En exécutant _QEMU_ dans un _stub domain_, ce
+dernier est automatiquement déprivilégié (via `XEN_DOMCTL_set_target`) de sorte qu'il
+n'a de privilèges que sur le domaine HVM spécifique auquel il est associé.
+
+La plupart des _stub domains_ sont basés sur le système d'exploitation minimaliste
+_Mini-OS_ @xen_minios, bien que des travaux aient été menés sur des _stub domains_
+basés sur _Linux_.
+
+=== Dom0less <xen_dom0less>
+
+Le mode _dom0less_ est une fonctionnalité de _Xen_ permettant d'accélérer
+significativement le démarrage des domaines @xen_dom0less_doc
+@xen_dom0less_partitioning. Cette optimisation répond à un besoin critique dans
+les systèmes embarqués et temps-réel où le temps de démarrage est déterminant.
+
+Traditionnellement, le démarrage d'un domaine depuis l'initialisation du système
+nécessite plusieurs étapes séquentielles prenant plusieurs secondes:
+1. Démarrage de l'hyperviseur _Xen_
+2. Démarrage du noyau _dom0_
+3. Initialisation de l'espace utilisateur du _dom0_
+4. Disponibilité de l'outil `xl` pour créer les domaines
+
+Avec _dom0less_, _Xen_ démarre les domaines sélectionnés directement depuis
+l'hyperviseur au moment du boot, en parallèle sur différents cœurs physiques.
+Cette approche permet d'obtenir des temps de démarrage sous-secondes pour les
+systèmes temps-réel. Le temps de démarrage total devient approximativement égal
+à: temps_xen + temps_domU, éliminant ainsi le surcoût du démarrage du _dom0_ et
+de son espace utilisateur.
+
+Cette fonctionnalité est particulièrement adaptée aux systèmes à partitionnement
+statique où plusieurs domaines doivent démarrer rapidement lors de l'initialisation
+de l'hôte. Elle s'intègre désormais dans le projet _Hyperlaunch_ qui généralise
+cette approche.
 
 == Mise en place d'une machine virtuelle Alpine
 
@@ -2737,10 +2775,66 @@ _fentISS_ propose une suite d'outils pour faciliter le développement avec _Xtra
 - *Xtraceview* : support d'observabilité
 - *SKE* : simulateur _XtratuM_ sur serveurs
 
-TODO:
-- C'est quoi `cyclic scheduling policy`?
-- `inter-partition communication` avec sampling et queuing ARINC-653-like ports
-- health monitoring service
+== Ordonnancement cyclique <xtratum_scheduling>
+
+_XtratuM_ implémente une politique d'ordonnancement cyclique conforme à la norme
+_ARINC-653_. Dans le domaine temporel, _XtratuM_ alloue le CPU aux partitions
+selon un plan défini lors de la configuration @lithos_arinc653_xtratum. Il s'agit
+d'un ordonnancement cyclique statique (_static cyclic scheduling_) où tous les
+intervalles d'exécution des partitions sont déterminés avant l'exécution.
+
+Chaque partition est ordonnancée pour un créneau temporel (_time slot_) défini
+par un temps de démarrage et une durée. Durant ce créneau, _XtratuM_ alloue les
+ressources système à la partition. Lorsque le créneau de la partition est écoulé,
+_XtratuM_ force un changement de contexte vers la partition suivante selon le plan
+cyclique défini.
+
+Le système utilise un ordonnancement hiérarchique à deux niveaux: _XtratuM_ gère
+l'ordonnancement des partitions au niveau supérieur, tandis que chaque partition
+peut exécuter son propre ordonnanceur pour ses tâches internes.
+
+== Communication inter-partition <xtratum_ipc>
+
+_XtratuM_ fournit un mécanisme de communication inter-partition (_IPC_) conforme
+à la norme _ARINC-653_ @xtratum_arinc653_ipc @lithos_arinc653_xtratum. Ce
+mécanisme permet l'échange de messages entre les partitions _ARINC_ s'exécutant
+sur la même carte.
+
+Un _canal_ (_channel_) est un lien logique entre une partition source et une ou
+plusieurs partitions de destination. Les partitions peuvent envoyer et recevoir
+des messages via plusieurs canaux à travers des points d'accès définis appelés
+_ports_. _XtratuM_ utilise deux interruptions virtuelles pour notifier les
+partitions de la disponibilité de nouveaux messages dans les ports de destination.
+
+La norme _ARINC-653_ définit deux modes de transfert de messages:
+
+- *Mode échantillonnage* (_sampling mode_): Supporte les messages multicast
+  envoyés d'une seule source vers plusieurs destinations. La transmission d'un
+  message sur un canal copie le message du port d'échantillonnage source vers
+  les tampons de tous les ports d'échantillonnage de destination. Ce mode convient
+  aux données périodiques où seule la dernière valeur est pertinente.
+
+- *Mode file d'attente* (_queuing mode_): Ne supporte que les messages unicast.
+  Les messages sont mis en file d'attente et traités séquentiellement. Ce mode
+  convient aux événements sporadiques qui nécessitent un traitement ordonné.
+
+== Health Monitoring <xtratum_health_monitoring>
+
+_XtratuM_ intègre un service de _health monitoring_ conforme à la norme _ARINC-653_
+@lithos_arinc653_xtratum. Ce service permet la détection et la gestion des
+défaillances des partitions.
+
+Lorsqu'un événement de _health monitoring_ est déclenché, le système peut entreprendre
+des actions correctives telles que des changements de mode. Par défaut, le Plan 1
+(mode maintenance) est le plan exécuté lorsqu'un événement sélectionne un changement
+de mode comme action.
+
+Le principe d'isolation des partitions garantit que la défaillance d'une partition
+n'affecte pas les autres partitions. Cependant, bien qu'une partition ne puisse
+pas affecter les autres partitions, la défaillance peut toujours se produire et
+potentiellement conduire à une défaillance du système global. Le service de _health
+monitoring_ permet de limiter ces risques par une détection précoce et des actions
+de récupération appropriées.
 
 == Architectures supportées <xtratum_architectures>
 
