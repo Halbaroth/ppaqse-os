@@ -1,3 +1,37 @@
+monolithic:
+  short: monolithique
+  description: >
+    todo
+
+gnu:
+  short: GNU
+  long: GNU is Not Unix
+  description: >
+    todo
+
+gc:
+  short: ramasse-miette
+  description: >
+    TODO
+
+gpos:
+  short: GPOS
+  long: General-Purpose Operating System
+  description: >
+    TODO
+
+rtos:
+  short: RTOS
+  long: Real-time Operating System
+  description: >
+    TODO
+
+hypercall:
+  short: hypercall
+  description: >
+    Mécanisme de communication entre un système d'exploitation invité ou
+    un programme baremetal et l'hyperviseur sur lequel il est exécuté.
+
 runtime:
   short: runtime
   description:
@@ -151,44 +185,50 @@ security:
 qualification:
   short: qualification
   article: la
-  description: |
+  description: >
     todo
 
 certification:
   short: certification
   article: la
-  description: |
+  description: >
     todo
 
 bsp:
   short: BSP
   long: Board Support Package
-  description: |
+  description: >
     todo
 
 esa:
   short: ESA
   long: European Space Agency
-  description: |
+  description: >
     todo
 
 ecss:
   short: ECSS
   long: European Cooperation for Space Standardization
-  description: |
+  description: >
     Ensembles de normes utilisées dans le spatial.
 
 amp:
   short: AMP
   long: Asymmetric multiprocessing
-  description: |
-    todo
+  description: >
+    Architectures multiprocesseur dont chaque cœur exécute son propre
+    programme. Les ressources mémoires et périphériques sont statiquement
+    partagées entre les cœurs. Les cœurs peuvent être identiques (homogène)
+    ou différents (hétérogène). Ces architectures visent à garantir un
+    comportement déterministe et une bonne isolation des tâches.
 
 smp:
   short: SMP
   long: Symmetric multiprocessing
-  description: |
-    todo
+  description: >
+    Architectures multiprocesseur dont les cœurs partagent les mêmes ressources
+    et sont gérés par un seul système d'exploitation. Ces architectures visent
+    à maximiser la charge de travail traitée.
 
 html:
   short: HTML

@@ -320,7 +320,7 @@ nous avons sélectionné les architectures avec les critères suivants:
 - #box[L'architecture doit être utilisé dans de véritables systèmes critiques,]
 - #box[L'architecture doit être supportée nativement, c'est-à-dire que le
 système d'exploitation doit pourvoir s'exécuter sur une telle architecture
-sans avoir recourt à un mécanisme d'émulation,]
+sans avoir recours à un mécanisme d'émulation,]
 - #box[Certain système ont une longue histoire rendant une documentation
 exhaustive en pratique très difficile. Nous nous bornons à un sous-ensemble
 des architectures et renvoyons le lecteur à la documentation officielle pour les
@@ -371,8 +371,6 @@ en général que le programme peut être compilé vers le jeu d'instructions mai
 reste un effort important à fournir si l'OS ne fournit pas un @bsp pour la carte
 considérée. Cet aspect n'est pas abordé en profondeur dans l'étude.]
 
-=== Support multi-tâche et temps-réel
-
 === Support multi-processeur
 
 Au début du XXI#super[e] siècle, les architectures multi-processeurs se sont
@@ -381,8 +379,9 @@ années 2000, la croissance exponentielle de la puissance de calcul était
 principalement soutenue par l'augmentation rapide des fréquences d'horloges
 des monoprocesseurs. Cette stratégie a cependant rencontré des limites physiques
 (mur thermique, courants de fuite, ...). L'industrie des
-microprocesseurs s'est alors tournée vers le parallélisme des architectures
-multi-processeurs pour maintenir la progression de la puissance de calcul.
+microprocesseurs s'est alors tournée vers le parallélisme offert par
+les architectures multi-processeurs pour maintenir la progression de la
+puissance de calcul.
 
 La diffusion de ces technologie dans les systèmes critiques a été freinée par
 d'importants défis @saidi2015shift. En effet, les architectures multi-processeur
@@ -392,19 +391,76 @@ les analyses statiques plus complexes et donc la certification de
 tels systèmes plus difficiles. Ces difficultés sont majorées dans les systèmes
 critiques mixtes @burns2017survey.
 
-Toutefois leur usage est désormais généralisé, principalement motivé par la
-nécessité d'accroître la puissance de calcul tout en permettant une meilleure
-intégration et une réduction de poids et de taille des systèmes embarqués,
-notamment dans les secteur de l'avionique et du spatial.
+Toutefois leur usage dans les systèmes critiques est désormais généralisé,
+principalement motivé par la nécessité d'accroître la puissance de calcul tout
+en permettant une meilleure intégration et une réduction de poids et de taille
+des systèmes embarqués, notamment dans les secteur de l'avionique et du spatial.
 
-Nous avons donc examiné le support de certaines architectures multi-processeur
-dans les systèmes d'exploitation étudié. Nous nous sommes en premier lieu
-intéressé au support d'architectures @smp et notamment le support des processeurs
-multi-cœur qui sont très répandu. Il était aussi pertinent d'examiner le support
-d'architectures @amp et notamment les @soc.
+Il existe deux grandes catégories d'architecture multiprocesseur:
+- #box[Les architectures @smp qui sont constituées d'un ensemble de cœurs
+le plus souvent homogènes et destinés à être pilotés par un unique système
+d'exploitation. Les cœurs partagent la mémoire principale, les périphériques et
+la majorités des caches et des bus mémoires. Ces architectures offrent un
+excellent débit. Elles sont répandues aussi bien sur les ordinateurs personnels
+que les serveurs.]
+- #box[Les architectures @amp qui sont constituées le plus souvent d'un ensemble
+de cœurs hétérogènes. Contrairement aux architectures @smp, les architectures
+@amp sont conçues pour exécuter sur chaque cœur une instance distincte
+d'un ou plusieurs programmes bare-metal. Ces architectures
+sont davantage déterministes que les architectures @smp et offrent une meilleure
+isolation des tâches. Elles sont donc très présentes sur dans l'embarqué
+critique, notamment sous la forme de @soc.]
 
-TODO: Dans le cadre @smp, le masquage des interruptions seuls ne suffit pas à
-garantir l'isolation d'une section critique.
+Le @smp_vs_amp récapitule les différences entre ces deux architectures
+multiprocesseur.
+
+#let diagonal(body1, body2, width: auto, height: auto, inset: 5pt) = {
+  table.cell(inset: 0pt,
+    box(
+    width: width,
+    height: height)[
+      #place(top+right,body1, dx: -inset, dy: inset)
+      #place(bottom+left,body2, dx: inset, dy: -inset)
+      #line(start: (0%,0%),end: (100%,100%),stroke: 0.5pt)
+  ])
+}
+
+#figure(
+  table(
+    columns: (auto, 1fr, 1fr),
+    [#diagonal([Architecture],[Caractéristique], width: 6cm, height:1cm)], [_SMP_], [_AMP_],
+
+    [Nature des cœurs],
+    [Le plus souvent homogènes],
+    [Le plus souvent hétérogènes],
+
+    [Gestion logicielle],
+    [Un unique système d'exploitation gère tous les cœurs et partage dynamique
+      des tâches],
+    [Instance indépendante exécutée sur chaque cœur],
+
+    [Partage de Ressources],
+    [Mémoire principale, périphériques et caches partagés],
+    [Ressources partitionnées entre les cœurs],
+
+    [Objectif & Performance],
+    [Excellent débit],
+    [
+      - Déterminisme accru
+      - Meilleure isolation des tâches
+    ],
+
+    [Domaines d'application],
+    [
+      - Ordinateurs personnels
+      - Serveurs
+    ],
+    [Systèmes embarqués critiques]
+  ),
+  caption: [Différences entre les architectures _SMP_ et _AMP_.],
+) <smp_vs_amp>
+
+=== Support multi-tâche et temps-réel
 
 === Partitionnement
 
@@ -449,13 +505,25 @@ fourni un exemple d'utilisation lorsque cela était possible.
 
 === Support de langages de programmation en @baremetal
 
-Dans l'étude PPAQSE 2024, nous avons proposé une comparaison de différents
-langages de programmation, notamment dans un contexte @baremetal. Porter une
-application conçue pour un environnement @baremetal vers une partition d'un
-hyperviseur est une question natuelle lorsqu'on souhaiter porter un ancien programme
-vers une nouvelle plateforme. Nous avons examiné la possibilité de faire un
-tel portage pour des programmes écrit dans les langages suivant:
-_OCaml_, _C_, _Rust_ et _Ada_.
+La programmation @baremetal était et demeure commune dans les systèmes critiques.
+Toutefois, comme mentionné dans la sous-section @why_os, l'adoption d'un système
+d'exploitation offre de nombreuses avantages, notamment en permettant
+l'isolation logicielle de plusieurs tâches critiques.
+Il est donc fréquent de vouloir porter des applications @baremetal existantes
+vers des architectures virtualisées pour bénéficier de l'isolation offertes
+par ces dernières.
+
+C'est dans cette optique que nous avons examiné les possibilités offertes en
+matière de programmation @baremetal par les hyperviseurs étudiés. Notre analyse
+est circonscrite aux langages de programmation _Ada_, _C_, _OCaml_ et _Rust_.
+
+Le principal défi d'un tel portage est d'adapter le @runtime de ces langages pour
+l'hyperviseur donné. Dans le cas de _Ada_, _C_ et _Rust_ se portage est grandement
+faciliter par la possibilité de limiter la taille du @runtime et de se passer
+de la majorité de la bibliothèque standard ou de la remplacer par une bibliothèque
+dédiée au @baremetal. Pour le langage _OCaml_, la difficulté est plus importante
+car son @runtime contient un @gc, ce qui implique de devoir porter un plus
+grand nombre d'appels systèmes.
 
 === Temps de démarrage
 
@@ -765,7 +833,7 @@ mémoire longtemps sans être accédées. On peut par exemple penser aux
 enregistrements d'une base de donnée que l'on souhaite maintenir dans la
 mémoire principale pour en accélérer l'accès. Les _soft errors_ peuvent
 alors s'y accumuler au point que le code correcteur ne permette plus leur correction.
-Pour pallier ce problème, on a recourt au _scrubbing_. Il en existe de deux types:
+Pour pallier ce problème, on a recours au _scrubbing_. Il en existe de deux types:
 - #box[Le _demand scrubbing_ permet à l'utilisateur de déclencher manuellement le
 nettoyage d'une plage mémoire.]
 - #box[Le _patrol scrubbing_ qui consiste à scanner périodiquement la mémoire
@@ -816,25 +884,111 @@ collectés seront représentatifs des caractéristiques de performances du progr
 
 = Linux <linux>
 
-Le noyau _Linux_ est un système d'exploitation généraliste de type UNIX développé par une
-communauté décentralisée de développeurs. Le projet est initié par Linus Torvalds
-en 1991. De nos jours, il est utilisé sur une large gamme de matériels comme des
-serveurs, des supercalculateurs, des systèmes embarqués et des ordinateurs personnels.
-Originellement conçu comme un noyau monolithique, _Linux_ est devenu un noyau
-modulaire à partir de la version `1.1.85` publiée en 1995. En plus d'être un
-_GPOS_, _Linux_ intègre un hyperviseur et est depuis 2024 un _RTOS_.
+Le noyau _Linux_ est un @gpos libre de type _UNIX_. L'ensemble des
+fonctionnalités offertes par _Linux_ inclut:
+- #box[Un ordonnanceur de tâches avec des politiques adaptées à un usage @gpos
+ou temps-réel,]
+- #box[Un excellent support des architectures @smp,]
+- #box[Un support de très nombreux systèmes de fichiers,]
+- #box[Une pile réseau supportant de nombreux protocoles,]
+- #box[Un support matériel étendu grâces aux nombreux pilotes, souvent
+écrits par les fabricants eux-mêmes,]
+- #box[Une API stable respectant une grande partie de la norme _POSIX_
+#footnote[Contrairement à d'autres systèmes _UNIX_, le noyau _Linux_ n'a pas
+fait l'objet de certifications pour le standard _POSIX_.].]
 
-De nombreuses entreprises contribuent également au noyau, notamment aux pilotes
-(Intel, Google, Samsung, AMD, ...).
+Le développement du noyau débute en 1991 sous la forme d'un projet
+personnel de Linus Torvalds, alors étudiant en informatique à l'université
+d'Helsinki en Finlande. Linus entreprit d'écrire un noyau après avoir
+constaté qu'il n'existait pas de système _UNIX_ bon marché capable d'exploiter
+pleinement les capacités de son nouveau processeur 32 bits _Intel 80386_.
+Le projet prend alors rapidement de l'ampleur, notamment après avoir adopté en
+1992 la licence _GPLv2_ pour la distribution de son code source. Ce changement
+de licence a permis au noyau d'utiliser les outils du projet @gnu afin de
+fournir un système d'exploitation complet. La première version majeure `1.0`
+est publiée en 1994 avec un support pour l'interfaces graphiques via le projet
+_XFree86_. Cette année les distributions _GNU/Linux_ _Red Hat_ et _SUSE_ publient
+leur première version majeure. À partir de 1995 avec la version `1.1.85`, le
+noyau passe d'une architecture @monolithic à une approche modulaire, permettant
+le chargement à chaud de modules. La version `2.0` publiée
+en 1996 propose un support pour les architecture @smp. En 2007, la version
+`2.6.20` intègre un hyperviseur baptisé _KVM_. En 2024, la totalité des
+patchs du projet _PREEMPT_RT_ sont intégrés dans le noyau, faisant de _Linux_
+un _RTOS_.
 
-== KVM <linux_kvm>
+De nos jours le noyau _Linux_ est développé par une communauté décentralisée de
+développeurs. De très nombreuses entreprises contribuent au noyau, notamment aux
+pilotes (_Intel_, _Google_, _Samsung_, _AMD_, ...).
 
-Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
-baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
-d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
-pour la paravirtualisation.
+== Architectures supportées <linux_architectures>
 
-== PREEMPT_RT <linux_prempt_rt>
+À l'origine, le noyau _Linux_ était uniquement développé pour
+l'architecture _x86-32_. Il a depuis été porté sur de très nombreuses autres
+architectures @linux_arch. Il fonctionne notamment sur les architectures
+suivantes: _x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_
+et _SPARC_.
+
+Quant à l'hyperviseur _KVM_, il supporte la virtualisation assistée par
+le matériel sur certaines architectures. Sur architecture _x86_, il supporte
+les extensions _Intel VT-x_ et _AMD-V_. Sur architecture _ARM_, il supporte
+l'extension de virtualisation de _ARM v7_ à partir
+de _Cortex-A15_ et de _ARMv8-A_. Enfin il supporte certaines architectures
+_PowerPC_ comme _BookE_ et _Book3S_.
+
+== Support multi-processeur <linux_multiprocessor>
+
+Cette section aborde le support d'architectures multi-processeur sous _Linux_.
+
+=== Architectures @smp
+
+Le support pour les architectures @smp est ajoutée dans _Linux 2.0_ en 1996.
+Toutefois les premières versions du noyau supportant les architectures @smp avaient
+recours à un verrou global appelé _BKL_ (_Big Kernel Lock_). Ce dernier assurait que
+les sections critiques du noyau ne pouvaient pas exécutées en parallèle.
+Cette technique avait l'avantage d'être simple à mettre en place mais
+conduisait à des performances médiocres, notamment lorsque le système avait
+de nombreux cœurs. Le _BKL_ a été progressivement remplacé par des mécanismes
+de synchronisation plus fins comme les _spin locks_ et les _mutexes_, puis
+totalement supprimé à partir de la version _2.6.39_. Le noyau propose aussi
+depuis la version 2.5 des structures de données synchronisées de type _RCU_
+(_Read-Copy-Update_) @linux_what_is_rcu qui permettent la lecture et l'écriture
+simultanée sans mécanisme de verrouillage pour les lecteurs. Quant à
+l'ordonnanceur de tâche _EEVDF_ (_Earliest Eligible Virtual Deadline First_), il
+est conçu pour répartir aussi équitablement que possible le temps _CPU_
+entre les processus et une faible latence. C'est l'ordonnanceur par défaut depuis
+la version _6.6_.
+
+Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
+tapez la commande suivante:
+```console
+zcat /proc/config.gz | grep CONFIG_SMP
+```
+
+#aside[`CONFIG_SMP` obligatoire][
+  Le support @smp ne sera plus optionnel à partir de _Linux 6.17_ pour la
+  majorité des architectures @linux_unconditional_smp. Les monoprocesseurs sont
+  de plus en plus rares et les primitives introduites pour le support @smp
+  n'engendrent qu'un surcoût mineur. Cette décision permettra de simplifier le
+  code source du noyau.
+]
+
+=== Processeurs @amp
+
+Depuis la branche `3.x`, le noyau _Linux_ offre un support pour les processeurs
+distants via les sous-systèmes `remoteproc` @linux_remoteproc et `RPMsg` @linux_rpmsg.
+Vous pouvez vérifier que votre noyau est compilé avec le support pour ces systèmes
+via respectivement les commandes:
+```console
+zcat /proc/config.gz | grep CONFIG_REMOTEPROC
+zcat /proc/config.gz | grep CONFIG_RPMSG
+```
+
+Le cas d'usage typique est l'exécution d'un _RTOS_ sur un processeur secondaire
+dans un système embarqué hétérogène sous la forme d'un @soc. Avant l'apparition
+de `remoteproc`, le contrôle des processeurs secondaires se faisait via des @api
+propriétaires et non standardisées.
+
+== Support multi-tâche et temps réels
 
 Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
 _Linux_ de capacités temps réel. Le noyau de l'époque avait été développé dans
@@ -939,45 +1093,19 @@ zcat /proc/config.gz | grep PREEMPT_RT
 Certaines distributions proposent également des noyaux alternatifs avec cette
 option activée, rendant l'installation de _PREEMPT_RT_ nettement plus simple.
 
-== Architectures supportées <linux_architectures>
 
-Le noyau _Linux_ était dans un premier temps développé pour l'architecture _x86_.
-Il a depuis été porté sur de très nombreuses architectures
-@linux_arch. Il fonctionne notamment sur les architectures suivantes:
-_x86-32_, _x86-64_, _ARM v7_, _ARM v8_, _PowerPC_, _MIPS_, _RISC-V_ et _SPARC_.
+== Partitionnement
 
-Quant à l'hyperviseur _KVM_, il nécessite un support matériel pour
-l'hypervirtualisation. Sur architecture _x86_, il supporte _Intel VT-x_ et
-_AMD-V_. Sur architecture _ARM_, il supporte l'architecture _ARM v7_ à partir
-de _Cortex-A15_ et _ARMv8-A_. Enfin il supporte certaines architectures
-_PowerPC_ comme _BookE_ et _Book3S_.
+== Draft
 
-== Support multi-processeur <linux_multiprocessor>
+== KVM <linux_kvm>
 
-Cette section aborde le support d'architectures multi-processeur sous _Linux_.
-=== Architectures SMP
-Le support pour les architectures @smp est ajouté dans _Linux 2.0_ en 1998.
-Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
-tapez la commande suivante:
-```console
-zcat /proc/config.gz | grep CONFIG_SMP
-```
+Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
+baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
+d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
+pour la paravirtualisation.
 
-=== Processeurs distants
-
-Depuis la branche `3.x`, le noyau _Linux_ offre un support pour les processeurs
-distants via les sous-systèmes `remoteproc` @linux_remoteproc et `RPMsg` @linux_rpmsg.
-Vous pouvez vérifier que votre noyau est compilé avec le support pour ces systèmes
-via respectivement les commandes:
-```console
-zcat /proc/config.gz | grep CONFIG_REMOTEPROC
-zcat /proc/config.gz | grep CONFIG_RPMSG
-```
-
-Le cas d'usage typique est l'exécution d'un _RTOS_ sur un processeur secondaire
-dans un système embarqué hétérogène sous la forme d'un @soc. Avant l'apparition
-de `remoteproc`, le contrôle des processeurs secondaires se faisait via des @api
-propriétaires et non standardisées.
+== PREEMPT_RT <linux_prempt_rt>
 
 == Partitionnement <linux_partitioning>
 
@@ -1990,8 +2118,7 @@ offertes par _RTEMS_ inclut:
 - #box[Un ordonnanceur préemptif basé sur les priorités et les pilotés par les événements,]
 - #box[Un support pour le multitâche avec des mécanismes de communications et de
 synchronisation entre les tâches,]
-- #box[Le support pour des architectures multiprocesseurs, aussi bien homogènes que hétérogènes
-(voir la sous-section @rtems_multiprocessors),]
+- #box[Le support pour des architectures @smp et @amp (voir la sous-section @rtems_multiprocessors),]
 - #box[Une modularité importante permettant de configurer statiquement l'image.]
 - #box[Une @api _POSIX_ et une pile réseau _TCP/IP_ basée sur celle du projet _FreeBSD_.]
 
@@ -2423,7 +2550,6 @@ OS invités. Il existe deux types de tels domaines. Les domaines de paravirtuali
 et les domaines _HVM_.]
 - #box[_dom0less_.]
 
-
 == Corruption de la mémoire <xen_memory_corruption>
 
 == Perte du flux d'exécution
@@ -2432,7 +2558,7 @@ et les domaines _HVM_.]
 
 == Profilage <xen_profiling>
 
-=== Support de langages de programmation en @baremetal <xen_baremetal>
+== Support de langages de programmation en @baremetal <xen_baremetal>
 
 == Watchdog <xen_watchdog>
 
@@ -2464,6 +2590,11 @@ _sleep_ ainsi:
 ```console
 xenwatchdogd 30 15
 ```
+
+Notez que l'outil `xl` permet de choisir quelle stratégie appliquer lorsque
+le _watchdog_ est déclenché via le paramètre `on_watchdog`. Plus d'informations
+sont disponibles dans la page de manuelle `xl.cfg`.
+
 _Linux_ dispose d'un pilote _xen_wdt_ pour le _watchdog_ virtuel de _Xen_ qui
 implèmente l'API décrit dans la section @linux_watchdog_api.
 
@@ -2968,6 +3099,10 @@ tels systèmes d'exploitation dans cette étude.]
 L'étude contient un certain nombres de tutoriels et exemples illustrant
 le fonctionnement des différents systèmes étudiés. Pour que ces exemples
 puissent s'exécuter sur votre machine, il faut un certains nombres de prérequis.
+
+TODO: Dans le cadre @smp, le masquage des interruptions seuls ne suffit pas à
+garantir l'isolation d'une section critique.
+
 
 === Xen & MirageOS
 Nous supposons que vous êtes sous une distribution _GNU/Linux_ disposant

@@ -5,6 +5,6 @@ _start:
   mov $0x100000, %esp
   call main
 
-hlt_loop:
+halt:
   hlt
-  jmp hlt_loop
+  jmp halt
