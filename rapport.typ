@@ -3,6 +3,7 @@
 #import "@preview/showybox:2.0.4": showybox
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, node, edge
 #import "@preview/glossy:0.8.0": *
+#import "@preview/oxifmt:1.0.0": strfmt
 #import fletcher.shapes: house, hexagon
 #set text(lang: "fr", size: 12pt)
 #set par(justify: true)
@@ -112,8 +113,10 @@
 
 #outline(depth: 1)
 
-#show link: set text(blue)
-#show ref: set text(blue)
+#let dark-blue = rgb("#1a2f62")
+
+#show link: set text(dark-blue)
+#show ref: set text(dark-blue)
 
 // Glossary
 #let emph-term(term-body) = { emph(term-body) }
@@ -124,14 +127,15 @@
   } else if mode == "long" {
     long-form
   } else {
-    short-form
+    strfmt("{} ({})", short-form, long-form)
   }
 }
 
 #show: init-glossary.with(
   yaml("glossary.yaml"),
+  term-links: true,
   show-term: emph-term,
-  format-term: format-term
+  format-term: format-term,
 )
 
 // Figures
@@ -250,6 +254,9 @@ considérablement d'un système. Comparer ces apports est l'un des enjeux de cet
 
 == Criticité et temps réel <criticity_real_time>
 
+Nous étudions les systèmes d'exploitation dans un contexte critique et temps réel.
+Donnons une définition brève de ces deux qualificatifs.
+
 Un système est dit #definition[critique] si sa défaillance peut
 entraîner des conséquences indésirables. Ses défaillances varient considérablement
 en nature et en gravité:
@@ -258,17 +265,18 @@ d'une base de données bancaire.]
 - #box[Elles peuvent aller jusqu'à des destructions matérielles, comme celles
 qui peuvent subvenir dans une centrale nucléaire ou une usine.]
 - #box[Dans les cas les plus graves, elles peuvent engendrer des pertes humaines,
-comme dans un accident d'avions ou la défaillance d'un système médical.]
+comme dans un accident d'avions ou dans la défaillance d'un système médical comme
+un pacemaker.]
 La criticité d'un système est généralement évalué lors de sa conception et le
 choix d'une solution informatique adaptée en est une étape importante.
 
-Un système informatique est qualifié de #definition[temps-réel] lorsque
-celui-ci est capable de piloter un procédé physique à une vitesse adaptée à
-l'évolution de ce dernier. Un tel système doit donc impérativement respecter des
-limites et contraintes temporelles. Ils sont souvent présents dans des systèmes
-critiques.
+Un système informatique est qualifié de #definition[temps réel] s'il est capable
+de piloter un système physique à une vitesse adaptée à l'évolution de ce dernier. Pour
+parvenir à ce résultat, les logiciels qu'il embarque doivent être capable de
+répondre à des stimuli dans un temps imparti. L'enjeu n'est donc par la performance
+mais le respect d'échéances.
 
-== Organisation et critères de comparaison
+= Organisation et critères de comparaison
 
 Au travers de cette étude, les systèmes d'exploitation ont été étudiés et comparés
 suivant les critères détaillés ci-dessous. Il est noté que certains critères
@@ -283,11 +291,11 @@ librement utilisée dans les chapitres ultérieurs.]
 @xen, @xtratum exposent chacun des OS étudiés.]
 - #box[Le chapitre @comp contient des tableaux comparatifs.]
 
-=== Type de systèmes d'exploitation
+== Type de systèmes d'exploitation
 Dans ce document, nous classons les systèmes d'exploitation étudiés en quatre
 grandes catégories:
 - #box[Les #definition[systèmes d'exploitation généralistes]
-(_GPOS_ pour _General-Purpose Operating System_) constituent la
+@gpos constituent la
 classe la plus connue du grand public. Ils sont le plus souvent directement
 exécutés au-dessus de la couche matérielle et offrent un large éventail de
 services. Leur domaine d'application est particulièrement vaste puisqu'on les
@@ -313,7 +321,7 @@ une image appelée un #definition[unikernel]. Celui-ci peut ensuite être exécu
 sur un hyperviseur ou en _bare-metal_, c'est-à-dire
 directement sur la couche matérielle.]
 
-=== Architectures supportées
+== Architectures supportées
 Pour chacun des systèmes d'exploitation étudiés, nous donnons une liste des
 différentes architectures supportées. Afin que cet effort soit tenable,
 nous avons sélectionné les architectures avec les critères suivants:
@@ -371,7 +379,7 @@ en général que le programme peut être compilé vers le jeu d'instructions mai
 reste un effort important à fournir si l'OS ne fournit pas un @bsp pour la carte
 considérée. Cet aspect n'est pas abordé en profondeur dans l'étude.]
 
-=== Support multi-processeur
+== Support multi-processeur
 
 Au début du XXI#super[e] siècle, les architectures multi-processeurs se sont
 imposées dans l'ensemble des secteurs de l'informatique. Jusqu'au milieu des
@@ -396,18 +404,19 @@ principalement motivé par la nécessité d'accroître la puissance de calcul to
 en permettant une meilleure intégration et une réduction de poids et de taille
 des systèmes embarqués, notamment dans les secteur de l'avionique et du spatial.
 
-Il existe deux grandes catégories d'architecture multiprocesseur:
+Il existe deux catégories d'architecture multiprocesseur utilisée dans les
+systèmes critiques:
 - #box[Les architectures @smp qui sont constituées d'un ensemble de cœurs
 le plus souvent homogènes et destinés à être pilotés par un unique système
 d'exploitation. Les cœurs partagent la mémoire principale, les périphériques et
 la majorités des caches et des bus mémoires. Ces architectures offrent un
 excellent débit. Elles sont répandues aussi bien sur les ordinateurs personnels
-que les serveurs.]
+que les serveurs mais sont aussi en usage dans des systèmes critiques récents.]
 - #box[Les architectures @amp qui sont constituées le plus souvent d'un ensemble
 de cœurs hétérogènes. Contrairement aux architectures @smp, les architectures
 @amp sont conçues pour exécuter sur chaque cœur une instance distincte
-d'un ou plusieurs programmes bare-metal. Ces architectures
-sont davantage déterministes que les architectures @smp et offrent une meilleure
+d'un ou plusieurs programmes bare-metal. Elle offre un meilleur déterminisme que
+les architectures @smp et une meilleure
 isolation des tâches. Elles sont donc très présentes sur dans l'embarqué
 critique, notamment sous la forme de @soc.]
 
@@ -460,11 +469,28 @@ multiprocesseur.
   caption: [Différences entre les architectures _SMP_ et _AMP_.],
 ) <smp_vs_amp>
 
-=== Support multi-tâche et temps-réel
+== Support temps-réel
 
-=== Partitionnement
+Comme nous l'avons expliqué dans la sous-section @criticity_real_time, les
+logiciels, et en particulier le système d'exploitation, d'un système critique
+doivent fournir des garanties sur le temps d'exécution de leurs routines. En informatique
+usuelle, le temps d'exécution d'un programme ne fait généralement pas parti
+de sa correction. Ce n'est plus le cas dans un système temps réel où répondre après
+une certaine échéance conduit à un résultat erroné. On souhaite donc que les calculs
+soient fait suffisamment vite en toute circonstance. À cette fin, le système doit
+être aussi déterministe que possible afin qu'il soit possible en pratique d'estimer
+le temps d'exécution des routines dans le pire cas#footnote[Ce concept est souvent appelé
+_WCET_ (_Worst Case Execution Time_) dans la littérature.]. Dans le cas
+d'un système d'exploitation, le déterminisme est souvent assuré par le caractère
+préemptible du noyau. En effet, lorsqu'une tâche critique doit commencer son
+exécution aussi vite que possible, il ne faut pas que celle-ci doive attendre
+la fin de l'exécution d'une longue routine du noyau avant d'avoir la main sur
+le _CPU_ ou un périphérique. La latence du système d'exploitation est donc une
+mesure importante pour assurer le respect des échéances.
 
-=== Corruption de la mémoire
+== Partitionnement
+
+== Corruption de la mémoire
 
 Nous avons étudié le support logiciel des différents systèmes visant à prévenir
 la corruption de la mémoire. On distingue deux types d'erreurs:
@@ -486,7 +512,7 @@ puces supplémentaire pour gérer des codes correcteurs. On parle de mémoire @e
   il est en revanche commun dans celui destiné aux serveurs.
 ]
 
-=== Support de watchdog
+== Support de _watchdog_
 
 Un #definition[watchdog] est un dispositif matériel ou logiciel conçu
 pour détecter le blocage d'un système informatique, et de réagir
@@ -503,7 +529,7 @@ recours aux _watchdogs_ pour améliorer leur fiabilité. Pour chacun des systèm
 nous avons étudiés le support des _watchdog_ logiciels et matériels et avons
 fourni un exemple d'utilisation lorsque cela était possible.
 
-=== Support de langages de programmation en @baremetal
+== Support de langages de programmation en baremetal
 
 La programmation @baremetal était et demeure commune dans les systèmes critiques.
 Toutefois, comme mentionné dans la sous-section @why_os, l'adoption d'un système
@@ -525,7 +551,7 @@ dédiée au @baremetal. Pour le langage _OCaml_, la difficulté est plus importa
 car son @runtime contient un @gc, ce qui implique de devoir porter un plus
 grand nombre d'appels systèmes.
 
-=== Temps de démarrage
+== Temps de démarrage
 
 Pour les hyperviseurs, le temps de démarrage des @vm est une métrique importante
 de leur performance. En cas de défaillance d'une @vm, on espère
@@ -534,7 +560,7 @@ courant, notamment dans le cloud computing, est de lancer des @vm à la demande
 pour s'adapter au mieux aux variations de la charge de travail. Ces @vm doivent
 se lancer rapidement pour garantir des temps de réponse acceptables.
 
-=== Maintenabilité
+== Maintenabilité
 
 L'usage d'un @cots présente le risque d'une rupture de la maintenance du système.
 
@@ -543,344 +569,6 @@ sous-critères:
 - La taille du code source.
 - La modularité de la base de code et la complexité des invariants de celle-ci.
 - L'organisation et le nombres de développeurs.
-
-= Conceptions générales
-
-Cette section regroupe davantage d'informations sur les designs généraux des
-systèmes d'exploitations. À ce titre cet exposé peut être pertinent quant au
-choix du design dans un projet.
-
-== Noyau monolithique versus micronoyau <monolithic_vs_microkernel>
-
-La notion de système d'exploitation est complexe à délimiter car
-les tâches exécutées en mode noyau peuvent varier considérablement d'un système
-à l'autre. Toutefois, les systèmes d'exploitation modernes partagent un ensemble
-de services fondamentaux et notamment:
-- La gestion de la mémoire principale.
-- La gestion des _threads_ et des processus.
-- #box[La communication inter-processus
-#footnote[En anglais _Inter Process Communication_, abrégé _IPC_.].]
-- La gestion des périphériques d'entrée/sortie.
-- La pile réseau.
-- Le système fichiers.
-- La gestion des droits d'accès.
-
-Deux approches extrêmes s'opposent dans la conception des noyaux:
-- #box[Les noyaux #definition[monolithiques] intègrent un grand nombres de
-services exécutés en mode noyau. Par exemple, le noyau _Linux_ gère
-tous les services mentionnés ci-dessus dans ce mode.]
-- #box[Les #definition[micronoyaux], au contraire, cherchent à minimiser la
-quantité de code exécuter en mode noyau. La gestion de la mémoire, des
-_threads_ et l'_IPC_ sont assurés par le micronoyau, tandis que les autres
-services peuvent être exécutés en mode utilisateur.]
-
-Les deux approches ont des avantages et inconvénients:
-- #box[L'approche monolithique
-est souvent de conception plus simple. Elle offre de très bonnes performances
-en permettant une communication rapide entre les différents services, évitant
-notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
-d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
-souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
-à la taille nettement plus importante de leur base de code. Leur vérification et
-certification est également plus complexe, tandis que la fiabilité du système
-est compromise dès lors que l'un de ses services fait défaut.]
-- #box[L'approche micronoyau est conceptuellement plus complexe. L'efficacité
-de la communication _IPC_ est cruciale pour les performances étant donné qu'un
-grand nombres de services tournent en mode utilisateur. En contrepartie, cette
-approche offre une plus grande fiabilité et robustesse face aux pannes. La vérification
-et la certification est facilité par la base de code plus réduite.]
-
-On peut également citer une dernière conception qui est une variante de l'approche
-monolithique. Il s'agit des noyaux #definition[modulaires].
-
-=== Le noyau L4 <l4_kernel>
-Un exemple notable de tel système est le micronoyau _L4_
-développé au sein de l'université Karlsruhe. Ce projet visait à réduire les
-écarts de performances entre les micronoyaux et les architectures monolithiques
-de l'époque. Ce projet a servi de base à deux systèmes d'exploitations étudiés
-dans ce rapport: _seL4_ et _PikeOS_.
-
-Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
-- Les noyaux monolithique.
-- #box[Les micronoyaux: au contraire du noyau monolithique, le micronoyau se
-concentre sur les opérations fondamentales qui ne peuvent être effectuée que
-dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
-et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
-dans le _user space_. ]
-- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
-designs précédents. Le noyau a la possibilité de charger ou décharger certaines
-sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
-
-== Hyperviseur <type_hypervisor>
-
-Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
-raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
-et sûre, une première solution consiste
-à héberger chaque service sur une machine individuelle. On obtient ainsi une
-isolation totale des différents services. Cette solution présente
-toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
-maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
-besoins à moindre frais.
-
-Les _hyperviseurs_ se divisent généralement en deux catégories:
-- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
-matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
-- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
-intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
-OS dans ce document.]
-
-Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
-- #box[La _virtualisation total_: le comportement de la couche matérielle]
-- #box[La _virtualisation partielle_]
-- #box[La _paravirtualisation_]
-
-La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
-le comportement de la couche matérielle en exposant la même interface aux systèmes
-invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
-lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation
-totale:
-- la translation binaire (_binary translation_ en anglais)
-- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
-
-La _paravirtualisation_ est une technique de virtualisation qui consiste à
-présenter une interface logicielle similaire au matériel mais optimisée pour
-la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
-et du système d'exploitation invité. En contre partie, la paravirtualisation
-permet généralement d'obtenir de meilleures performances.
-
-== RTOS <type_rtos>
-
-Un _RTOS_ est un système d'exploitation offrant des garanties sur le temps
-d'exécution de ses tâches. Les contraintes temporelles sont d'autant plus
-difficiles à garantir que le système est multi-tâche. On distingue
-trois classes de contraintes temporelles suivant leur criticité:
-- #box[Les contraintes _soft real time_ sont des contraintes nécessaires pour
-offrir une certaine qualité de service. Par exemple le visionnage d'une vidéo
-nécessite un _frame rate_ minimal. La violation de ces contraintes
-n'occasionne qu'une dégradation de la qualité du service rendu.]
-- #box[Les contraintes _firm real time_ sont similaires au cas précédent mais
-leur violation peut conduire à un résultat invalide.]
-- #box[Les contraintes _hard real time_ sont les plus strictes et leur violation
-a généralement des conséquences indésirables. Ces contraintes sont typiques dans
-les systèmes critiques.]
-
-Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
-d'un programme informatique sur une plateforme matérielle donnée.
-
-= Notions générales <general_notions>
-
-Cette section contient des notions générales autour des systèmes
-d'exploitation et des interfaces matérielles pertinentes pour ce rapport. Ces
-notions ne sont qu'effleurées étant donné d'une part la complexité des
-architectures et des OS actuels, et d'autre part le foisonnement des solutions
-existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
-au fil de la section.
-
-== Partitionnement des ressources
-
-Le partitionnement des ressources est un mécanisme fondamental des systèmes
-d'exploitation modernes. Il vise à permettre l'exécution simultanée de
-plusieurs tâche sur une même machine physique. On parle alors de système
-#definition[multi-tâche].
-En effet, les ressources matérielles étant le plus souvent insuffisantes pour exécuter
-chaque tâche sur sa propre machine, il est nécessaire de partager ces ressources
-entre les programmes.
-Dans ce contexte, l'isolation des tâches en cours d'exécution devient nécessaire
-afin de s'assurer qu'un programme malveillant ou défectueux ne puisse compromettre
-l'ensemble du système. Ce partage peut être opéré à plusieurs niveaux, notamment:
-- Au niveau des #definition[processus] s'exécutant sur un système d'exploitation.
-- Au niveau des OS invités s'exécutant sur un hyperviseur.
-
-Dans cette section, nous examinons ce partionnement pour deux ressources:
-la mémoire principale et le processeur.
-
-=== Partitionnement en mémoire
-
-Le partitionnement en mémoire vise à partager la mémoire principale entre
-plusieurs tâches en cours d'exécution. Ce partage est crucial car il permet de
-conserver en mémoire tout ou une partie des données de plusieurs processus,
-améliorant les performances du système.
-
-Dans le cas des processus, la méthode la plus courante pour gérer ce partage
-s'appuie sur la #definition[mémoire virtuelle]. Au lieu de faire référence à
-des adresses physiques directement, les instructions utilisent des
-adresses virtuelles qui sont traduites à la volée vers des adresses physiques
-par une puce dédiée: le _MMU_ (_Memory Management Unit_). Ainsi, chaque
-processus a l'illusion de disposer de la totalité de la mémoire principale.
-
-Lorsqu'une instruction tente d'accéder à une adresse virtuelle qui ne figure pas
-dans le table du processus en cours d'exécution, un _page fault_ est émis sous
-la forme d'une interruption matérielle et permet au système d'exploitation de réagir
-en conséquence.
-
-Un autre aspect important est la #definition[pagination]. L'espace d'adressage est
-subdivisée en des pages de tailles fixes. Cela permet de n'avoir qu'une portion
-des données d'un processus en mémoire et de charger les pages manquantes à la
-demande.
-
-=== Partitionnement en temps
-
-Les systèmes d'exploitation moderne permettent l'exécution de programmes dans un
-contexte multi-tâches. Cette exécution peut être #definition[concurrentielle]
-ou #definition[parallèle]. Dans cette section, une tâche peut aussi bien désigner
-un programme, un _thread_ ou même un OS invité.
-
-L'#definition[ordonnanceur de tâche] (_scheduler_) est un des composants
-principales d'un système d'exploitation. Son rôle est de décider quelle tâche doit
-être exécuté à un instant donné sur le CPU. Un _scheduler_ peut poursuivre des
-objectifs différents et parfois incompatibles. Il peut notamment chercher à:
-- #box[Maximiser la quantité de travail accomplie par unité de temps. En anglais,
-on parle souvent du _throughtput_.]
-- #box[Minimiser la #definition[latence] (_latency_), c'est-à-dire ]
-- #box[Être #definition[équitable] (_fairness_) en donnant des tranches de temps
-en proportion de la priorité et de la charge de travail d'une tâche.]
-
-L'ordonnanceur de tâches d'un _RTOS_ cherche à maximiser le nombre de tâches
-pouvant respecter leurs _deadlines_ simultanément. À cette fin, la
-#definition[latence].
-
-L'ordonnanceur de tâches d'un _GPOS_ cherche le plus souvent à maximiser
-la quantité de travail accomplie par unité de temps#footnote[Cette quantité
-est souvent désigner par _throughput_ en anglais.]
-
-Un _cœur_ est un ensemble de circuits intégrés capable d'exécuter des instructions
-de façon autonome. Un microprocesseur embarquant plusieurs cœurs est qualifié
-de _processeur multi-cœur_.
-
-De nos jours, certains fabricants comme Intel ou ARM proposent des processeurs où les
-cœurs ne sont plus identiques. L'intérêt principal de ces architectures hybrides est
-de faire un compromis entre la puissance de calcul et l'efficacité énergétique. Ainsi
-on y trouve généralement deux types de cœurs:
-- #box[Les cœurs performances: ces unités sont dédiées aux tâches lourdes mais
-  sont gourmandes en énergie. On peut citer les cœurs _P-cores_ chez Intel et
-  _big_ chez ARM.]
-- #box[Les cœurs économes: moins performantes que les cœurs de la
-  première catégorie mais consomment nettement moins d'énergie et dissipent moins
-  de chaleur. On peut citer les cœurs _E-cores_ chez Intel et _LITTLE_ chez ARM).]
-
-== Gestion des interruptions
-
-La gestion des interruptions est l'une des tâches primordiales d'un système d'exploitation.
-Une #definition[interruption] est un événement matériel qui altère le flot d'exécution normal
-d'un programme. Au niveau matériel, elles se manifestent par des signaux
-électriques pouvant être émis à tout moment par:
-- Un périphérique (clavier, disque, carte PCI, ...).
-- Le CPU lui-même.
-- #box[Dans une architecture multi-cœur, des signaux sont émis entre les cœurs.]
-Lorsqu'une interruption est déclenchée, l'exécution courante est suspendue. Dans ce cas,
-un gestionnaire d'interruption prend le relais. Il est important de noter qu'une
-interruption peut subvenir à n'importe quel moment, y compris pendant l'exécution
-d'un gestionnaire d'interruption. Cela pose plusieurs difficultés:
-- #box[Il n'est pas toujours possible d'interrompre l'exécution d'une routine, notamment
-dans une section critique. C'est un scénario courant dans un noyau.]
-- #box[Dans un programme temps réel et suivant le niveau d'exigence, la latence induite par
-ces interruptions doit ou non être prise en compte dans les contraintes temporelles.]
-
-=== Interruptions programmables
-
-Les architectures modernes permettent généralement la programmation des interruptions
-grâce à des puces dédiées réparties entre la carte mère et le CPU:
-- #box[Sur les architectures Intel et AMD, cette tâche est répartie entre la puce
-_I/O APIC_#footnote[_APIC_ est un abréviation pour _Advanced Programmable Interrupt Controller_]
-qui gère les interruptions émises par les périphériques et des circuits intégrés dans chaque
-cœur appelés _Local APIC_ qui gèrent les interruptions entre les cœurs.]
-- #box[Sur les architectures ARM, cette tâche est dévolue au _GIC_
-(_Generic Interrupt Controller_).]
-L'émetteur de l'interruption envoie une requête d'interruption
-(_IRQ_ pour _Interrupt ReQuest_) à l'une de ces puces qui décide ensuite d'envoyer ou non
-l'interruption au destinataire (TODO: vérifier).
-
-=== Masquage des interruptions
-
-Une solution pour gérer les interruptions est de _masquer_, c'est-à-dire bloquer,
-temporairement certaines d'entre elles.
-
-Les architecture moderne embarque généralement plusieurs puces dédiées à la gestion des
-requêtes d'interruption (_IRQ_ pour _Interrupt ReQuest_). Par exemple, sur les architectures
-Intel et AMD, cette tâche est accomplie par le sous-système _APIC_
-(_Advanced Programmable Interruption Controller_). Sur les architectures ARM,
-elle est dévolue au _GIC_ (_Generic Interrupt Controller_).
-
-Les processeurs multi-cœur disposent aussi de puce _APIC_ par cœur, permettant
-la gestion des interruptions entre cœurs (_Inter-Processor Interrupt_ IPI).
-
-Les contrôleurs d'interruption permettent également de mettre des niveaux de priorité
-sur les interruptions.
-
-== Corruption de la mémoire
-
-Dans cette section, on s'intéresse à la corruption de la mémoire et plus
-précisément à la détection et la correction de ces erreurs.
-Une méthode communément utilisée pour détecter et corriger les erreurs consiste
-à recourir à un code correcteur d'erreurs (en anglais _Error Correcting Code_, abrégé _ECC_).
-Cette méthode permet de corriger la majorité des _soft errors_.
-
-=== Mémoire ECC <ecc_memory>
-
-De nos jours, les mémoires de type _DRAM_ (_Dynamic Random Access Memory_) sont
-massivement utilisées comme mémoire principale aussi bien sur les serveurs que
-les ordinateurs personnels. Certaines barrettes sont dotées d'une puce
-mémoire supplémentaire permettant l'utilisation d'un code correcteur.
-Ce type de mémoire nécessite une prise en charge par le contrôleur mémoire, le
-CPU et le BIOS. Si cette prise en charge est rare sur le matériel grand public,
-elle est en revanche commune sur celui dédié aux serveurs.
-
-=== Scrubbing <scrubbing>
-
-Les mémoires _ECC_ décrites en @ecc_memory permettent de corriger automatiquement
-les erreurs à la lecture. Toutefois certaines données peuvent restées en
-mémoire longtemps sans être accédées. On peut par exemple penser aux
-enregistrements d'une base de donnée que l'on souhaite maintenir dans la
-mémoire principale pour en accélérer l'accès. Les _soft errors_ peuvent
-alors s'y accumuler au point que le code correcteur ne permette plus leur correction.
-Pour pallier ce problème, on a recours au _scrubbing_. Il en existe de deux types:
-- #box[Le _demand scrubbing_ permet à l'utilisateur de déclencher manuellement le
-nettoyage d'une plage mémoire.]
-- #box[Le _patrol scrubbing_ qui consiste à scanner périodiquement la mémoire
-pour détecter et corriger les erreurs régulièrement.]
-
-=== Interfaces matérielles
-
-Bien qu'aucun pilote spécifique ne soit requis pour les mémoires _ECC_, certains
-systèmes d'exploitation permettent de les piloter via des interfaces matérielles
-spécifiques. Ces interfaces permettent notamment de:
-- #box[Désactiver le _scrubbing_ lorsque cela pose des soucis de performance,]
-- #box[Changer le taux de balayage du _patrol scrubbing_,]
-- #box[Notifier et journaliser les _soft errors_ et les _hard errors_,
-permettant ainsi aux logiciels de réagir,]
-- #box[Spécifier une plage d'adresses pour le _demand scrubbing_.]
-Il existent de nombreuses interfaces matérielles. Le tableau comparatif suivant liste
-quelques unes d'entre elles ainsi que leurs caractéristiques clés.
-
-#figure(
-  table(
-    columns: (auto, auto, auto, auto, auto),
-    align: (left, left, left, left, left),
-    [Nom], [Demand scrubbing],[Plage d'adresses],  [Patrol scrubbing], [Taux de balayage],
-    [ACPI ARS], [Oui], [Oui], [Non], [Non],
-    [ACPI RAS2], [Oui], [Oui], [Oui], [Oui],
-    [CXL Patrol Scrub], [Non], [Non], [Oui], [Oui],
-    [CXL ECS], [Non], [Non], [Oui], [Non],
-  ),
-  caption: [Interfaces de pilotage pour le _scrubbing_],
-) <scrubbing_interfaces>
-
-== Profilage <profiling>
-
-Le profilage est une technique utilisée pour mesurer et analyser les performances
-d'un programme. Elle est souvent employée à des fins d'optimisation en
-permettant de localiser des points chauds, c'est-à-dire des sections de code
-particulièrement gourmandes en ressources (temps CPU, mémoire, ...). Toute mesure
-ayant un impact sur les caractéristiques de l'objet mesuré, il est crucial que
-cette instrumentation soit faite de la façon la moins intrusive possible.
-Autrement, on risque de mesurer les performances de son outil de profilage
-plutôt que ceux du programme étudié.
-
-À cette fin, certains outils utilie une approche statistique. Au lieu
-d'enregistrer tous les événements possibles lors de l'exécution du programme,
-on n'effectue un échantillonnage de ces mesures en espérant que les échantillons
-collectés seront représentatifs des caractéristiques de performances du programme
-étudié.
 
 = Linux <linux>
 
@@ -902,12 +590,12 @@ personnel de Linus Torvalds, alors étudiant en informatique à l'université
 d'Helsinki en Finlande. Linus entreprit d'écrire un noyau après avoir
 constaté qu'il n'existait pas de système _UNIX_ bon marché capable d'exploiter
 pleinement les capacités de son nouveau processeur 32 bits _Intel 80386_.
-Le projet prend alors rapidement de l'ampleur, notamment après avoir adopté en
-1992 la licence _GPLv2_ pour la distribution de son code source. Ce changement
+Le projet prend alors rapidement de l'ampleur, notamment après l'adoption en
+1992 de la licence _GPLv2_ pour distribuer le code source. Ce changement
 de licence a permis au noyau d'utiliser les outils du projet @gnu afin de
 fournir un système d'exploitation complet. La première version majeure `1.0`
 est publiée en 1994 avec un support pour l'interfaces graphiques via le projet
-_XFree86_. Cette année les distributions _GNU/Linux_ _Red Hat_ et _SUSE_ publient
+_XFree86_. Cette année là les distributions _GNU/Linux_ _Red Hat_ et _SUSE_ publient
 leur première version majeure. À partir de 1995 avec la version `1.1.85`, le
 noyau passe d'une architecture @monolithic à une approche modulaire, permettant
 le chargement à chaud de modules. La version `2.0` publiée
@@ -939,12 +627,12 @@ _PowerPC_ comme _BookE_ et _Book3S_.
 
 Cette section aborde le support d'architectures multi-processeur sous _Linux_.
 
-=== Architectures @smp
+=== Architectures @smp <linux_smp>
 
 Le support pour les architectures @smp est ajoutée dans _Linux 2.0_ en 1996.
 Toutefois les premières versions du noyau supportant les architectures @smp avaient
-recours à un verrou global appelé _BKL_ (_Big Kernel Lock_). Ce dernier assurait que
-les sections critiques du noyau ne pouvaient pas exécutées en parallèle.
+recours à un verrou global appelé @bkl. Ce dernier assurait que
+les sections critiques du noyau ne pouvaient pas s'exécuter en parallèle.
 Cette technique avait l'avantage d'être simple à mettre en place mais
 conduisait à des performances médiocres, notamment lorsque le système avait
 de nombreux cœurs. Le _BKL_ a été progressivement remplacé par des mécanismes
@@ -955,7 +643,7 @@ depuis la version 2.5 des structures de données synchronisées de type _RCU_
 simultanée sans mécanisme de verrouillage pour les lecteurs. Quant à
 l'ordonnanceur de tâche _EEVDF_ (_Earliest Eligible Virtual Deadline First_), il
 est conçu pour répartir aussi équitablement que possible le temps _CPU_
-entre les processus et une faible latence. C'est l'ordonnanceur par défaut depuis
+entre les processus avec une faible latence. C'est l'ordonnanceur par défaut depuis
 la version _6.6_.
 
 Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
@@ -972,7 +660,7 @@ zcat /proc/config.gz | grep CONFIG_SMP
   code source du noyau.
 ]
 
-=== Processeurs @amp
+=== Architectures @amp <linux_amp>
 
 Depuis la branche `3.x`, le noyau _Linux_ offre un support pour les processeurs
 distants via les sous-systèmes `remoteproc` @linux_remoteproc et `RPMsg` @linux_rpmsg.
@@ -986,14 +674,16 @@ zcat /proc/config.gz | grep CONFIG_RPMSG
 Le cas d'usage typique est l'exécution d'un _RTOS_ sur un processeur secondaire
 dans un système embarqué hétérogène sous la forme d'un @soc. Avant l'apparition
 de `remoteproc`, le contrôle des processeurs secondaires se faisait via des @api
-propriétaires et non standardisées.
+propriétaires et non standardisées. Quant au système _RPMsg_
+(_Remote Processor Messaging_), il permet la intercommunication avec un
+processeur distant via un protocole asynchrone à la _virtio_.
 
-== Support multi-tâche et temps réels
+== Support temps réel
 
 Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
 _Linux_ de capacités temps réel. Le noyau de l'époque avait été développé dans
-l'optique de maximiser le débit de l'ordonnanceur de tâches. Les changements requis
-pour rendre le noyau préemptible étaient donc considérés comme trop complexes,
+l'optique de maximiser le débit de son ordonnanceur de tâches. Les changements
+pour rendre le noyau préemptible étaient donc considérés trop complexes,
 et des approches alternatives ont émergées. L'une de ces approches consiste à
 contourner le noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
 directement au-dessus d'un micronoyau temps réel. On parle alors de
@@ -1047,12 +737,56 @@ _cokernel_. Cette architecture est illustrée dans la figure
     height: 100%,
     inset: 1em))
 
-Les projets open-sources _RTLinux_ et _RTAI_#footnote[Le projet est
-toujours activement développé.] adoptèrent cette approche avec succès.
-L'avantage de celle-ci est de donner d'excellentes garanties quant aux respects
-des _deadlines_ et une latence faible. En contrepartie, le développeur
-d'applications temps réel ne peut pas utiliser l'écosystème et les
-bibliothèques UNIX, rendant le développement plus ardu et coûteux. Ce défaut
+En particulier, les projets open-sources _RTLinux_, _RTAI_ et _Xenomai_
+adoptèrent cette approche avec succès. Ces
+principaux avantages sont ses bonnes garanties quant aux respects
+des _deadlines_ et une latence très faible. En contrepartie, le développeur
+de l'application temps réel ne peut pas utiliser l'écosystème _UNIX_, rendant
+le développement plus ardu et coûteux. Par exemple cette architecture conduit
+à une duplication des pilotes puisque les tâches temps réel ne peuvent pas utiliser
+les pilotes du noyau _Linux_. Il faut également maintenir une couche d'abstraction
+dans le noyau _Linux_ pour lui permettre d'interagir avec le micronoyau. Cette
+contrainte a motivé le développement
+de patchs visant à doter le noyau _Linux_ de capacités temps réel. Le plus connu
+et utilisé est _PREEMPT_RT_ que nous étudions dans la sous-section @preempt_rt
+ci-dessous.
+
+=== _PREEMPT_RT_ <preempt_rt>
+
+Le projet _PREEMPT_RT_ vise à rendre la majorité des routines du noyau
+_Linux_ préemptibles afin de pouvoir l'utiliser dans un système temps réel.
+Contrairement aux _cokernels_, cette approche conduit à une modification en
+profondeur du noyau. Du fait de sa complexité, le projet, initié par Thomas
+Gleixner et Ingo Molnár
+en 2005, s'est étalé sur une vingtaine d'années sous la forme d'une succession
+de patchs. Ces derniers ont été progressivement intégrés à la branche principale
+du noyau _Linux_. Les derniers patchs ont été appliqués en septembre 2024,
+faisant de _Linux_ un _RTOS_ complet à partir de sa version _6.12_.
+
+==== Installation
+
+Bien que _PREEMPT_RT_ soit désormais distribué avec la branche
+principale du noyau, il est nécessaire de compiler ce dernier avec l'option
+de compilation `CONFIG_PREEMPT_RT` activé pour obtenir un noyau préemptible.
+Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
+vous pouvez tapez la commande:
+```console
+zcat /proc/config.gz | grep PREEMPT_RT
+```
+Certaines distributions proposent également des noyaux alternatifs avec cette
+option activée, rendant l'installation de _PREEMPT_RT_ plus simple.
+
+==== Principes
+
+- Remplacer les _spinlocks_ par des _mutexes_ temps réels.
+- #box[Exécuter les gestionnaires d'interruption dans des _threads_ noyau.
+Cela permet d'interrompre l'exécution d'un gestionnaire d'interruption si une
+tâche plus prioritaire arrive et de mettre une priorité sur ce _thread_ noyau
+au même titre que n'importe quel processus.]
+
+=== Draft
+
+Ce défaut
 majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
 d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
 l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
@@ -1082,16 +816,6 @@ des fonctionnalités temps réel.
 
 La documentation de _PREEMPT_RT_: @preempt_rt_doc.
 
-Bien que les patchs de _PREEMPT_RT_ soient désormais distribués avec la branche
-principale du noyau, il est nécessaire de compiler ce dernier avec l'option
-de compilation `CONFIG_PREEMPT_RT` activé pour obtenir un noyau préemptible.
-Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
-vous pouvez tapez la commande:
-```console
-zcat /proc/config.gz | grep PREEMPT_RT
-```
-Certaines distributions proposent également des noyaux alternatifs avec cette
-option activée, rendant l'installation de _PREEMPT_RT_ nettement plus simple.
 
 
 == Partitionnement
@@ -1981,8 +1705,15 @@ Quelques avantages:
 == SpaceOS <mirageos_spaceos>
 
 = PikeOS <pikeos>
+_PikeOS_ est un micronoyau temps réel dédié à l'embarqué critique. Ces
+principales fonctionnalités sont:
 
-_PikeOS_ est un _RTOS_ et un hyperviseur de type 1 développé par l'entreprise
+== Draft
+
+- Un noyau de séparation permettant la criticité mixte
+- Déterminisme
+
+_PikeOS_ est un @rtos et un hyperviseur de type 1 développé par l'entreprise
 _SYSGO_ depuis 2005. En 2012, l'entreprise _SYSGO_ est rachetée par _Thalès_.
 À l'origine _PikeOS_ était basé sur le micronoyau _L4_#footnote[Voir la section
 @monolithic_vs_microkernel pour plus d'informations sur le micronoyau _L4_.].
@@ -1996,20 +1727,63 @@ section @pikeos_licenses.
 _PikeOS_ supporte les architectures suivantes: _x86-64_, _ARM v7_, _ARM v8_,
 _PowerPC_, _RISC-V_ et _SPARC_.
 
+Le support pour l'architecture _ARM_ existe depuis 2006.
+Quant à son hyperviseur, il propose un support pour la virtualisation matérielle
+sur les architectures _ARM v7_ @pikeos_hwvirt_armv7, _x86-64_ @pikeos_hwvirt_x86.
+
 Le support matériel se fait via des @bsp. Il est
 également possible de financer le développement de nouveaux _BSP_.
+
+== Support multi-processeur
+
+=== Architectures @smp <pikeos_smp>
+
+Le support @smp a été amélioré dans _PikeOS 5.0_. Afin de garantir un
+déterminisme suffisant et des estimations @wcet suffisamment fines, _PikeOS_
+avait recours à un verrou global similaire au @bkl de _Linux_
+(voir la sous-section @linux_smp). Ce verrou assurait que
+les sections critiques du micronoyau ne pouvaient pas s'exécuter en parallèle.
+Depuis la version _5.0_, _PikeOS_ utilise un système de verrouillage plus fin
+qui permet aux appels systèmes de s'exécuter en parallèle s'ils n'utilisent pas
+des ressources en commun.
+
+=== Architectures @amp <pikeos_amp>
+
+L'entreprise _SYSGO_ propose une version spéciale de _PikeOS_ baptisée _PikeOS
+for MPU_. Cette édition de l'hyperviseur est dédiée aux plateformes @soc équipées
+de _MPU_ et offre en particulier un support pour des architecture @amp. Il supporte les
+architectures _ARMv7-R_, _ARMv8-R_ et dispose de @bsp les @soc _NG-Ultra_ et
+_AMD Zynq Ultrascale+_.
+
+== OS invités supportés
+
+Les systèmes invités sont appelés _GuestOS_.
+
+=== _ELinOS_
+
+_ELinOS_ est une distribution _Linux_ pour l'embarqué temps réel maintenu par
+la société _SYSGO_ @pikeos_elinos. Il pour être utilisé dans une partition de
+_PikeOS_ aussi bien en paravirtualisation qu'avec la virtualisation assitée
+par le matériel. _SYSGO_ offre un support pour chaque version d'une durée de
+5 ans qui peut être étendu.
 
 == Partitionnement
 
 Son hyperviseur permet à la fois la paravirtualisation et la virtualisation
-de type _HVM_.
+de assistée par le matériel.
 
-== Licences & brevets <pikeos_licenses>
+- _HwVirt_ désigne la virtualisation assistée par le matériel.
+- _Pv-virt_ désigne la paravirtualisation.
 
-La société SYSGO propose deux types de licences propriétaires:
-- #box[Une licence de développement permettant de concevoir des systèmes basés
-sur _PikeOS_.]
-- Une licence de déploiement.
+Il est possible d'avoir une certification pour une partition spécifique.
+
+== Corruption de la mémoire
+
+== Support de _watchdog_ <pikeos_watchdog>
+
+== Temps de démarrage <pikeos_booting_time>
+
+== Certifications <pikeos_certifications>
 
 Certifications:
 - RTCA DO-178B/C
@@ -2022,6 +1796,13 @@ Certifications:
 Normes:
 - Critères communs (quel niveau?)
 - SAR
+
+== Licences <pikeos_licenses>
+
+La société SYSGO propose deux types de licences propriétaires:
+- #box[Une licence de développement permettant de concevoir des systèmes basés
+sur _PikeOS_.]
+- Une licence de déploiement.
 
 = ProvenVisor <provenvisor>
 
@@ -3120,6 +2901,346 @@ d'un support pour l'hyperviseur _Xen_.
   sudo ip addr 10.0.0.1/24 dev br0
   ```
 ]
+
+
+= Conceptions générales
+
+Cette section regroupe davantage d'informations sur les designs généraux des
+systèmes d'exploitations. À ce titre cet exposé peut être pertinent quant au
+choix du design dans un projet.
+
+== Noyau monolithique versus micronoyau <monolithic_vs_microkernel>
+
+La notion de système d'exploitation est complexe à délimiter car
+les tâches exécutées en mode noyau peuvent varier considérablement d'un système
+à l'autre. Toutefois, les systèmes d'exploitation modernes partagent un ensemble
+de services fondamentaux et notamment:
+- La gestion de la mémoire principale.
+- La gestion des _threads_ et des processus.
+- #box[La communication inter-processus
+#footnote[En anglais _Inter Process Communication_, abrégé _IPC_.].]
+- La gestion des périphériques d'entrée/sortie.
+- La pile réseau.
+- Le système fichiers.
+- La gestion des droits d'accès.
+
+Deux approches extrêmes s'opposent dans la conception des noyaux:
+- #box[Les noyaux #definition[monolithiques] intègrent un grand nombres de
+services exécutés en mode noyau. Par exemple, le noyau _Linux_ gère
+tous les services mentionnés ci-dessus dans ce mode.]
+- #box[Les #definition[micronoyaux], au contraire, cherchent à minimiser la
+quantité de code exécuter en mode noyau. La gestion de la mémoire, des
+_threads_ et l'_IPC_ sont assurés par le micronoyau, tandis que les autres
+services peuvent être exécutés en mode utilisateur.]
+
+Les deux approches ont des avantages et inconvénients:
+- #box[L'approche monolithique
+est souvent de conception plus simple. Elle offre de très bonnes performances
+en permettant une communication rapide entre les différents services, évitant
+notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
+d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
+souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
+à la taille nettement plus importante de leur base de code. Leur vérification et
+certification est également plus complexe, tandis que la fiabilité du système
+est compromise dès lors que l'un de ses services fait défaut.]
+- #box[L'approche micronoyau est conceptuellement plus complexe. L'efficacité
+de la communication _IPC_ est cruciale pour les performances étant donné qu'un
+grand nombres de services tournent en mode utilisateur. En contrepartie, cette
+approche offre une plus grande fiabilité et robustesse face aux pannes. La vérification
+et la certification est facilité par la base de code plus réduite.]
+
+On peut également citer une dernière conception qui est une variante de l'approche
+monolithique. Il s'agit des noyaux #definition[modulaires].
+
+=== Le noyau L4 <l4_kernel>
+Un exemple notable de tel système est le micronoyau _L4_
+développé au sein de l'université Karlsruhe. Ce projet visait à réduire les
+écarts de performances entre les micronoyaux et les architectures monolithiques
+de l'époque. Ce projet a servi de base à deux systèmes d'exploitations étudiés
+dans ce rapport: _seL4_ et _PikeOS_.
+
+Les _GPOS_ peuvent d'être divisé en trois grandes catégories:
+- Les noyaux monolithique.
+- #box[Les micronoyaux: au contraire du noyau monolithique, le micronoyau se
+concentre sur les opérations fondamentales qui ne peuvent être effectuée que
+dans le _kernel space_. Il s'agit généralement de la gestion de la mémoire
+et des processus. Toutes les autres tâches sont déléguées à des services s'exécutant
+dans le _user space_. ]
+- #box[Les noyaux modulaires: ils constituent un intermédiaire entre les deux
+designs précédents. Le noyau a la possibilité de charger ou décharger certaines
+sous-systèmes de façon dynamique. C'est notamment le cas des pilotes.]
+
+== Hyperviseur <type_hypervisor>
+
+Avant de dresser une vue d'ensemble des hyperviseurs, rappelons brièvement leur
+raison d'être. Lorsque l'on souhaite héberger plusieurs services  de façon fiable
+et sûre, une première solution consiste
+à héberger chaque service sur une machine individuelle. On obtient ainsi une
+isolation totale des différents services. Cette solution présente
+toutefois deux inconvénients majeurs, à savoir le coût prohibitif et une
+maintenance plus complexe. Les _hyperviseurs_ ont été créés pour répondre à ces
+besoins à moindre frais.
+
+Les _hyperviseurs_ se divisent généralement en deux catégories:
+- #box[Les _hyperviseurs de type 1_ s'installent directement sur la couche
+matérielle. On parle aussi parfois d'_hyperviseurs bare-metal_.]
+- #box[Les _hyperviseurs de type 2_ nécessitent une couche logicielle
+intermédiaire entre eux et la couche matérielle. Nous n'étudions pas de tels
+OS dans ce document.]
+
+Un autre axe d'attaque pour comparer les _hyperviseurs_ est:
+- #box[La _virtualisation total_: le comportement de la couche matérielle]
+- #box[La _virtualisation partielle_]
+- #box[La _paravirtualisation_]
+
+La _virtualisation totale_ (_full virtualization_ en anglais) consiste à émuler
+le comportement de la couche matérielle en exposant la même interface aux systèmes
+invités. Cette méthode permet d'exécuter n'importe quel logiciel qui aurait pu être
+lancé sur cette couche matérielle. On distingue deux sous-types de virtualisation
+totale:
+- la translation binaire (_binary translation_ en anglais)
+- la virtualisation assistée par le matériel (_hardware-assisted virtualization_)
+
+La _paravirtualisation_ est une technique de virtualisation qui consiste à
+présenter une interface logicielle similaire au matériel mais optimisée pour
+la virtualisation. Cette technique nécessite à la fois un support de l'hyperviseur
+et du système d'exploitation invité. En contre partie, la paravirtualisation
+permet généralement d'obtenir de meilleures performances.
+
+== RTOS <type_rtos>
+
+Un _RTOS_ est un système d'exploitation offrant des garanties sur le temps
+d'exécution de ses tâches. Les contraintes temporelles sont d'autant plus
+difficiles à garantir que le système est multi-tâche. On distingue
+trois classes de contraintes temporelles suivant leur criticité:
+- #box[Les contraintes _soft real time_ sont des contraintes nécessaires pour
+offrir une certaine qualité de service. Par exemple le visionnage d'une vidéo
+nécessite un _frame rate_ minimal. La violation de ces contraintes
+n'occasionne qu'une dégradation de la qualité du service rendu.]
+- #box[Les contraintes _firm real time_ sont similaires au cas précédent mais
+leur violation peut conduire à un résultat invalide.]
+- #box[Les contraintes _hard real time_ sont les plus strictes et leur violation
+a généralement des conséquences indésirables. Ces contraintes sont typiques dans
+les systèmes critiques.]
+
+Le _WCET_ (_Worst-Case Execution Time_) désigne le temps d'exécution maximal
+d'un programme informatique sur une plateforme matérielle donnée.
+
+= Notions générales <general_notions>
+
+Cette section contient des notions générales autour des systèmes
+d'exploitation et des interfaces matérielles pertinentes pour ce rapport. Ces
+notions ne sont qu'effleurées étant donné d'une part la complexité des
+architectures et des OS actuels, et d'autre part le foisonnement des solutions
+existantes. Le lecteur intéressé par plus détails pourra lire les sources citées
+au fil de la section.
+
+== Partitionnement des ressources
+
+Le partitionnement des ressources est un mécanisme fondamental des systèmes
+d'exploitation modernes. Il vise à permettre l'exécution simultanée de
+plusieurs tâche sur une même machine physique. On parle alors de système
+#definition[multi-tâche].
+En effet, les ressources matérielles étant le plus souvent insuffisantes pour exécuter
+chaque tâche sur sa propre machine, il est nécessaire de partager ces ressources
+entre les programmes.
+Dans ce contexte, l'isolation des tâches en cours d'exécution devient nécessaire
+afin de s'assurer qu'un programme malveillant ou défectueux ne puisse compromettre
+l'ensemble du système. Ce partage peut être opéré à plusieurs niveaux, notamment:
+- Au niveau des #definition[processus] s'exécutant sur un système d'exploitation.
+- Au niveau des OS invités s'exécutant sur un hyperviseur.
+
+Dans cette section, nous examinons ce partionnement pour deux ressources:
+la mémoire principale et le processeur.
+
+=== Partitionnement en mémoire
+
+Le partitionnement en mémoire vise à partager la mémoire principale entre
+plusieurs tâches en cours d'exécution. Ce partage est crucial car il permet de
+conserver en mémoire tout ou une partie des données de plusieurs processus,
+améliorant les performances du système.
+
+Dans le cas des processus, la méthode la plus courante pour gérer ce partage
+s'appuie sur la #definition[mémoire virtuelle]. Au lieu de faire référence à
+des adresses physiques directement, les instructions utilisent des
+adresses virtuelles qui sont traduites à la volée vers des adresses physiques
+par une puce dédiée: le _MMU_ (_Memory Management Unit_). Ainsi, chaque
+processus a l'illusion de disposer de la totalité de la mémoire principale.
+
+Lorsqu'une instruction tente d'accéder à une adresse virtuelle qui ne figure pas
+dans le table du processus en cours d'exécution, un _page fault_ est émis sous
+la forme d'une interruption matérielle et permet au système d'exploitation de réagir
+en conséquence.
+
+Un autre aspect important est la #definition[pagination]. L'espace d'adressage est
+subdivisée en des pages de tailles fixes. Cela permet de n'avoir qu'une portion
+des données d'un processus en mémoire et de charger les pages manquantes à la
+demande.
+
+=== Partitionnement en temps
+
+Les systèmes d'exploitation moderne permettent l'exécution de programmes dans un
+contexte multi-tâches. Cette exécution peut être #definition[concurrentielle]
+ou #definition[parallèle]. Dans cette section, une tâche peut aussi bien désigner
+un programme, un _thread_ ou même un OS invité.
+
+L'#definition[ordonnanceur de tâche] (_scheduler_) est un des composants
+principales d'un système d'exploitation. Son rôle est de décider quelle tâche doit
+être exécuté à un instant donné sur le CPU. Un _scheduler_ peut poursuivre des
+objectifs différents et parfois incompatibles. Il peut notamment chercher à:
+- #box[Maximiser la quantité de travail accomplie par unité de temps. En anglais,
+on parle souvent du _throughtput_.]
+- #box[Minimiser la #definition[latence] (_latency_), c'est-à-dire ]
+- #box[Être #definition[équitable] (_fairness_) en donnant des tranches de temps
+en proportion de la priorité et de la charge de travail d'une tâche.]
+
+L'ordonnanceur de tâches d'un _RTOS_ cherche à maximiser le nombre de tâches
+pouvant respecter leurs _deadlines_ simultanément. À cette fin, la
+#definition[latence].
+
+L'ordonnanceur de tâches d'un _GPOS_ cherche le plus souvent à maximiser
+la quantité de travail accomplie par unité de temps#footnote[Cette quantité
+est souvent désigner par _throughput_ en anglais.]
+
+Un _cœur_ est un ensemble de circuits intégrés capable d'exécuter des instructions
+de façon autonome. Un microprocesseur embarquant plusieurs cœurs est qualifié
+de _processeur multi-cœur_.
+
+De nos jours, certains fabricants comme Intel ou ARM proposent des processeurs où les
+cœurs ne sont plus identiques. L'intérêt principal de ces architectures hybrides est
+de faire un compromis entre la puissance de calcul et l'efficacité énergétique. Ainsi
+on y trouve généralement deux types de cœurs:
+- #box[Les cœurs performances: ces unités sont dédiées aux tâches lourdes mais
+  sont gourmandes en énergie. On peut citer les cœurs _P-cores_ chez Intel et
+  _big_ chez ARM.]
+- #box[Les cœurs économes: moins performantes que les cœurs de la
+  première catégorie mais consomment nettement moins d'énergie et dissipent moins
+  de chaleur. On peut citer les cœurs _E-cores_ chez Intel et _LITTLE_ chez ARM).]
+
+== Gestion des interruptions
+
+La gestion des interruptions est l'une des tâches primordiales d'un système d'exploitation.
+Une #definition[interruption] est un événement matériel qui altère le flot d'exécution normal
+d'un programme. Au niveau matériel, elles se manifestent par des signaux
+électriques pouvant être émis à tout moment par:
+- Un périphérique (clavier, disque, carte PCI, ...).
+- Le CPU lui-même.
+- #box[Dans une architecture multi-cœur, des signaux sont émis entre les cœurs.]
+Lorsqu'une interruption est déclenchée, l'exécution courante est suspendue. Dans ce cas,
+un gestionnaire d'interruption prend le relais. Il est important de noter qu'une
+interruption peut subvenir à n'importe quel moment, y compris pendant l'exécution
+d'un gestionnaire d'interruption. Cela pose plusieurs difficultés:
+- #box[Il n'est pas toujours possible d'interrompre l'exécution d'une routine, notamment
+dans une section critique. C'est un scénario courant dans un noyau.]
+- #box[Dans un programme temps réel et suivant le niveau d'exigence, la latence induite par
+ces interruptions doit ou non être prise en compte dans les contraintes temporelles.]
+
+=== Interruptions programmables
+
+Les architectures modernes permettent généralement la programmation des interruptions
+grâce à des puces dédiées réparties entre la carte mère et le CPU:
+- #box[Sur les architectures Intel et AMD, cette tâche est répartie entre la puce
+_I/O APIC_#footnote[_APIC_ est un abréviation pour _Advanced Programmable Interrupt Controller_]
+qui gère les interruptions émises par les périphériques et des circuits intégrés dans chaque
+cœur appelés _Local APIC_ qui gèrent les interruptions entre les cœurs.]
+- #box[Sur les architectures ARM, cette tâche est dévolue au _GIC_
+(_Generic Interrupt Controller_).]
+L'émetteur de l'interruption envoie une requête d'interruption
+(_IRQ_ pour _Interrupt ReQuest_) à l'une de ces puces qui décide ensuite d'envoyer ou non
+l'interruption au destinataire (TODO: vérifier).
+
+=== Masquage des interruptions
+
+Une solution pour gérer les interruptions est de _masquer_, c'est-à-dire bloquer,
+temporairement certaines d'entre elles.
+
+Les architecture moderne embarque généralement plusieurs puces dédiées à la gestion des
+requêtes d'interruption (_IRQ_ pour _Interrupt ReQuest_). Par exemple, sur les architectures
+Intel et AMD, cette tâche est accomplie par le sous-système _APIC_
+(_Advanced Programmable Interruption Controller_). Sur les architectures ARM,
+elle est dévolue au _GIC_ (_Generic Interrupt Controller_).
+
+Les processeurs multi-cœur disposent aussi de puce _APIC_ par cœur, permettant
+la gestion des interruptions entre cœurs (_Inter-Processor Interrupt_ IPI).
+
+Les contrôleurs d'interruption permettent également de mettre des niveaux de priorité
+sur les interruptions.
+
+== Corruption de la mémoire
+
+Dans cette section, on s'intéresse à la corruption de la mémoire et plus
+précisément à la détection et la correction de ces erreurs.
+Une méthode communément utilisée pour détecter et corriger les erreurs consiste
+à recourir à un code correcteur d'erreurs (en anglais _Error Correcting Code_, abrégé _ECC_).
+Cette méthode permet de corriger la majorité des _soft errors_.
+
+=== Mémoire ECC <ecc_memory>
+
+De nos jours, les mémoires de type _DRAM_ (_Dynamic Random Access Memory_) sont
+massivement utilisées comme mémoire principale aussi bien sur les serveurs que
+les ordinateurs personnels. Certaines barrettes sont dotées d'une puce
+mémoire supplémentaire permettant l'utilisation d'un code correcteur.
+Ce type de mémoire nécessite une prise en charge par le contrôleur mémoire, le
+CPU et le BIOS. Si cette prise en charge est rare sur le matériel grand public,
+elle est en revanche commune sur celui dédié aux serveurs.
+
+=== Scrubbing <scrubbing>
+
+Les mémoires _ECC_ décrites en @ecc_memory permettent de corriger automatiquement
+les erreurs à la lecture. Toutefois certaines données peuvent restées en
+mémoire longtemps sans être accédées. On peut par exemple penser aux
+enregistrements d'une base de donnée que l'on souhaite maintenir dans la
+mémoire principale pour en accélérer l'accès. Les _soft errors_ peuvent
+alors s'y accumuler au point que le code correcteur ne permette plus leur correction.
+Pour pallier ce problème, on a recours au _scrubbing_. Il en existe de deux types:
+- #box[Le _demand scrubbing_ permet à l'utilisateur de déclencher manuellement le
+nettoyage d'une plage mémoire.]
+- #box[Le _patrol scrubbing_ qui consiste à scanner périodiquement la mémoire
+pour détecter et corriger les erreurs régulièrement.]
+
+=== Interfaces matérielles
+
+Bien qu'aucun pilote spécifique ne soit requis pour les mémoires _ECC_, certains
+systèmes d'exploitation permettent de les piloter via des interfaces matérielles
+spécifiques. Ces interfaces permettent notamment de:
+- #box[Désactiver le _scrubbing_ lorsque cela pose des soucis de performance,]
+- #box[Changer le taux de balayage du _patrol scrubbing_,]
+- #box[Notifier et journaliser les _soft errors_ et les _hard errors_,
+permettant ainsi aux logiciels de réagir,]
+- #box[Spécifier une plage d'adresses pour le _demand scrubbing_.]
+Il existent de nombreuses interfaces matérielles. Le tableau comparatif suivant liste
+quelques unes d'entre elles ainsi que leurs caractéristiques clés.
+
+#figure(
+  table(
+    columns: (auto, auto, auto, auto, auto),
+    align: (left, left, left, left, left),
+    [Nom], [Demand scrubbing],[Plage d'adresses],  [Patrol scrubbing], [Taux de balayage],
+    [ACPI ARS], [Oui], [Oui], [Non], [Non],
+    [ACPI RAS2], [Oui], [Oui], [Oui], [Oui],
+    [CXL Patrol Scrub], [Non], [Non], [Oui], [Oui],
+    [CXL ECS], [Non], [Non], [Oui], [Non],
+  ),
+  caption: [Interfaces de pilotage pour le _scrubbing_],
+) <scrubbing_interfaces>
+
+== Profilage <profiling>
+
+Le profilage est une technique utilisée pour mesurer et analyser les performances
+d'un programme. Elle est souvent employée à des fins d'optimisation en
+permettant de localiser des points chauds, c'est-à-dire des sections de code
+particulièrement gourmandes en ressources (temps CPU, mémoire, ...). Toute mesure
+ayant un impact sur les caractéristiques de l'objet mesuré, il est crucial que
+cette instrumentation soit faite de la façon la moins intrusive possible.
+Autrement, on risque de mesurer les performances de son outil de profilage
+plutôt que ceux du programme étudié.
+
+À cette fin, certains outils utilie une approche statistique. Au lieu
+d'enregistrer tous les événements possibles lors de l'exécution du programme,
+on n'effectue un échantillonnage de ces mesures en espérant que les échantillons
+collectés seront représentatifs des caractéristiques de performances du programme
+étudié.
+
 
 
 

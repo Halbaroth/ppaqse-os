@@ -1,3 +1,21 @@
+bkl:
+  short: BKL
+  long: Big Kernel Lock
+  description: >
+    todo
+
+wcet:
+  short: WCET
+  long: Worst Case Execution Time
+  description: >
+    todo
+
+rtos:
+  short: RTOS
+  long: Real-Time Operating System
+  description: >
+    todo
+
 monolithic:
   short: monolithique
   description: >
