@@ -39,37 +39,12 @@
   metabox(color: blue, header: "Aparté", title, content)
 }
 
-// Table style
-#show table: set par(justify: false)
-#set table(
-  align: left + horizon,
-  fill: (x, y) =>
-    if x == 0 or y == 0 { rgb("#e5e5e5") })
-
-#page(margin: (left: 2in))[
-  #align(horizon + left)[
-    #line(start: (0%, 5%), end: (8.5in, 5%), stroke: (thickness: 2pt))
-    #text(
-      size: 20pt,
-      [Étude comparative de systèmes d'exploitations dans un
-      contexte critique et temps-réel]
-    )
-
-  ]
-
-  #align(bottom + left)[#datetime.today().display()]
-]
-
-#set page(paper: "a4", margin: (y: 4em), numbering: "1", header: context {
-  if calc.odd(here().page()) {
-    align(right, emph(hydra(1)))
-  } else {
-    align(left, emph(hydra(2)))
-  }
-  line(length: 100%)
-})
-
 #set heading(numbering: "1.1", supplement: [])
+
+#show heading: it => {
+  set block(above: 1.5em, below: 0.8em)
+  it
+}
 
 #let definition(t) = {
   text(style: "oblique")[#t]
@@ -111,7 +86,99 @@
       raw(lang:lang, block: true, read(file))))
 }
 
+
+// Table style
+#show table: set par(justify: false)
+#set table(
+  align: left + horizon,
+  fill: (x, y) =>
+    if x == 0 or y == 0 { rgb("#e5e5e5") })
+
+// Page de garde
+#page(margin: 2cm)[
+  // Logos en haut - alignés et centrés
+  #align(center)[
+    #grid(
+      columns: (auto, 3cm, auto),
+      align: (center + horizon, center, center + horizon),
+      image("imgs/Logo_OCamlPro_officiel_transparent (Bleu).png", height: 2cm, fit: "contain"),
+      [],
+      image("imgs/Logo carré bleu - fond transparent.png", height: 2cm, fit: "contain")
+    )
+  ]
+
+  #v(3cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(1cm)
+
+  // Titre au centre avec style moderne
+  #set par(justify: false)
+  #align(center)[
+    #text(size: 26pt, weight: "bold", fill: rgb("#003366"))[Étude comparative de systèmes d'exploitations]
+
+    #v(0.5cm)
+
+    #text(size: 20pt, weight: "regular", fill: rgb("#0066CC"))[dans un contexte critique et temps-réel]
+  ]
+  #v(1cm)
+
+  // Ligne décorative
+  #align(center)[
+    #line(length: 60%, stroke: 3pt + rgb("#0066CC"))
+  ]
+
+  #v(2cm)
+
+  // Boîte d'informations avec style moderne
+  #align(center)[
+    #box(
+      fill: rgb("#0066CC").lighten(95%),
+      stroke: 2pt + rgb("#0066CC"),
+      radius: 8pt,
+      inset: 1.5em,
+      width: 70%,
+      [
+        #grid(
+          columns: (auto),
+          row-gutter: 0.8em,
+          align: center,
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Version :] #text(size: 12pt, fill: rgb("#0066CC"))[git-3181113]],
+          [],
+          [#text(size: 12pt, weight: "bold", fill: rgb("#003366"))[Référence CNES :] #text(size: 12pt, fill: rgb("#0066CC"))[DLA-SF-0000000-211-QGP]],
+          [#text(size: 11pt, fill: rgb("#003366"))[Édition 2 - Révision 0]],
+          [],
+          [#text(size: 11pt, style: "italic", fill: rgb("#003366"))[#datetime.today().display()]]
+        )
+      ]
+    )
+  ]
+
+  #v(1fr)
+
+  // Logo de licence en bas
+  #align(center + bottom)[
+    #image("imgs/by.png", width: 12%)
+  ]
+]
+
+
+#set page(paper: "a4", margin: (y: 4em), numbering: "1", header: context {
+  if calc.odd(here().page()) {
+    align(right, emph(hydra(1)))
+  } else {
+    align(left, emph(hydra(2)))
+  }
+  line(length: 100%)
+})
+
+#pagebreak()
 #outline(depth: 1)
+#pagebreak()
 
 #let dark-blue = rgb("#1a2f62")
 
@@ -195,7 +262,9 @@ un système d'exploitation et nous adoptons ici l'approche retenue dans
 définir ce concept. Nous appelons donc #definition[système d'exploitation]#footnote[En anglais
 _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
-privilégié du processeur. Le système en question
+privilégié du processeur.
+
+Le système en question
 peut être un serveur, un ordinateur personnel ou un système embarqué. Le rôle
 principal du système d'exploitation est de fournir une couche d'abstraction logicielle entre le
 matériel et les logiciels applicatifs. Il permet ainsi de masquer la complexité
@@ -404,21 +473,28 @@ principalement motivé par la nécessité d'accroître la puissance de calcul to
 en permettant une meilleure intégration et une réduction de poids et de taille
 des systèmes embarqués, notamment dans les secteur de l'avionique et du spatial.
 
-Il existe deux catégories d'architecture multiprocesseur utilisée dans les
+Il existe deux catégories d'architectures multiprocesseur utilisées dans les
 systèmes critiques:
-- #box[Les architectures @smp qui sont constituées d'un ensemble de cœurs
-le plus souvent homogènes et destinés à être pilotés par un unique système
-d'exploitation. Les cœurs partagent la mémoire principale, les périphériques et
-la majorités des caches et des bus mémoires. Ces architectures offrent un
-excellent débit. Elles sont répandues aussi bien sur les ordinateurs personnels
-que les serveurs mais sont aussi en usage dans des systèmes critiques récents.]
-- #box[Les architectures @amp qui sont constituées le plus souvent d'un ensemble
-de cœurs hétérogènes. Contrairement aux architectures @smp, les architectures
-@amp sont conçues pour exécuter sur chaque cœur une instance distincte
-d'un ou plusieurs programmes bare-metal. Elle offre un meilleur déterminisme que
-les architectures @smp et une meilleure
-isolation des tâches. Elles sont donc très présentes sur dans l'embarqué
-critique, notamment sous la forme de @soc.]
+- #box[Les architectures @amp sont constituées le plus souvent d'un
+ensemble de cœurs hétérogènes. Ces cœurs ne partagent pas leurs caches ou leur
+bus mémoire. Ces architectures sont conçues pour exécuter des instances distinctes de
+programmes @baremetal sur chaque cœur. Cette isolation des cœurs offre un
+très bon déterminisme du système et une meilleure isolation des tâches. En
+contrepartie, les mécanismes de communication interprocesseur sont à la charge
+du développeur. Ces architectures sont depuis longtemps présentes dans
+l'embarqué critique, notamment sous la forme de @soc.]
+- #box[Les architectures @smp sont constituées le plus souvent d'un ensemble
+de cœurs homogènes. Les cœurs partagent la mémoire principale et la majorité
+des caches et des bus mémoires. Elles offrent d'excellentes
+performances, à condition que le système d'exploitation sache en tirer parti.
+En contrepartie, leur programmation est plus complexe. Par exemple le masquage
+des interruptions seul ne suffit pas à garantir l'isolation de sections critiques
+du noyau. En effet, plusieurs cœurs peuvent exécuter en parallèle ces sections, ce qui
+multiplie les occasions de courses critiques. Il faut alors avoir recours à des
+mécanisme de synchronisation tels que les @spinlock:pl et les verrous atomiques.
+Ces architectures sont répandues aussi bien sur les serveurs que les ordinateurs personnels
+mais sont aussi en usage dans des systèmes critiques récents.]
+
 
 Le @smp_vs_amp récapitule les différences entre ces deux architectures
 multiprocesseur.
@@ -445,7 +521,7 @@ multiprocesseur.
 
     [Gestion logicielle],
     [Un unique système d'exploitation gère tous les cœurs et partage dynamique
-      des tâches],
+      les tâches entre eux],
     [Instance indépendante exécutée sur chaque cœur],
 
     [Partage de Ressources],
@@ -464,7 +540,11 @@ multiprocesseur.
       - Ordinateurs personnels
       - Serveurs
     ],
-    [Systèmes embarqués critiques]
+    [Systèmes embarqués critiques],
+
+    [Prix],
+    [Très bon marché],
+    [Élevé]
   ),
   caption: [Différences entre les architectures _SMP_ et _AMP_.],
 ) <smp_vs_amp>
@@ -738,15 +818,14 @@ _cokernel_. Cette architecture est illustrée dans la figure
     inset: 1em))
 
 En particulier, les projets open-sources _RTLinux_, _RTAI_ et _Xenomai_
-adoptèrent cette approche avec succès. Ces
-principaux avantages sont ses bonnes garanties quant aux respects
-des _deadlines_ et une latence très faible. En contrepartie, le développeur
-de l'application temps réel ne peut pas utiliser l'écosystème _UNIX_, rendant
-le développement plus ardu et coûteux. Par exemple cette architecture conduit
-à une duplication des pilotes puisque les tâches temps réel ne peuvent pas utiliser
-les pilotes du noyau _Linux_. Il faut également maintenir une couche d'abstraction
-dans le noyau _Linux_ pour lui permettre d'interagir avec le micronoyau. Cette
-contrainte a motivé le développement
+adoptèrent cette approche avec succès. Ces principaux avantages sont ses bonnes
+garanties quant aux respects des _deadlines_ et une latence très faible. En
+contrepartie, le développeur de l'application temps réel ne peut pas utiliser
+l'écosystème _UNIX_, rendant le développement plus ardu et coûteux. Par exemple
+cette architecture conduit à une duplication des pilotes puisque les tâches
+temps réel ne peuvent pas utiliser les pilotes du noyau _Linux_. Il faut
+également maintenir une couche d'abstraction dans le noyau _Linux_ pour lui
+permettre d'interagir avec le micronoyau. Cette contrainte a motivé le développement
 de patchs visant à doter le noyau _Linux_ de capacités temps réel. Le plus connu
 et utilisé est _PREEMPT_RT_ que nous étudions dans la sous-section @preempt_rt
 ci-dessous.
@@ -953,7 +1032,7 @@ interfaces, tables de routage et règles de pare-feu.]
 
 ==== Exemple d'utilisation avec `systemd`
 Le gestionnaire de services `systemd` intègre l'outil `systemd-nspawn` pour faciliter
-l'utilisation des _namespaces_. Il consistue une alternative à `chroot` plus sûre.
+l'utilisation des _namespaces_. Il constitue une alternative à `chroot` plus sûre.
 En plus d'isoler l'aborescence des fichiers, cette commande isole celle des
 processus, le réseau et les utilisateurs. Par exemple, considérons le
 programme _C_ suivant:
@@ -1071,7 +1150,63 @@ pour les interfaces de pilotage du scrubbing décrites dans le @scrubbing_interf
 
 == Perte du flux d'exécution
 
+La perte du flux d'exécution (_control flow hijacking_) est une vulnérabilité
+majeure dans les systèmes d'exploitation, où un attaquant modifie le flux
+d'exécution normal d'un programme pour exécuter du code malveillant. Cette attaque
+exploite généralement des dépassements de tampon ou d'autres corruptions mémoire
+pour modifier les adresses de retour ou les pointeurs de fonction.
+
+Les mécanismes de _Control-Flow Integrity_ (CFI) constituent une famille de
+défenses contre ces attaques @cfi_survey_embedded. Le CFI vise à garantir que le
+flux d'exécution d'un programme suit uniquement les chemins d'exécution légitimes
+définis par le graphe de flot de contrôle du programme.
+
+Dans les systèmes embarqués et temps-réel, l'application du CFI présente des défis
+particuliers liés aux contraintes de ressources (taille, poids, puissance, coût)
+et aux exigences temporelles strictes. Les mécanismes de CFI doivent minimiser
+leur surcoût en temps d'exécution tout en offrant des garanties de sécurité robustes.
+
+_Linux_ peut bénéficier de plusieurs mécanismes de protection du flux d'exécution,
+notamment via les extensions matérielles modernes comme _Intel CET_ (_Control-flow
+Enforcement Technology_) sur _x86_ ou _ARM BTI_ (_Branch Target Identification_)
+sur _ARM_. Ces mécanismes matériels offrent une protection efficace avec un surcoût
+minimal.
+
 == Monitoring <linux_monitoring>
+
+_Linux_ dispose d'un écosystème riche et mature d'outils de monitoring et
+d'observabilité @linux_perf_brendan @linux_monitoring_tools_2024. Ces outils
+permettent de surveiller les performances, l'état du système et d'identifier les
+problèmes en temps-réel.
+
+Parmi les outils de monitoring les plus utilisés:
+
+- *top/htop*: Moniteurs système interactifs affichant l'utilisation du CPU, de
+  la mémoire et des processus en temps réel.
+
+- *netdata*: Solution de monitoring temps-réel légère et performante, collectant
+  automatiquement plus de 5000 métriques sans configuration. Particulièrement
+  adaptée aux environnements embarqués grâce à sa faible empreinte.
+
+- *eBPF* (_Extended Berkeley Packet Filter_): Technologie moderne permettant
+  l'exécution de code personnalisé dans le noyau sans modification ni ajout de
+  modules. _eBPF_ offre une observabilité en temps réel avec un impact minimal
+  sur les performances, devenant l'outil de référence pour le monitoring avancé
+  en 2024.
+
+- *perf*: Outil d'analyse de performance basé sur les compteurs de performance
+  matériels (_PMU_), permettant un profilage détaillé avec un faible surcoût.
+
+- *SystemTap*: Permet l'instrumentation dynamique du noyau pour l'analyse
+  approfondie du comportement système.
+
+- *Prometheus/Grafana*: Solutions d'observabilité distribuée largement adoptées
+  pour le monitoring de systèmes critiques.
+
+Pour les systèmes embarqués, la simplicité et la légèreté des outils sont
+prioritaires. _Monitorix_ est particulièrement adapté à ces contraintes, ayant
+été conçu pour les serveurs mais utilisable sur dispositifs embarqués grâce à
+sa taille réduite.
 
 == Profilage <linux_profiling>
 
@@ -1415,11 +1550,16 @@ Vous pouvez accéder au shell du `docker` en tapant:
 ```console
 make -C mirageos shell
 ```
-
 == Environnements d'exécution <mirageos_environments>
 
 Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
 hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-metal_.
+
+Les _LibOS_ souffrent généralement d'un problème de portabilité car elles doivent
+être adaptées à chaque environnement matériel spécifique. Cette problématique est
+largement atténuée par l'usage d'un hyperviseur qui offre une couche d'abstraction
+matérielle standardisée, facilitant ainsi le déploiement des _unikernels_ sur
+différentes plateformes.
 
 #figure(
   table(
@@ -2638,7 +2778,22 @@ ECSS-Qualified?
 _lithOS_ est un système d'exploitation temps réel conçu pour être exécuté dans
 une partition de _XtratuM_.
 
-== Qualifications
+== Qualifications <xtratum_qualifications>
+
+_XtratuM_ est qualifié selon la norme _ECSS_ (_European Cooperation for Space Standardization_)
+catégorie B @xtratum_ecss_qualification. Cette qualification en fait un hyperviseur
+adapté aux missions spatiales critiques.
+
+L'hyperviseur a été qualifié initialement pour les processeurs _SPARC-Leon_ et
+_ARM Cortex-R4/R5_ et _A9_. L'entreprise _fentISS_ continue de travailler sur la
+qualification de nouvelles versions, notamment _XtratuM Next Generation_ pour
+lequel un processus de qualification ECSS niveau B est en cours.
+
+Le succès de _XtratuM_ dans le spatial est remarquable: son hyperviseur temps-réel
+est désormais déployé dans plus de 1000 satellites et engins spatiaux
+@xtratum_milestone_1000, en faisant l'un des logiciels système les plus largement
+adoptés en orbite. Cette présence massive témoigne de la maturité et de la fiabilité
+du système dans des environnements opérationnels critiques.
 
 == Licences & brevets <xtratum_licenses>
 
@@ -2937,7 +3092,7 @@ Les deux approches ont des avantages et inconvénients:
 - #box[L'approche monolithique
 est souvent de conception plus simple. Elle offre de très bonnes performances
 en permettant une communication rapide entre les différents services, évitant
-notamment les coûteuses communations de contexte nécessaires lorsqu'on passe
+notamment les coûteuses commutations de contexte nécessaires lorsqu'on passe
 d'un mode d'exécution à un autre. Cependant les noyaux monolithiques sont
 souvent de maintenance plus difficile que les micronoyaux. Cela est notamment dû
 à la taille nettement plus importante de leur base de code. Leur vérification et

@@ -1,3 +1,8 @@
+spinlock:
+  short: spinlock
+  description: >
+    todo
+
 bkl:
   short: BKL
   long: Big Kernel Lock
