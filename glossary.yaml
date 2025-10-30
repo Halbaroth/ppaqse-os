@@ -1,7 +1,25 @@
+ipc:
+  short: IPC
+  long: Inter-Process Communication
+  description: >
+    todo
+
+runtime:
+  short: runtime
+  description: >
+    todo
+
 spinlock:
   short: spinlock
   description: >
     todo
+
+isr:
+  short: ISR
+  long: Interrupt Service Routine
+  description: >
+    Gestionnaire d'interruption exécutée lorsqu'une interruption matérielle
+    ou logicielle survient.
 
 bkl:
   short: BKL
@@ -161,11 +179,12 @@ api:
   description: >
     Interface de programmation applicative.
 
-soc:
-  short: SoC
-  long: System on a chip
+mpsoc:
+  short: MPSoC
+  long: Multiprocessor System on a chip
   description: >
-    Système embarqué complet sur un seul circuit intégré.
+    Système embarqué complet sur un seul circuit intégré comprenant
+    plusieurs processeurs généralement hétérogènes.
 
 pmu:
   short: PMU

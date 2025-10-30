@@ -8,6 +8,19 @@
 #set text(lang: "fr", size: 12pt)
 #set par(justify: true)
 
+#show heading.where(level: 1, outlined: true): it => {
+    pagebreak(weak: true)
+    state("blank-page").update(true)
+    pagebreak(to: "odd", weak: true)
+    state("blank-page").update(false)
+    it
+}
+#set page(footer: context {
+    if not state("blank-page", false).get() {
+      align(center, counter(page).display())
+    }
+ })
+
 // Boxes
 #let metabox(color: gray, header: "", title, content) = {
   showybox(
@@ -63,9 +76,11 @@
   code
 }
 
+#show figure: set block(breakable: true)
+
 #show raw.where(block: true, lang: "output"): set block(fill: luma(240), inset: 1em, radius: 0.5em, width: 100%)
 
-#let snippet(file, lang:none) = {
+#let snippet_raw(content, lang:none) = {
   show raw: code => {
     show raw.line: line => {
       text(fill: gray)[#line.number]
@@ -83,9 +98,10 @@
       right: 16pt,
       top: 10pt,
       bottom: 10pt,
-      raw(lang:lang, block: true, read(file))))
+      raw(lang:lang, block: true, content)))
 }
 
+#let snippet(file, lang:none) = snippet_raw(read(file), lang:lang)
 
 // Table style
 #show table: set par(justify: false)
@@ -345,7 +361,7 @@ parvenir à ce résultat, les logiciels qu'il embarque doivent être capable de
 répondre à des stimuli dans un temps imparti. L'enjeu n'est donc par la performance
 mais le respect d'échéances.
 
-= Organisation et critères de comparaison
+= Critères de comparaison
 
 Au travers de cette étude, les systèmes d'exploitation ont été étudiés et comparés
 suivant les critères détaillés ci-dessous. Il est noté que certains critères
@@ -390,7 +406,7 @@ une image appelée un #definition[unikernel]. Celui-ci peut ensuite être exécu
 sur un hyperviseur ou en _bare-metal_, c'est-à-dire
 directement sur la couche matérielle.]
 
-== Architectures supportées
+== Architectures supportées <architectures>
 Pour chacun des systèmes d'exploitation étudiés, nous donnons une liste des
 différentes architectures supportées. Afin que cet effort soit tenable,
 nous avons sélectionné les architectures avec les critères suivants:
@@ -406,7 +422,7 @@ architectures plus exotiques,]
 Avec ces critères à l'esprit, nous avons retenu l'architectures
 suivantes: `ARM`, `x86`, `PowerPC`, `MIPS`, `RISC-V` et `SPARC`. Notez que
 ces dernières existent dans des versions 32 bits et 64 bits qui sont listées
-dans @architectures ci-dessous.
+dans @table_architectures ci-dessous.
 
 #figure(
   table(
@@ -440,7 +456,7 @@ dans @architectures ci-dessous.
     [`SPARC v9`]
   ),
   caption: [Architectures considérées dans l'étude.]
-) <architectures>
+) <table_architectures>
 
 #aside[][Le support d'une architecture donnée n'est en général pas suffisant pour
 que le système puisse s'exécuter sur une carte de cette architecture. Cela signifie
@@ -482,7 +498,7 @@ programmes @baremetal sur chaque cœur. Cette isolation des cœurs offre un
 très bon déterminisme du système et une meilleure isolation des tâches. En
 contrepartie, les mécanismes de communication interprocesseur sont à la charge
 du développeur. Ces architectures sont depuis longtemps présentes dans
-l'embarqué critique, notamment sous la forme de @soc.]
+l'embarqué critique, notamment sous la forme de @mpsoc.]
 - #box[Les architectures @smp sont constituées le plus souvent d'un ensemble
 de cœurs homogènes. Les cœurs partagent la mémoire principale et la majorité
 des caches et des bus mémoires. Elles offrent d'excellentes
@@ -549,24 +565,31 @@ multiprocesseur.
   caption: [Différences entre les architectures _SMP_ et _AMP_.],
 ) <smp_vs_amp>
 
-== Support temps-réel
+== Temps-réel
 
 Comme nous l'avons expliqué dans la sous-section @criticity_real_time, les
 logiciels, et en particulier le système d'exploitation, d'un système critique
 doivent fournir des garanties sur le temps d'exécution de leurs routines. En informatique
 usuelle, le temps d'exécution d'un programme ne fait généralement pas parti
-de sa correction. Ce n'est plus le cas dans un système temps réel où répondre après
-une certaine échéance conduit à un résultat erroné. On souhaite donc que les calculs
-soient fait suffisamment vite en toute circonstance. À cette fin, le système doit
-être aussi déterministe que possible afin qu'il soit possible en pratique d'estimer
-le temps d'exécution des routines dans le pire cas#footnote[Ce concept est souvent appelé
-_WCET_ (_Worst Case Execution Time_) dans la littérature.]. Dans le cas
-d'un système d'exploitation, le déterminisme est souvent assuré par le caractère
-préemptible du noyau. En effet, lorsqu'une tâche critique doit commencer son
-exécution aussi vite que possible, il ne faut pas que celle-ci doive attendre
-la fin de l'exécution d'une longue routine du noyau avant d'avoir la main sur
-le _CPU_ ou un périphérique. La latence du système d'exploitation est donc une
-mesure importante pour assurer le respect des échéances.
+de sa correction#footnote[Une exception notable est celle des applications multimédia.].
+Ce n'est plus le cas dans un système temps réel où répondre après
+un délai trop long conduit à un résultat erroné. On souhaite donc que les calculs
+soient fait suffisamment vite en toute circonstance, tandis qu'en informatique
+usuelle on cherche généralement à ce que les calculs soient fait le plus vite possible
+en moyenne.
+
+Afin d'offrir ces garanties temps réel, le système d'exploitation doit être
+aussi déterministe que possible. Ce déterminisme permet en pratique d'estimer
+le temps d'exécution de ses routines dans le pire cas#footnote[Ce concept est souvent appelé
+_WCET_ (_Worst Case Execution Time_) dans la littérature.]. Le déterminisme est
+souvent assuré par le caractère préemptible du noyau#footnote[Nous verrons
+toutefois avec l'exemple de _seL4_ que ce n'est pas toujours la bonne approche
+pour obtenir le déterminisme.] et des éventuelles autres tâches. En effet,
+lorsqu'une tâche critique doit commencer son exécution aussi vite que
+possible, il ne faut pas que celle-ci doive attendre
+la fin de l'exécution d'une longue routine du noyau ou la fin de la tranche
+de temps d'une tâche de plus faible priorité. La latence du système
+d'exploitation est donc une mesure importante pour assurer le respect des échéances.
 
 == Partitionnement
 
@@ -720,8 +743,10 @@ de synchronisation plus fins comme les _spin locks_ et les _mutexes_, puis
 totalement supprimé à partir de la version _2.6.39_. Le noyau propose aussi
 depuis la version 2.5 des structures de données synchronisées de type _RCU_
 (_Read-Copy-Update_) @linux_what_is_rcu qui permettent la lecture et l'écriture
-simultanée sans mécanisme de verrouillage pour les lecteurs. Quant à
-l'ordonnanceur de tâche _EEVDF_ (_Earliest Eligible Virtual Deadline First_), il
+simultanée sans mécanisme de verrouillage pour les lecteurs. Ces structures
+sont donc particulièrement pertinentes lorsque la majorité des accès sont
+en lecture. Quant à l'ordonnanceur de tâche _EEVDF_
+(_Earliest Eligible Virtual Deadline First_), il
 est conçu pour répartir aussi équitablement que possible le temps _CPU_
 entre les processus avec une faible latence. C'est l'ordonnanceur par défaut depuis
 la version _6.6_.
@@ -752,24 +777,24 @@ zcat /proc/config.gz | grep CONFIG_RPMSG
 ```
 
 Le cas d'usage typique est l'exécution d'un _RTOS_ sur un processeur secondaire
-dans un système embarqué hétérogène sous la forme d'un @soc. Avant l'apparition
+dans un système embarqué hétérogène sous la forme d'un @mpsoc. Avant l'apparition
 de `remoteproc`, le contrôle des processeurs secondaires se faisait via des @api
 propriétaires et non standardisées. Quant au système _RPMsg_
 (_Remote Processor Messaging_), il permet la intercommunication avec un
 processeur distant via un protocole asynchrone à la _virtio_.
 
-== Support temps réel
+== Temps réel <linux_real_time>
 
 Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
 _Linux_ de capacités temps réel. Le noyau de l'époque avait été développé dans
-l'optique de maximiser le débit de son ordonnanceur de tâches. Les changements
-pour rendre le noyau préemptible étaient donc considérés trop complexes,
-et des approches alternatives ont émergées. L'une de ces approches consiste à
-contourner le noyau _Linux_ en exécutant les tâches temps réel et le noyau _Linux_
-directement au-dessus d'un micronoyau temps réel. On parle alors de
-_cokernel_. Cette architecture est illustrée dans la figure
-@architecture_cokernel.
-
+l'optique de maximiser les performances de son ordonnanceur de tâches, au
+détriment du déterminisme. Les changements pour rendre l'ordonnanceur déterministe
+étaient donc considérés trop complexes, et des approches alternatives ont
+émergées. L'une de ces approches consiste à contourner la difficulté en
+exécutant les tâches temps réel et le noyau _Linux_ directement au-dessus d'un
+micronoyau temps réel. Le noyau devient ainsi une tâche de faible
+priorité pour ce micronoyau et peut être préempté par ce dernier. On parle alors
+d'architecture _cokernel_ ou _dual kernel_, voir la figure @architecture_cokernel.
 #figure(
   diagram(
     spacing: 10pt,
@@ -827,56 +852,17 @@ temps réel ne peuvent pas utiliser les pilotes du noyau _Linux_. Il faut
 également maintenir une couche d'abstraction dans le noyau _Linux_ pour lui
 permettre d'interagir avec le micronoyau. Cette contrainte a motivé le développement
 de patchs visant à doter le noyau _Linux_ de capacités temps réel. Le plus connu
-et utilisé est _PREEMPT_RT_ que nous étudions dans la sous-section @preempt_rt
-ci-dessous.
-
-=== _PREEMPT_RT_ <preempt_rt>
+et utilisé est _PREEMPT_RT_.
 
 Le projet _PREEMPT_RT_ vise à rendre la majorité des routines du noyau
-_Linux_ préemptibles afin de pouvoir l'utiliser dans un système temps réel.
-Contrairement aux _cokernels_, cette approche conduit à une modification en
+_Linux_ préemptibles afin de rendre l'ordonnancement des tâches aussi prédictible
+que possible. Contrairement aux _cokernels_, cette approche conduit à une modification en
 profondeur du noyau. Du fait de sa complexité, le projet, initié par Thomas
 Gleixner et Ingo Molnár
 en 2005, s'est étalé sur une vingtaine d'années sous la forme d'une succession
-de patchs. Ces derniers ont été progressivement intégrés à la branche principale
-du noyau _Linux_. Les derniers patchs ont été appliqués en septembre 2024,
-faisant de _Linux_ un _RTOS_ complet à partir de sa version _6.12_.
-
-==== Installation
-
-Bien que _PREEMPT_RT_ soit désormais distribué avec la branche
-principale du noyau, il est nécessaire de compiler ce dernier avec l'option
-de compilation `CONFIG_PREEMPT_RT` activé pour obtenir un noyau préemptible.
-Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
-vous pouvez tapez la commande:
-```console
-zcat /proc/config.gz | grep PREEMPT_RT
-```
-Certaines distributions proposent également des noyaux alternatifs avec cette
-option activée, rendant l'installation de _PREEMPT_RT_ plus simple.
-
-==== Principes
-
-- Remplacer les _spinlocks_ par des _mutexes_ temps réels.
-- #box[Exécuter les gestionnaires d'interruption dans des _threads_ noyau.
-Cela permet d'interrompre l'exécution d'un gestionnaire d'interruption si une
-tâche plus prioritaire arrive et de mettre une priorité sur ce _thread_ noyau
-au même titre que n'importe quel processus.]
-
-=== Draft
-
-Ce défaut
-majeur a motivé le développement du projet _PREEMPT_RT_ par Ingo Molnár et
-d'autres développeurs du noyau _Linux_. Contrairement aux _cokernels_,
-l'approche de _PREEMPT_RT_ consiste à modifier en profondeur le noyau afin de
-le rendre préemptible, voir la figure @architecture_preempt_rt. Le projet a
-débuté en 2005 et s'est étalé sur une vingtaine d'années sous la forme d'une
-succession de patchs qui ont progressivement été intégrés à la branche
-principale de _Linux_. Les derniers patchs ont été ajoutés en septembre 2024,
-faisant de _Linux_ un _RTOS_ complet.
-
-Depuis la version `6.12`, le noyau intègre les patchs _PREEMPT_RT_ qui lui confère
-des fonctionnalités temps réel.
+de patchs. Ces modifications ont été progressivement intégrées à la branche principale
+du noyau _Linux_, jusqu'aux derniers patchs qui ont été appliqués en septembre 2024.
+_Linux_ est ainsi devenu un _RTOS_ complet à partir de sa version _6.12_.
 
 #figure(
   cetz.canvas({
@@ -893,9 +879,75 @@ des fonctionnalités temps réel.
   caption: [Architecture de _Linux_ avec _PREEMPT_RT_]
 ) <architecture_preempt_rt>
 
-La documentation de _PREEMPT_RT_: @preempt_rt_doc.
+#aside[installation][
+  Bien que _PREEMPT_RT_ soit désormais distribué avec la branche
+  principale du noyau, il est nécessaire de compiler ce dernier avec l'option
+  de compilation `CONFIG_PREEMPT_RT` activée pour obtenir un noyau préemptible.
+  Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
+  vous pouvez tapez la commande:
+  ```console
+  zcat /proc/config.gz | grep PREEMPT_RT
+  ```
+  Certaines distributions comme _Fedora_ ou _Ubuntu_ proposent également des
+  noyaux alternatifs avec cette option activée, rendant l'installation de
+  _PREEMPT_RT_ plus simple.
 
+  Une fois installée, le noyau offre une nouvelle politique d'ordonnancement
+  baptisée _PREEMPT_FULL_, qui comme son nom l'indique, maximise l'ensemble
+  du code préemptible dans le noyau.
+]
 
+Les modifications apportées au noyau par le projet _PREEMPT_RT_ sont trop
+complexes et techniques pour en faire ici une révue détaillée. Toutefois, il
+est intéressant de comprendre certains de leurs aspects afin de cerner les
+forces et les limites du temps réel dans ce noyau. Plus d'informations sont
+disponibles dans la documentation officielle @preempt_rt_doc.
+
+=== Mutex temps réels
+
+Chaque fois qu'un processus de faible priorité B à la main sur le _CPU_
+alors qu'un processus de plus haute priorité A souhaite s'exécuter, on parle
+d'_inversion de priorité_. Dans le cadre du temps réel, on doit s'assurer que le temps
+pendant lequel une telle inversion se produit est prédictible. Autrement dit,
+on doit pouvoir borner cet événement dans le temps. Une vigilance particulière est
+accordée aux mécanismes de synchronisation, puisqu'une inversion se produit
+en particulier lorsque que le processus A attend la libération
+d'une ressource par le processus B. Dans un scénario catastrophe,
+le processus B n'est jamais ordonnancé, bloquant pendant un temps indéterminé
+l'exécution de A.
+
+À fin de rendre prédectible la durée de ces inversions de priorité, _PREEMPT_RT_
+a introduit dans le noyau des _mutex_ temps réel (_rt-mutex_). Ceux-ci reposent sur la
+méthode dîte d'héritage de priorité (_Priority Inheritance_). Dans notre
+exemple, cela signifie que si le processus B possède une ressource verrouillée
+par un mutex temps réel et que le processus A essaie d'acquérir ce _mutex_, alors
+la priorité du processus B est augmenté afin qu'il libère cette ressource le plus
+vite possible.
+
+Plus de détails sur ces _mutex_ temps réel sont fournis dans la documentation
+officielle @linux_rt_mutex_design @linux_rt_mutex_subsystem.
+
+=== Gestionnaires d'interruption
+
+Lors de l'exécution d'un @isr, il est pratique de désactiver les interruptions
+car ce dernier exécute généralement du code critique et que rien n'empêche
+d'autres interruptions de subvenir durant son exécution. Les @isr constituaient
+donc une partie importante du code non-préemptible du noyau. Afin de réduire
+la portion de code non-préemptible, l'idée est de diviser en deux étapes le
+gestionnaire @linux_threaded_interrupt_handler. La première étape est exécutée
+avec les interruptions désactivées
+et ne fait que le stricte nécessaire pour que l'interruption puisse être prise
+en compte plus tard. La seconde étape est exécutée dans un _thread_ noyau
+préemptible.
+
+=== Remplacement de @spinlock:pl
+
+En l'absence de _PREEMPT_RT_, une tâche qui attend la libération d'un @spinlock
+effectue une attente active. Durant cette attente, la tâche n'est pas
+préemptible. En présence de _PREEMPT_RT_, ces @spinlock:pl sont donc remplacés
+par des _rt-mutex_.
+
+=== RCU
 
 == Partitionnement
 
@@ -907,8 +959,6 @@ Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
 baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
 d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
 pour la paravirtualisation.
-
-== PREEMPT_RT <linux_prempt_rt>
 
 == Partitionnement <linux_partitioning>
 
@@ -1433,10 +1483,47 @@ créer sa distribution _Linux_ dédiée à l'embarqué.
 
 = MirageOS <mirageos>
 
-_MirageOS_ est une _LibOS_ open-source conçue pour les applications réseaux et
-le _cloud computing_#footnote[Le _cloud computing_ est une pratique consistant à
-utiliser des serveurs chez un tiers pour héberger des services plutôt
-que sur un serveur local.]. Le projet est initié en 2009 au sein du laboratoire
+#showybox(
+  title: "MirageOS en bref",
+  frame: (
+    border-color: purple.darken(20%),
+    title-color: purple.lighten(80%),
+    body-color: purple.lighten(95%)
+  )
+)[
+  - *Type* : LibOS
+  - *Langage* : OCaml (99%)
+  - *Architectures* : x86-64, ARM v8, PowerPC#footnote[Support limité à l.]
+  - *Usage principal* : Cloud computing, applications réseau, systèmes embarqués, spatial
+  - *Points forts* : Sécurité renforcée (surface d'attaque réduite, langage sûr), taille minimale, temps de démarrage rapide, modularité
+  - *Limitations* : Portabilité limitée sans hyperviseur, débogage complexe, pas d'interface POSIX
+  - *Licences* : ISC (majoritaire) + LGPLv2 (certaines parties)
+  - *Projet notable* : SpaceOS (déployé dans l'espace en 2025)
+]
+
+
+Au tournant des années 2010, l'usage de la virtualisation révolutionne le
+déploiement des services, permettant de réduire les coûts et d'externaliser une
+partie de la maintenance via le concept de _cloud computing_. À cette époque,
+la majorité des @vm:pl exécutent un service dans un _GPOS_ complet. Cette
+approche présente l'avantage de circonscrire au système d'exploitation les
+modifications requises pour la virtualisation, tout en bénéficiant de
+l'isolation offerte par l'hyperviseur. En contre partie, la pile
+logicielle est grandement complexifiée comme l'illustre la
+@comparison_unikernel_gpos.
+
+En particulier, certains mécanismes
+d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
+le noyau exécuté dans la @vm. De plus, l'introduction d'un _GPOS_ augmente
+considérablement la surface d'attaque (@tcb volumineuse) et les sources de bugs
+potentiels. Cela est d'autant plus vrai que ces @gpos sont souvent écrits dans
+un langage de programmation#footnote[La vaste majorité est écrit en langage C,
+un langage n'offrant pratiquement aucune garantie mémoire et à la sémantique
+complexe sur les architectures @smp.]
+n'offrant que peu de garantie du point de vue des types
+et de la mémoire. C'est de ces deux constats que naît le projet _MirageOS_.
+
+Le projet est initié en 2009 au sein du laboratoire
 _Computer Laboratory_ de l'université de Cambridge sous la houlette de
 Anil Madhavapeddy @mirageos_unikernels. Il est de nos jours maintenu par la
 _MirageOS Core Team_ composée d'universitaires et d'ingénieurs du secteur privé
@@ -1445,20 +1532,22 @@ _MirageOS_ fait parti des projets soutenus par le _Xen Project_
 @mirageos_xen_project et bon nombre de ces contributeurs ont également contribué
 au projet _Xen_.
 
-Au tournant des années 2010, l'usage de la virtualisation révolutionne le
-déploiement des services, permettant de réduire les coûts et d'externaliser une
-partie de la maintenance via le concept de _cloud computing_. À cette époque,
-la majorité des _VM_ exécutent quelques services dans un _GPOS_ complet. Cette
-approche présente l'avantage de circonscrire au système d'exploitation les
-modifications requises pour la virtualisation. En contre partie, la pile
-logicielle est grandement complexifié comme
-l'illustre la @comparison_unikernel_gpos. En particulier, certains mécanismes
-d'isolation comme l'ordonnanceur de tâches sont dupliqués entre l'hyperviseur et
-le noyau exécuté dans la VM. De plus, l'introduction d'un _GPOS_ augmente
-considérablement la surface d'attaque et les sources de bugs. Ce dernier est
-souvent écrit dans un langage de programmation n'offrant que peu
-de garantie du point de vue des types et de la mémoire. C'est de ces deux
-constats que naît le projet _MirageOS_.
+_MirageOS_ adopte une approche de type _LibOS_. Au lieu de fournir un environnement
+d'exécution pour les services, _MirageOS_ se présentent sous la forme d'une
+collection de bibliothèques modulaires. Ces dernières sont écrites
+majoritairement en _OCaml_, un langage de programmation de haut niveau offrant
+la sûreté des types et équipé d'un ramasse-miette. La configuration et
+l'ensemble des bibliothèques
+nécessaires au service sont liés durant la compilation pour produire une image
+appelée _unikernel_. Cet _unikernel_ peut alors être exécuté dans divers
+environnements, voir la sous-section @mirageos_environments. Cela conduit à une
+simplification de la pile logicielle comme illustré dans @comparison_unikernel_gpos.
+L'approche _unikernel_ présente de nombreux avantages:
+- #box[Une plus petite surface d'attaque à la fois par la réduction de le taille du
+code source et l'utilisation d'un langage de programmation sûr.]
+- #box[Une amélioration des performances et notamment du temps de démarrage.]
+- #box[Une réduction de la taille des exécutables produits.]
+- #box[Un profilage simplifié par la suppression d'une couche logicielle.]
 
 #figure(
 grid(
@@ -1523,23 +1612,7 @@ grid(
   caption: [Comparaison entre l'approche _GPOS_ et l'approche _unikernel_.]
 ) <comparison_unikernel_gpos>
 
-_MirageOS_ adopte une approche de type _LibOS_. Au lieu de fournir un environnement
-d'exécution pour les services, _MirageOS_ se présentent sous la forme d'une
-collection de bibliothèques modulaires. Ces dernières sont écrites en _OCaml_,
-un langage de programmation de haut niveau offrant la sûreté des types et
-équipé d'un ramasse-miette. La configuration et l'ensemble des bibliothèques
-nécessaires au service sont liés durant la compilation pour produire une image
-appelée _unikernel_. Cet _unikernel_ peut alors être exécuté dans divers
-environnements, voir la sous-section @mirageos_environments. Cela conduit à une
-simplification de la pile logicielle comme illustré dans @comparison_unikernel_gpos.
-L'approche _unikernel_ présente de nombreux avantages:
-- #box[Une plus petite surface d'attaque à la fois par la réduction de le taille du
-code source et l'utilisation d'un langage de programmation sûr.]
-- #box[Une amélioration des performances et notamment du temps de démarrage.]
-- #box[Une réduction de la taille des exécutables produits.]
-- #box[Un profilage simplifié par la suppression d'une couche logicielle.]
-
-== Image docker <mirageos_imagedocker>
+== Tutoriel <mirageos_tutorial>
 Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
 disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
 nécessaire pour compiler des images avec MirageOS. Pour installer l'image, tapez:
@@ -1550,10 +1623,92 @@ Vous pouvez accéder au shell du `docker` en tapant:
 ```console
 make -C mirageos shell
 ```
-== Environnements d'exécution <mirageos_environments>
 
-Les _unikernels_ produits par _MirageOS_ peuvent aussi bien tourner sur un
-hyperviseur, un système de type _UNIX_ ou même dans un environnement _bare-metal_.
+== Architectures supportées <mirageos_architectures>
+
+Pour qu'une architecture soit supportée par _MirageOS_, il est nécessaire que
+celle-ci soit une cible de compilation du compilateur OCaml. Le compilateur pour
+OCaml 4 supporte les architectures suivantes: _x86-32_, _x86-64_, _ARM v7_,
+_ARM v8_, _PowerPC_, _SPARC_ et _MIPS_. Toutefois le support#footnote[Il subsiste
+pour la compilation en _bytecode_, ce qui n'est pas pertinent ici puisqu'il
+faudrait porter la machine virtuelle d'OCaml pour en définitif obtenir
+des performances médiocres.] des architectures 32-bits a été supprimé à partir d'OCaml 5.
+
+En pratique, les _unikernels_ produits par _MirageOS_ sont rarement exécutés
+en @baremetal mais plutôt dans une partition d'un hyperviseur. Il est donc nécessaire
+que l'hyperviseur supporte les architectures citées ci-dessus et que l'environnement
+d'exécution de _MirageOS_ ait été porté dessus. Le projet _solo5_
+vise à fournir une couche d'abstraction logicielle entre l'environnement
+d'exécution de _MirageOS_ et les différentes @api d'hyperviseurs et de @gpos.
+Il semble qu'à l'heure actuelle le projet _solo5_ n'offre qu'un support pour
+des systèmes sur _x86-64_, _ARM v8_ et _PowerPC_.
+
+Nous considérons donc ces architectures comme étant les seules bénéficiant d'un
+support officiel par le projet _MirageOS_.
+
+== Support multi-processeur <mirageos_multiprocessors>
+
+Les _unikernels_ générés avec _MirageOS_ étant le plus souvent exécutés au-dessus
+d'un hyperviseur, la question du support d'architectures multi-processeur revient
+à déterminer si ces images peuvent tirer parti du parallélisme qu'offre ces
+processeurs. À ce titre, l'environnement d'exécution d'_OCaml_ doit supporter
+le parallélisme.
+
+Jusqu'à _OCaml 4_, le @runtime _OCaml_ utilisait un verrou global assurant
+que le code _OCaml_ ne puisse jamais être exécuté en parallèle. Ce verrou permettait
+de garantir que certain invariants internes étaient préservés, notamment
+au niveau du ramasse-miette. Un moyen de bénéficier malgré tout du parallélisme
+était d'écrire le code à paralléliser en C puis de l'interfacer avec le code _OCaml_.
+Cette solution n'a pas été retenue par les développeurs de _MirageOS_ qui souhaitaient
+bénéficier de la sûreté des types offerte par le langage _OCaml_. Toutefois
+un service Web implémenté en _MirageOS_ doit pouvoir servir plusieurs
+utilisateurs simultanément. Lorsque cette application passe la majorité du
+temps à attendre des entrées/sorties, la programmation
+asynchrone s'avère un choix judicieux. À cette fin, le projet _MirageOS_ utilise
+une bibliothèque de _threads_ coopératifs baptisé _Lwt_ @vouillon2008lwt
+@lwt_manual. Lorsque le parallélisme est vraiment nécessaire, par exemple si
+les services doivent effectuer des tâches lourdes en calcul, une solution est
+d'exécuter plusieurs instances du même _unikernel_ et de les synchroniser via
+les @ipc de l'hyperviseur. Cette solution a été mise en pratique sur
+l'hyperviseur _Xen_.
+
+#aside[Bibliothèque _Lwt_][
+  La bibliothèque _Lwt_ est une bibiothèque _OCaml_ de _threads_ coopératifs.
+  Elle simplifie la programmation aynchrone en proposant un style de programmation
+  monadique via des promesses. Par exemple, dans le code suivant deux _threads_
+  légers sont lancés pour afficher un message après un décompte grâce à la
+  fonction `Mirage_sleep.ns`:
+  ```ocaml
+  open Lwt.Infix
+
+  let start () =
+    Lwt.join
+      [
+        ( Mirage_sleep.ns (Duration.of_sec 1) >|= fun () ->
+          Logs.info (fun m -> m "Heads") );
+        ( Mirage_sleep.ns (Duration.of_sec 2) >|= fun () ->
+          Logs.info (fun m -> m "Tails") );
+      ]
+    >|= fun () -> Logs.info (fun m -> m "Finished")
+  ```
+  La fonction `Lwt.join` crée une promesse qui ne sera résolue que lorsque
+  les deux _threads_ auront terminé leur travail.
+]
+
+À partir de la version 5, le @runtime _OCaml_ permet l'exécution en parallèle
+de code écrit en _OCaml_ via le concept de _domaine_ @retrofitting_parallelism.
+Un effort est en cours pour porter _MirageOS_ sur _OCaml 5_ @mirageos_on_ocaml5,
+ce qui devrait conduire à une amélioration des performances des _unikernels_
+sur les architectures @smp et à une simplification de leur architecture lorsque
+le parallélisme est nécessaire pour des raisons de performance.
+
+#aside[Domaine][
+  Les domaines sont un concept introduit en _OCaml 5_ pour permettre
+  l'exécution parallèle de code _OCaml_. Elle permet également l'écriture de
+  programme asynchrone mais sans avoir recours au style monadique comme _Lwt_.
+]
+
+== Environnements d'exécution <mirageos_environments>
 
 Les _LibOS_ souffrent généralement d'un problème de portabilité car elles doivent
 être adaptées à chaque environnement matériel spécifique. Cette problématique est
@@ -1561,59 +1716,17 @@ largement atténuée par l'usage d'un hyperviseur qui offre une couche d'abstrac
 matérielle standardisée, facilitant ainsi le déploiement des _unikernels_ sur
 différentes plateformes.
 
-#figure(
-  table(
-    columns: (1fr, 2fr, 2fr, 2fr),
-    stroke: 1pt + black,
-    align: center,
-    inset: 10pt,
-    [Cible],
-    [Description],
-    [Environnement],
-    [Compilateur],
+Les _unikernels_ produits par _MirageOS_ peuvent tourner sur les hyperviseurs
+_Xen_, _KVM_ de _Linux_, _BHyve_ de _FreeBSD_ et _OpenBSD VMM_. Il
+supporte également le noyau de séparation _Muen_. Finalement, il est possible
+d'exécuter une image dans un environnement _UNIX_ comme une distribution
+_GNU/Linux_ ou _macOS_, ce qui est particulièrement utile pour débogage.
 
-    [`unix`],
-    [Exécute l'unikernel comme un processus Unix normal],
-    [_GNU/Linux_],
-    [Compilateur OCaml classique, et la bibliothèque `mirage-unix`],
-
-    [`hvt`],
-    [Unikernel pour la virtualisation avec Solo5, requière le support matériel],
-    [_KVM_, _FreeBSD_, _Google Compute Engine_],
-    [Solo5 (tender `hvt`), compilateur OCaml],
-
-    [`xen`],
-    [Unikernel paravirtualisé pour Xen],
-    [_Xen_ + _Mini-OS_],
-    [outils de compilation Xen, compilateur OCaml],
-
-    [`spt`],
-    [Unikernel sécurisé avec seccomp],
-    [_KVM_],
-    [Solo5 (tender `spt`), compilateur OCaml, Linux seccomp],
-
-    [`virtio`],
-    [Unikernel utilisant virtio-blk/net],
-    [_virtio_],
-    [Qemu, Solo5 (tender `virtio`), compilateur OCaml],
-
-    [`mue`],
-    [Unikernel pour l'embarqué sans OS],
-    [_bare-metal_],
-    [Micro-Unikernel Environnement (MUE), compilateur OCaml],
-
-    [`qemu`],
-    [Unikernel pour Qemu],
-    [_QEMU_],
-    [Qemu, MirageOS backend Qemu],
-  )
-)
-
-#aside[la plateforme _Solo5_][
-  _Solo5_ est un initialement un projet pour porter _MirageOS_ sur _KVM_. Le
-  projet a depuis été étendu pour permettre l'exécution d'_unikernels_ sur les
-  hyperviseurs de _FreeBSD_ et .
-]
+À l'origine _MirageOS_ n'était supporté que par _Xen_. Lors de son portage
+vers _KVM_ par _IBM Research_, le projet _solo5_ a été lancé afin de mutualiser
+les efforts d'un tel portage. Aujourd'hui _solo5_ propose un environnement
+d'exécution standardisé pour différentes _LibOS_ et ciblant différents
+_hyperviseurs_.
 
 #howto[choisir l'environnement d'exécution][
 Le choix de l'environnement d'exécution se fait au moment de la configuration
@@ -1624,7 +1737,6 @@ mirage configure -t ENV
 où `ENV` peut désigner les valeurs suivantes:
 `unix`, `macosx`, `xen`, `virtio`, `hvt`, `muen`, `qubes`, `genode`, `spt`,
 `unikraft-firecracker` ou `unikraft-qemu`.
-]
 - #box[L'option `xen` permet l'exécution dans un domaine de _Xen_. Il s'agit
 de l'environnement original du projet _MirageOS_. En production, on exécute
 généralement le noyau minimaliste _Mini-OS_ dans le _dom0_ de _Xen_ @xen_minios.]
@@ -1634,60 +1746,112 @@ requière]
 l'_unikernel_ dans une distribution _GNU/Linux_, respectivement _macOS_. C'est
 un atout précieux pour le débogage et le profilage de l'application mais ne
 correspond généralement pas à l'environnement d'exécution en production.]
-- #box[_Xen_, _KVM_, _bhyve_, _VMM_.]
 - #box[Les options `unikraft-firecracker` et `unikraft-qemu` ont été ajoutées
 récemment au projet @mirageos_unikraft. Elles permettent d'exécuter l'_unikernel_
 dans un environnement _unikraft_.]
-
-Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
-_Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage le
-plus fréquent.
-
-== Architectures supportées <mirageos_architectures>
-
-Pour qu'une architecture soit supportée par _MirageOS_, il est nécessaire que
-celle-ci soit une cible de compilation du compilateur OCaml. Le compilateur pour
-OCaml 4 supporte les architectures suivantes: _x86-32_, _x86-64_, _ARM v7_,
-_ARM v8_, _PowerPC_, _SPARC_ et _MIPS_. Toutefois le support (en natif) des
-architectures 32-bits a été supprimé à partir d'OCaml 5.
-
-=== Support multi-processeur <mirageos_multiprocessors>
-
-#aside[la bibliothèque _Lwt_][
-  La bibliothèque _Lwt_ (_Light Weight Thread_) @vouillon2008lwt @lwt_manual
-  est une bibliothèque de _threads_ coopératifs écrite en OCaml. Elle permet
-  l'écriture de programme dans un style asynchrone et concurrentiel. Cette
-  bibliothèque est un bloc fondamental du projet _MirageOS_.
 ]
 
-Le support multi-cœur de _MirageOS_ dépend de la version d'OCaml utilisée:
-- #box[En OCaml 4, il n'est pas possible de tirer parti nativement du parallélisme
-offert par un processeur multi-cœur du fait de limitations du runtime OCaml.
-Lorsqu'on souhaite uniquement entrelacer des files d'exécution, on peut utiliser
-des threads coopératifs notamment avec la bibliothèque OCaml Lwt. Si le
-parallèlisme est nécessaire, une solution est d'exécuter plusieurs unikernels
-sur des cœurs différents. C'est notamment possible sur l'hyperviseur _Xen_ grâce
-à des canaux de communication entre machines virtuelles appelés _Xen vchan_
-@vchan_low_latency.]
-- #box[En OCaml 5, Le projet _multi-core_ @retrofitting_parallelism a introduit le
-concept de _domain_ dans le langage OCaml et permet exécution de code OCaml
-sur plusieurs cœurs en parallèle. Un effort est en cours pour porter _MirageOS_
-sur OCaml 5 @mirageos_on_ocaml5 afin de bénéficier des nouvelles fonctionnalités
-de ce dernier.]
+Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
+_Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage
+le plus fréquent.
+
+== Temps réel <mirageos_real_time>
+
+À notre connaissance, _MirageOS_ n'a jamais été utilisé dans un contexte temps
+réel. Le principal obstacle vient du ramasse-miette d'OCaml qui n'offre pas de
+garanties déterministes. Quant à la bibliothèque _Lwt_, elle n'a pas du tout été
+conçue pour cet usage puisque les tâches doivent rendre la main volontairement
+à l'ordonnanceur _Lwt_. Si vous souhaitez exécuter une tâche temps réel, il faudra
+avoir recours à un hyperviseur temps réel et exécuter cette tâche dans une
+partition distincte.
 
 == Partitionnement <mirageos_partioning>
 
-Le partitionnement est entièrement délégué à l'environnement d'exécution, qui
-est le plus souvent un hyperviseur. Lorsqu'on souhaite isoler plusieurs services,
-il suffit de créer des partitions différentes pour chaque service et de les faire
-communiquer via le protocole de communication inter-partition de l'hyperviseur.
-Par exemple dans le cas de _Xen_, on peut créer des _domU_ pour chaque _unikernel_
-et les faire communiquer via.
+_MirageOS_ n'offre pas de partitionnement temporel ou spatial. Cette tâche
+incombe à un noyau de séparation dans lequel l'_unikernel_ est exécuté, typiquement
+un hyperviseur comme _Xen_. En particulier, lorsque l'on souhaite isoler plusieurs
+services _MirageOS_, l'usage est d'exécuter ces services dans des _unikernels_
+distincts et de les faire communiquer via les @ipc de l'hyperviseur.
+
+En particulier, si vous utiliser _Xen_ comme noyau de séparation, vous pouvez
+utiliser la bibliothèque _vchan_ de _MirageOS_ pour communiquer entre deux
+_unikernels_.
 
 == Corruption de la mémoire <mirageos_memory_corruption>
 
-La gestion de la corruption de la mémoire est généralement déléguée à l'environnement
-d'exécution.
+La gestion de la corruption de la mémoire est généralement déléguée à
+l'environnement d'exécution de l'_unikernel_.
+
+Dans le cas de _Xen_ avec un noyau _Linux_ dans le domaine _dom0_, il suffira
+d'utiliser les sous-systèmes décrits dans @linux_memory_corruption et
+les @ipc de _Xen_ pour récupérer ces informations dans l'_unikernel_.
+
+== Watchdog <mirageos_watchdog>
+
+_MirageOS_ ne semble pas offrir d'@api en OCaml pour interagir avec un _watchdog_.
+Le support est donc dépendant de l'environnement dans lequel l'image est exécutée.
+
+Dans le cas de l'hyperviseur _Xen_, il suffit d'appeler les fonctions C de la
+bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à travers
+des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
+`tools/ocaml/` du dépôt _Xen_.
+
+== Temps de démarrage <mirageos_boot_time>
+
+Le temps de démarrage de _MirageOS_ est un enjeu important pour ses applications
+dans le _cloud computing_. Ainsi le temps de démarrage d'un _unikernel_ produit
+par _MirageOS_ a fait l'objet de plusieurs études.
+
+Dans l'article fondateur @madhavapeddy2013unikernels, les auteurs ont étudiés
+le temps de démarrage d'_unikernels_ _MirageOS_ et d'un serveur _Apache_ sous
+_Debian_ virtualisés dans des partitions _Xen_. Les _unikernels_ démarraient
+deux fois plus vite que la combinaison _Debian/Apache_. Un gain substantiel
+était possible en optimisant la _toolstack_ de _Xen_, permettant aux _unikernels_
+de démarrer en seulement 50ms.
+
+Dans @madhavapeddy2015jitsu, les auteurs ont étudié le temps de démarrage
+d'_unikernels_ _MirageOS_ sur un hyperviseur _Xen_ avec une pile logicielle
+optimisée. Ils sont parvenus sur des temps de démarrage à froid inférieurs à
+350 ms sur _ARM_ et 30ms sur _x86_.
+
+Dans l'étude récente @kuenzer2021unikraft, les auteurs affirment qu'un
+_unikernel_ de _MirageOS_ peut démarrer en moins de 3ms en utilisant
+l'environnement d'exécution _solo5_.
+
+En conclusion, le temps de démarrage de _MirageOS_ peut être rendu très faible
+et négligeable face à celui de la mise en place de la partition elle-même.
+
+== Maintenabilité <mirageos_maintenability>
+
+_MirageOS_ est en majorité écrit en OCaml, un langage de haut niveau qui offre
+de bonne garantie du point de vue de la sûreté des types et de la mémoire.
+À ce jour le dépôt https://github.com/mirage/mirage est constitué à 99% de code
+OCaml pour un total de 9075 _SLOC_.
+
+Toutefois la totalité de l'unikernel ne provient pas de la compilation de
+codes _OCaml_. Il subsiste plusieurs parties en langage C et notamment:
+- #box[L'environnement d'exécution du langage OCaml est écrit en C. Cela inclut en
+particulier son ramasse-miette,]
+- #box[Quelques bibliothèques en C comme _GMP_ au travers de _Zarith_. Leur réécriture
+en OCaml est théorique possible mais nécessiterait un effort considérable en pratique,]
+- #box[Les pilotes sont et doivent être écrit dans un langage bas niveau.]
+
+== Qualifications et certifications <mirageos_certifications>
+
+À notre connaissance, _MirageOS_ n'a pas fait l'objet de certifications. L'objectif
+premier de _MirageOS_ est davantage la sécurité que la sûreté de fonctionnement.
+Cet objectif est atteint en minimisant la surface d'attaque et en utilisant un
+langage de programmation sûr.
+
+== Licences
+
+Le code de _MirageOS_ est publié sous la licence _ISC_ avec certaines parties
+sous licence _LGPLv2_. L'utilisation d'une licence open-source permissive comme
+_ISC_ est nécessaire car l'_unikernel_ produit par _MirageOS_ est lié statiquement
+avec les bibliothèques. Grâce à cette licence, vous n'avez pas les contraintes
+des licences _GPL_ lorsque vous distribuez le binaire de votre _unikernel_.
+
+== Draft
 
 == Profilage & traçage <mirageos_profiling>
 
@@ -1765,46 +1929,6 @@ en bout. On peut utiliser un backend spécifique comme `mirageos-trace-viewer`.
 C'est un atout majeur en comparaison de _strace_ qui ne permet que de tracer
 les appels systèmes.
 
-== Maintenabilité <mirageos_maintenability>
-
-_MirageOS_ est en majorité écrit en OCaml. Comme nous l'avons indiqué dans
-l'introduction de cette section, il s'agit d'un langage de haut niveau qui offre
-de bonne garantie du point de vue de la sûreté des types et de la mémoire. Toutefois
-la totalité de l'unikernel ne provient pas de la compilation de code OCaml. Il
-subsiste plusieurs parties en langage C et notamment:
-- #box[L'environnement d'exécution du langage OCaml est écrit en C. Cela inclut en
-particulier son ramasse-miette,]
-- #box[Quelques bibliothèques en C comme _GMP_ au travers de _Zarith_. Leur réécriture
-en OCaml est théorique possible mais nécessiterait un effort considérable en pratique,]
-- #box[Les pilotes doivent être écrit dans un langage bas niveau.]
-
-À ce jour le dépôt https://github.com/mirage/mirage est constitué à 99% de code
-OCaml pour un total de 9075 _SLOC_.
-
-== Watchdog <mirageos_watchdog>
-
-_MirageOS_ ne semble pas offrir d'_API_ en OCaml pour interagir avec un _watchdog_.
-Le support est donc dépendant de l'environnement dans lequel l'image est exécutée.
-Dans le cas de l'hyperviseur _Xen_, il suffit d'appeler les fonctions C de la
-bibliothèque _xencontrol_ comme illustré dans la @xen_watchdog_example à travers
-des _bindings_ en OCaml. De tels _bindings_ existent déjà dans le dossier
-`tools/ocaml/` du dépôt _Xen_.
-
-== Qualifications & certifications <mirageos_certifications>
-
-À notre connaissance, _MirageOS_ n'a pas fait l'objet de certification. L'objectif
-premier de _MirageOS_ est davantage la sécurité que la sûreté de fonctionnement.
-Cet objectif est atteint en minimisant la surface d'attaque et en utilisant un
-langage de programmation sûr.
-
-== Licences <mirageos_licenses>
-
-Le code de MirageOS est publié sous la licence `ISC` avec certaines parties
-sous licence `LGPLv2`. L'utilisation d'une licence open-source permissive comme
-`ISC` est nécessaire car l'_unikernel_ produit par _MirageOS_ est lié statiquement
-avec les bibliothèques. En particulier, vous n'avez pas l'obligation de distribuer
-les sources de l'application lorsque vous distribuez le binaire de l'_unikernel_.
-
 == Draft
 
 Les bibliothèques d'OS souffrent d'un problème de portabilité. Cette situation
@@ -1843,6 +1967,35 @@ Quelques avantages:
 - vérification et certification modulaire
 
 == SpaceOS <mirageos_spaceos>
+
+_SpaceOS_ est un système d'exploitation basé sur _MirageOS_ développé par _Tarides_
+pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satellite.
+Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
+et multi-missions, construite sur la technologie des _unikernels_.
+
+_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial :
+- L'_ESA_ (_European Space Agency_)
+- Le _CNES_
+- _Thales Alenia Space_
+- _OHB_
+- _Eutelsat_
+- Le _Singapore Space Agency_
+
+Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
+_DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
+a déployé un logiciel basé sur _OCaml 5_ sur le satellite. Cette mission a démontré
+la viabilité des _unikernels_ _MirageOS_ pour les applications spatiales en conditions
+réelles.
+
+Les principaux avantages de _SpaceOS_ incluent:
+- Une réduction de taille d'un facteur 20 par rapport à un déploiement basé sur
+  des conteneurs _Linux_
+- Une sécurité accrue grâce à l'utilisation d'un langage à gestion mémoire sûre (_OCaml_)
+- Une architecture modulaire permettant de compiler uniquement les fonctionnalités
+  nécessaires du système d'exploitation
+
+Ces résultats ont valu à _SpaceOS_ une reconnaissance industrielle significative,
+notamment le prestigieux _Airbus Innovation Award_ lors de la _Paris Space Week_ 2024.
 
 = PikeOS <pikeos>
 _PikeOS_ est un micronoyau temps réel dédié à l'embarqué critique. Ces
@@ -1890,9 +2043,9 @@ des ressources en commun.
 === Architectures @amp <pikeos_amp>
 
 L'entreprise _SYSGO_ propose une version spéciale de _PikeOS_ baptisée _PikeOS
-for MPU_. Cette édition de l'hyperviseur est dédiée aux plateformes @soc équipées
+for MPU_. Cette édition de l'hyperviseur est dédiée aux plateformes @mpsoc équipées
 de _MPU_ et offre en particulier un support pour des architecture @amp. Il supporte les
-architectures _ARMv7-R_, _ARMv8-R_ et dispose de @bsp les @soc _NG-Ultra_ et
+architectures _ARMv7-R_, _ARMv8-R_ et dispose de @bsp les @mpsoc _NG-Ultra_ et
 _AMD Zynq Ultrascale+_.
 
 == OS invités supportés
@@ -2033,6 +2186,24 @@ _ProvenCore_ est conçu pour fonctionner avec le @tee _TrustZone_ de l'architect
 
 = RTEMS <rtems>
 
+#showybox(
+  title: "RTEMS en bref",
+  frame: (
+    border-color: red.darken(20%),
+    title-color: red.lighten(80%),
+    body-color: red.lighten(95%)
+  )
+)[
+  - *Type* : RTOS libre
+  - *Langage* : C (96%)
+  - *Architectures* : 20+ architectures (ARM, PowerPC, RISC-V, SPARC, x86, MIPS, ...)
+  - *Usage principal* : Systèmes embarqués temps-réel (spatial, militaire, médical, industriel)
+  - *Points forts* : Libre (GPL/BSD), API POSIX, support SMP, modulaire, mature, utilisé par NASA/ESA
+  - *Limitations* : Documentation parfois limitée, configuration complexe
+  - *Licences* : BSD 2-clause + exceptions (permettant code propriétaire)
+  - *Missions notables* : Galileo, James Webb Space Telescope, Mars rovers
+]
+
 _RTEMS_ (_Real-Time Executive for Multiprocessor Systems_) est un _RTOS_ libre conçu
 pour les systèmes embarqués. L'ensemble des fonctionnalités
 offertes par _RTEMS_ inclut:
@@ -2058,65 +2229,6 @@ alors renommé _Real-Time Executive for Multiprocessor Systems_ pour souligner
 ce changement ainsi que le support des systèmes multiprocesseurs. De nos jours,
 il est utilisé dans des missions spatiales et notamment la constellation de
 satellites _Galileo_.
-
-== Architectures supportées <rtems_architectures>
-
-Du fait de sa longue histoire, _RTEMS_ a supporté et supporte encore aujourd'hui
-un grand nombre d'architectures. Nous nous concentrons ici sur les architectures
-énumérées dans l'introduction de cette étude. D'après
-@rtems_architectures_website, _RTEMS_ supporte les familles d'architectures suivantes
-dans leur version 32bits et 64bits: _x86_, _ARM_, _PowerPC_, _MIPS_, _RISC-V_, _SPARC_.
-Le support se fait via des @bsp. Par exemple, le projet distribue un @bsp pour
-les processeurs _LEON2_ et _LEON3_ ayant pour architectures _SPARC v8_.
-
-== Support multi-processeur <rtems_multiprocessors>
-
-Cette section aborde le support d'architectures multi-processeur sous _RTEMS_.
-
-=== Architectures @smp
-
-_RTEMS_ offre un support pour les architectures @smp des processeurs
-_x86_, _ARM_, _PowerPC_, _RISC-V_ et _SPARC_. Ce support est toutefois relatif
-à chaque @bsp.
-
-Le support @smp n'est pas activé par défaut. Il requière d'être activé durant
-la phase de compilation du noyau.
-
-=== Architectures @amp
-
-== Temps de démarrage <rtems_booting_time>
-
-== Maintenance <rtems_maintening>
-
-== Licences <rtems_licenses>
-
-_RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
-et open-sources avec pour licence principale BSD-2. Le noyau peut être utilisé ou
-être lié avec des programmes sous n'importe quelle licence @rtems_licenses_website.
-
-== Draft
-- Il offre un support pour les architectures @smp et @amp.
-- Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
-- Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
-- ARINC 653 RTEMS
-- Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
-
-== Support multi-processeur
-
-_RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
-mais également pour les architectures @amp.
-
-L'utilisation d'un processeur SMP augmente significativement le risque d'accès
-concurrentiel car plusieurs _threads_ peuvent s'exécuter en parallèle.
-
-Le support @smp repose sur l'utilisation d'un _clustered scheduler_.
-
-- Le support concerne un sous ensemble des architectures cibles et de bps? Lesquelles? faire un tableau?
-- Les architectures supportées: AArch64, ARMv7-A, i386, PowerPC, RSIC-V et SPARC.
-- Le support est disponible depuis la version 4.11.0 et doit être activé explicitement lors de la configuration via l'option `--enable-smp`.
-- Support pour les processeurs @smp LEON3 et LEON4. Ce sont des processeurs _SPARC v8_. LEON est un processeur 32bits libre développé par @esa.
-- Il existe un support affinité des tâches. Autrement dit on peut spécifier sur quel sous-ensemble de cœur une tâche peut s'exécuter.
-- Il y a un support pour la migration de tâche.
 
 == Tutoriel <rtems_tutoriel>
 
@@ -2147,6 +2259,191 @@ sous tension, vous pouvez lancez la commande suivante afin d'interagir avec l'in
 minicom -D /dev/ttyUSB0
 ```
 Le nom de l'interface _TTY_ peut varier suivant l'adaptateur utilisé.
+
+
+== Architectures supportées <rtems_architectures>
+
+Du fait de sa longue histoire, _RTEMS_ a supporté et supporte encore aujourd'hui
+un grand nombre d'architectures. Nous nous concentrons ici sur les architectures
+énumérées dans la sous-section @architectures. D'après @rtems_architectures_website,
+_RTEMS_ supporte les familles d'architectures suivantes dans leur version 32bits
+et 64bits: _x86_, _ARM_, _PowerPC_, _MIPS_, _RISC-V_, _SPARC_.
+Le support se fait via des @bsp. En particulier, le projet distribue un @bsp pour
+les processeurs _LEON2_ et _LEON3_ ayant pour architectures _SPARC v8_ et
+conçus pour des applications dans le spatial.
+
+== Support multi-processeur <rtems_multiprocessors>
+
+Cette section aborde le support d'architectures multi-processeur sous _RTEMS_.
+_RTEMS_ offre à la fois un support pour les architectures @smp @rtems_smp,
+mais également pour les architectures @amp.
+
+=== Architectures @smp <rtems_smp_2>
+
+Depuis la version _4.11.0_, _RTEMS_ offre un support pour les architectures
+@smp des processeurs _x86_, _ARM_, _PowerPC_, _RISC-V_ et _SPARC_. Ce support
+est toutefois relatif à chaque @bsp. Il est par exemple disponible pour les
+processeurs _LEON3_ et _LEON4_.
+
+Ce support inclut entre autres:
+- #box[Des ordonnanceurs de tâches dédiés comme _EDF_ (_Earliest Deadline First_)
+qui tient compte d'échéances via le mécanisme de _deadline_
+(voir la sous-section @rtems_real_time) et se comporte comme un ordonnanceur à
+priorité fixe en l'absence de _deadlines_.]
+- #box[La possibilité de circonscrire une tâche à un sous-ensemble de _CPU_ via
+un mécanisme d'affinité.]
+- #box[Un support pour la migration de tâches.]
+- #box[Des mécanismes de synchonisations fins via des protocoles de verrouillage
+comme _OMIP_ et _MrsP_.]
+
+#aside[Activation @smp][
+Le support @smp n'est pas activé par défaut. Il requière d'être activé durant
+la phase de compilation du noyau via l'option `--enable-smp`.
+]
+
+Le support @smp a fait l'objet de vérifications et de pré-qualifications comme
+nous le verrons dans la sous-section @rtems_certifications.
+
+=== Architectures @amp <rtems_amp>
+
+Il est possible d'utiliser _RTEMS_ sur des @mpsoc. Par exemple, il existe un
+@bsp pour le @mpsoc _Xilinx Zynq UltraScale+_ @rtems_xilinx_bsp.
+
+== Temps réel <rtems_real_time>
+
+En tant que _RTOS_, _RTEMS_ a été conçu pour être déterministe. À cette fin,
+il dispose de plusieurs ordonnanceurs préemptifs couvrant différents cas d'usage.
+
+Afin d'assurer la synchronisation des sections critiques et de prévenir les
+inversions de priorité, _RTEMS_ propose quatre protocols de verrouillage:
+- #box[_ICPP_ (_Immediate Ceiling Priority Protocol_) pour les architectures
+monoprocesseur]
+- #box[_PIP_ (_Priority Inheritance Protocol_) pour les architectures
+monoprocesseur. La prorité d'une tâche est élevée au niveau de la plus haute
+priorité d'une tâche qui attend un verrou. C'est une approche similaire aux
+verrous _rt-mutex_ de _Linux_ vu en sous-section @linux_real_time.]
+- #box[_MrsP_ (_Multiprocessor Resource Sharing Protocol_) pour les architectures
+@smp. Il généralise les verrous _ICPP_ aux multiprocesseur @smp et utilise de
+l'attente active.]
+- #box[_OMIP_ (_O(m) Independence Preserving Protocol_) pour les architectures
+@smp. Il généralise le protocol _PIP_ aux architectures @smp.]
+
+(TODO: vérifier)
+
+_RTEMS_ est un _RTOS_ ce qui signifie qu'il a été conçu pour avoir un
+comportement déterministe. Il dispose d'un ordonnanceur préemptif basé
+sur des priorités. Une tâche préempte immédiatement
+une éventuelle autre tâche de plus faible priorité. Son ordonnanceur
+propose deux modes de fonctionnement. Le mode _RMS_ (_Rate Monotonic Scheduling_)
+avec des priorités statiques basée sur des périodes. La tâche avec la période
+la plus courte est la plus prioritaire. L'autre mode est _EDF_ (_Earliest Deadline
+First_). Cette fois c'est la tâche avec l'échéance la plus proche qui reçoit la plus
+haute priorité. Les temps de latence sont courts et connus.
+
+Le premier scheduler est plutôt appelé un _Deterministic Priority Scheduler_. D'après
+la documentation il est plutôt approprié pour les architectures monoprocesseur.
+
+_RTEMS_ offrent des ordonnanceurs pour monoprocesseur et pour multiprocesseur
+de type @smp. En @smp, tous les ordonnanceurs sont basées sur des priorités.
+
+#table(
+  columns: (2fr, 2fr, 2fr),
+  stroke: 0.5pt,
+  align: center + horizon,
+
+  [Ordonnanceur], [Algorithme / Logique], [Complexité et Impact RAM],
+
+  // Ligne 1 : Déterministe
+  [Déterministe Priorité],
+  [Basé sur priorité préemptive (utilise un tableau de FIFO par priorité, géré par un *bitmap*).],
+  [#box(fill: green.lighten(90%), "Déterministe et fixe en temps d'exécution.") Utilise ~3KB de RAM (pour 256 niveaux de priorité).],
+
+  // Ligne 2 : Simple
+  [Simple Priorité],
+  [Même comportement que le déterministe, mais utilise une *seule liste chaînée* pour toutes les tâches prêtes.],
+  [#box(fill: yellow.lighten(90%), "Complexité O(n) (n = tâches prêtes).") Utilise beaucoup moins de RAM (idéal pour petits systèmes).],
+
+  // Ligne 3 : EDF
+  [Earliest Deadline First (EDF)],
+  [Basé sur l'échéance : la tâche avec l'échéance la plus proche est prioritaire. Supporte les tâches d'arrière-plan. Nécessite le *Rate Monotonic Manager* pour les échéances.],
+  [Haute utilisation du CPU (jusqu'à 100% en théorie). Utilise un arbre *rouge-noir* pour la file d'attente unique.],
+
+  // Ligne 4 : CBS
+  [Constant Bandwidth Server (CBS)],
+[Extension de l'EDF axée sur l'*isolation temporelle*. Le serveur (par tâche) est caractérisé par un budget/période (bande passante).],
+  [Fournit une isolation stricte : une tâche ne peut pas influencer l'exécution des autres. Rétrograde les tâches qui dépassent leur budget.],
+)
+
+Il est possible d'implémenter son propre ordonnanceur.
+
+Afin d'assurer la synchronisation et de prévenir les inversions de priorité,
+_RTEMS_ propose quatre types de verrous.
+- Immediate Ceiling Priority Protocol _ICPP_
+- Priority Inheritance Protocol,
+- Multiprocessor Resource Sharing Protocol _MrsP_
+- O(m) Independence-Preserving Protocol _OMIP_
+
+#figure(
+table(
+  columns: (1.5fr, 1.5fr, 1.5fr, 1.5fr),
+  stroke: 0.5pt,
+  align: center + horizon, // Alignement vertical et horizontal au centre
+
+  [Acronyme], [Nom Complet], [Contexte Principal], [Mécanisme Clé Anti-Inversion],
+
+  // Ligne ICPP
+  [ICPP], [Immediate Ceiling Priority Protocol], [Uniprocesseur (Monocœur)], [Priorité immédiatement élevée au *Plafond* pré-défini.],
+
+  // Ligne PIP
+  [PIP], [Priority Inheritance Protocol], [Uniprocesseur (Monocœur)], [Priorité élevée au niveau de la *plus haute priorité* en attente.],
+
+  // Ligne MrsP
+  [MrsP], [Multiprocessor Resource Sharing Protocol], [Multiprocesseur (SMP, Ordonnancement en cluster)], [Généralisation de l'ICPP pour SMP ; utilise la priorité plafond et l'attente active (*busy wait*).],
+
+  // Ligne OMIP
+  [OMIP], [O(m) Independence-Preserving Protocol], [Multiprocesseur (SMP, Ordonnancement en cluster)], [Généralisation du PIP pour SMP ; *Ne nécessite aucune configuration* externe (pas de priorité plafond).],
+),
+caption: [Protocoles de verrouillage]
+)
+
+== Partitionnement
+
+_RTEMS_ n'offre pas beaucoup de garantie quant au partionnement spatial.
+
+== Corruption de la mémoire
+
+== Monitoring
+
+== Profilage & traçage
+
+Il a existé également un projet baptisé _RTMA_ (_RTEMS Monitoring Application_)
+développé par des chercheurs autour des années 2000.
+
+_RTEMS_ offre un outil de traçage intégré @rtems_introduction_to_tracing.
+
+== Support de _watchdog_
+
+== Temps de démarrage <rtems_booting_time>
+
+== Maintenabilité <rtems_maintening>
+
+ Le projet _RTEMS_ est développé et maintenu depuis plus de 30 ans. Il est
+ écrit en langage C à plus de 96% pour 1 990 023 _SLOC_.
+
+== Licences <rtems_licenses>
+
+_RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
+et open-sources avec pour licence principale _BSD 2-Clause_. Le point commun de
+ces licences est qu'elles autorisent l'utilisateur a lié son programme avec le
+code source de _RTEMS_ sans devoir redistribuer son propre code source
+@rtems_licenses_website.
+
+== Draft
+- Il offre un support pour les architectures @smp et @amp.
+- Il permet le cross-développement via d'autres OS: distributions GNU/Linux, Windows, BSD, Solaris, MacOS.
+- Il est utilisé dans l'industrie spatiale, notamment chez les acteurs européens.
+- ARINC 653 RTEMS
+- Il existe un support commercial pour les entreprises européennes ou américaines et la communauté offre bien sûr un support gratuit sans garantie.
 
 == Partionnement <rtems_partioning>
 
@@ -2255,7 +2552,7 @@ la communication inter-processus. Toutefois, contrairement à la majorité des
 autres micronoyaux de la famille _L4_, il fournit également des _capabilities_
 pour gérer les autorisations.
 
-== Installation <sel4_installation>
+== Tutoriel <sel4_tutorial>
 
 Le site de _seL4_ fournit un tutoriel détaillé et une image _docker_ contenant
 tout le nécessaire pour tester le micronoyau dans une machine virtuelle.
@@ -2270,15 +2567,97 @@ make user
 == Architectures supportées <sel4_architectures>
 
 Le développement initial de _seL4_ s'est fait uniquement sur l'architecture
-_ARM v6_. Le projet a depuis été porté sur les plateformes _x86_ et _RISC-V_.
-La dernière version du micronoyau supporte les architectures suivantes: _ARM v6_,
-_ARM v7_, _x86-32_, _x86-64_ et _RISC-V_.
+_ARM v7_. Le projet a depuis été porté sur les plateformes _x86_ et _RISC-V_.
+La dernière version du micronoyau supporte les architectures suivantes: _ARM v7_,
+_ARM v8_, _x86-32_, _x86-64_ et _RISC-V_.
 
-Sur la plateforme _x86_, il est possible d'utiliser les instructions _VT-X_ pour
+Sur l'architecture _x86_, il est possible d'utiliser les instructions _VT-X_ pour
 la virtualisation assistée par le matériel.
 
 Plus d'informations sur le support des différentes plateformes sont
 disponibles sur leur site @sel4_supported_platforms.
+
+== Support multi-processeur <sel4_multiprocessor>
+
+_seL4_ offre un support aussi bien pour les architectures multiprocesseur
+@smp que @amp.
+
+== Support @smp
+
+Le noyau _seL4_ dispose d'un support @smp pour les architectures _x86_ et
+_ARM_. La fonctionnalité pour _x86_ semble avoir été ajouté lors de l'introduction
+du support _x86-64_. Quant à _ARM v7_, le support @smp date de la version majeure
+6.0.0 et était d'abord limité à la plateforme @mpsoc _Sabre_ avec au plus quatre
+cœurs.
+
+Le micronoyau utilise un verrou global @bkl de type _CLH_ comme mécanisme de i
+synchronisation @sel4_multiprocessing.
+Cela signifie que deux sections critiques du noyau ne peuvent pas s'exécuter en
+parallèle. Cette approche a été adoptée pour sa simplicité et comme une étape
+intermédiaire avant de mettre en œuvre des mécanismes de synchronisation plus
+fins. De plus les appels systèmes de _seL4_ étant courts, cela n'engendre pas
+une dégradation des
+performances comme c'était le cas dans le noyau _Linux_. Toutefois l'utilisation
+d'un tel verrou donne des estimations du @wcet pessimistes @sel4_update_research.
+
+#aside[][
+  Le support @smp n'est pas activé par défaut.
+]
+
+Quelque soit la configuration utilisée, le support @smp n'a pas fait l'objet
+de vérification formelle @sel4_multiprocessing. Cette vérification est d'autant
+plus difficile que les architectures @smp modernes ont des modèles de mémoire
+faible @colvin2024practicalrelyguaranteeverificationefficient @sel4_multiprocessing.
+C'est le cas notamment de l'architecture _ARM_ qui reste
+l'architecture de référence pour le développement _seL4_ du fait de son omniprésence
+dans l'embarqué. L'implémentation des verrous _CLH_ a fait récemment l'objet de
+vérification formelle @colvin2024practicalrelyguaranteeverificationefficient.
+
+== Support @amp
+
+_seL4_ offre un support pour des architectures @amp sur @mpsoc. L'avantage de
+cette approche est de bénéficier de la vérification formelle dans ce cas
+contrairement aux architectures @smp.
+
+Il y a également un support pour _OpenAMP_.
+
+Quelques projets qui utilisent _seL4_ sur des architectures @amp: @solox_amp_rust.
+
+== Support temps-réel <sel4_realtime>
+
+En plus de disposer d'un ordonnanceur déterministe, _seL4_ a fait l'objet
+d'une analyse de son @wcet approfondi @blackham2011timing @sewell2016complete.
+Autrement dit, pour un certain nombre de configurations, on dispose d'une estimation
+vérifiée du temps d'exécution de toutes les routines du micronoyau. Toutefois
+cette analyse a été faite sur ARMv6 et ARM ne fournit pas les informations
+nécessaires pour réitérer cette analyse sur les nouvelles architectures.
+Il semble qu'il y ait un projet pour une telle analyse sur _RISC-V_.
+
+Le noyau tourne avec les interruptions matérielles désactivées. Ce choix
+simplifie grandement la conception et la vérification formelle.
+
+Les appels systèmes sont généralement courts. Ceux qui sont trop longs sont
+préemptible à des points clés ajoutés par les développeurs.
+
+Il permet de faire du temps réel tout en ayant l'isolation spatiale, ce qui
+n'est pas le cas de nombreux _RTOS_ (vérifier pour _RTEMS_).
+
+Il semblerait qu'être préemptible ne soit pas un prérequis pour offrir de faible
+latences!
+
+== Corruption de la mémoire <sel4_memory_corruption>
+
+== Support de watchdog <sel4_watchdog>
+
+== Support de langages de programmation en baremetal
+
+La documentation de _seL4_ détaille les manipulations nécessaires pour exécuter
+du code C ou Rust en @baremetal.
+
+Il y a une crate Rust @sel4_crate_rust.
+
+== Temps de démarrage
+
 
 == Partitionnement <sel4_partition>
 
@@ -2355,25 +2734,26 @@ virtualisation assistée par le matériel. Il est aujourd'hui très utilisé
 dans le monde de l'hébergement et du cloud computing.
 
 L'histoire de _Xen_ est étroitement liée à l'évolution de la virtualisation et
-du cloud computing. Son histoire débute en 1999 avec le projet de recherche
+du cloud computing. Elle débute en 1999 avec le projet de recherche
 _XenoServers_ à l'université de Cambridge. Le chercheur
 Ian Pratt, entouré de plusieurs étudiants, propose une infrastructure pour
-exécuter plusieurs services sur des machines virtuelles Java.
+exécuter plusieurs services sur des @vm:pl Java.
 L'idée fondatrice était de garantir l'isolation des services,
-même lorsque certains d'entre eux n'étaient pas dignes de confiance.
+même lorsqu'ils n'étaient pas dignes de confiance et d'assurer équité quant à
+la répartition des ressources.
 
 En 2003, une première version de l'hyperviseur _Xen_ est publié sous licence
 libre. Contrairement à son prédécesseur _XenoServers_, il permet d'exécuter
-n'importe quelle application dans une machine virtuelle tournant sur un noyau
+n'importe quelle application dans une @vm tournant sur un noyau
 _Linux_ modifié. Ces modifications contournent les limites
 de performances de la virtualisation complète sur architecture _x86_ en permettant
 au noyau virtualisé de collaboré avec l'hyperviseur. C'est la naissance de la
 @paravirtualization.
 
 En 2005, le support pour la virtualisation assistée par le matériel est ajoutée
-en étroite collaboration avec Intel qui développe sa technologie _Intel VT-X_. Cette
-technologie permet la virtualisation de systèmes d'exploitation à sources fermées
-comme _Windows_.
+en étroite collaboration avec Intel qui développait alors sa technologie
+_Intel VT-X_. Cette technologie permet la virtualisation de systèmes
+d'exploitation à sources fermées comme _Windows_.
 
 Cette même année, la société _XenSource Inc_ est fondée pour continuer le
 développement de _Xen_ et faire face à la concurrence. Elle est racheté en 2007
@@ -2439,8 +2819,74 @@ _Virtualization Extensions_ sur _ARM_ @xen_arm_hvm.
 )
 
 == Support multi-processeur <xen_multiprocessor>
-_Xen_ supporte les architectures multi-cœur. L'hyperviseur offre la possibilité
-d'allouer les cœurs à certains systèmes invités grâce au concept de _virtual CPU_.
+
+== Processeurs virtuels <xen_vcpu>
+
+_Xen_ offre une abstraction des processeurs physiques appelée _vCPU_ (_Virtual
+CPU_). La correspondance entre processeur physique et _vCPU_ est souple puisqu'il
+n'est pas nécessaire qu'un _vCPU_ corresponde toujours au même processeur
+physique, ni même qu'il y ait un processeur physique disponible pour chaque
+_vCPU_ à un instant donné. En particulier, il est possible d'avoir davantage
+de _vCPU_ que de processeurs physiques. On parle alors d'_oversubscription_.
+Toutefois une @vm ne peut pas avoir plus de _vCPU_ que le nombre de
+processeurs physiques disponibles.
+
+L'allocation des _vCPU_ sur les processeurs
+physiques est géré par un ordonnanceur similaire à ceux utilisés pour des
+processus dans un @gpos. La distribution officielle de _Xen_ offre deux
+ordonnanceurs généralistes:
+- #box[_Credit Scheduler_ est l'ordonnanceur historique du projet _Xen_ et il est
+encore à ce jour l'ordonnanceur par défaut @xen_credit_scheduler. Il permet une
+répartition juste des processeurs physiques entre les @vm. Plus précisément
+chaque @vm dispose d'une fraction du temps _CPU_ total qui est proportionnel à
+un poids configuré à l'avance. De plus l'ordonnanceur garantit qu'un processeur
+physique ne restera pas inactif s'il y a une tâche
+pouvant y être exécutée#footnote[On dit que l'ordonnanceur est _work-conserving_.].]
+- #box[_Credit2 Scheduler_ est une évolution de _Credit Scheduler_ @xen_credit2_scheduler.
+Il est conçu pour être plus juste et offrir de meilleures performances sur les
+serveurs dotés d'un grand nombres de processeurs. Il est disponible depuis la
+version _4.8_ de _Xen_.]
+
+Depuis sa version _4.5_, _Xen_ distribue également un ordonnanceur temps réel
+baptisé _RTDS_. Nous donnons plus d'informations sur ce dernier dans la sous-section
+@xen_real_time.
+
+== Support @smp
+
+_Xen_ offre un support @smp pour toutes les architectures vues en sous-section
+@xen_architectures. En particulier les ordonnanceurs _Credit Scheduler_ et
+_Credit2 Scheduler_ sont capables de répartir automatiquement la charge sur les
+différents cœurs.
+
+Lorsqu'un système invité supporte lui-même les architectures @smp, il peut
+en tirer parti dès lors qu'il dispose de plusieurs _vCPU_.
+
+== Support @amp
+
+Nous n'avons pas d'informations précises sur l'usage de _Xen_ sur des plateformes
+@amp. Toutefois la documentation de _RTEMS_ mentionne l'usage de _Xen_ sur
+un @mpsoc _Xilinix Zynq UltraScale+_ @vanvossenxen.
+
+== Temps réel <xen_real_time>
+
+Comme nous l'avons vu dans la section introductive, _Xen_ a été conçu pour le
+_cloud computing_. En particulier, le projet met l'accent sur les garanties
+que les ressources louées par des clients seront effectivement disponibles lorsque
+leurs @vm:pl les requerront. Les ordonnanceurs que nous avons vus dans la sous-section
+@xen_vcpu cherchent donc à être aussi juste que possibles. Cette garantie est
+en contradiction avec les besoins du temps réel. En effet une tâche critique
+peut avoir soudainement besoin de beaucoup de ressources, si ce n'est la totalité
+des ressources.
+
+Le projet _RT-Xen_ visait à dôter _Xen_ d'un ordonnanceur temps réel pour ces
+_vCPU_. À l'origine le projet est développé à partir d'un _fork_ de la branche
+_4.3_ de _Xen_. Il a été intégré dans _Xen_ à partir de la version _4.5_ sous
+la forme d'un nouvel ordonnanceur baptisé _RTDS_ (_Real-Time Deferrable Server_) @xi2014real.
+L'objectif de _RTDS_ est d'assurer que les @vm:pl reçoivent un temps _CPU_ minimal
+garanti. Cet ordonnanceur supporte les plateformes @smp.
+
+Il est donc possible d'exécuter dans une @vm un _RTOS_. Par exemple _RTEMS_
+peut être exécuté dans une telle configuration sur architecture _ARM_.
 
 == Partitionnement <xen_partitioning>
 _Xen_ propose trois types de partitions différentes:
@@ -2960,7 +3406,7 @@ depuis la couche matérielle. MCE (Machine-check exception)
 
 ==== MirageOS
 
-L'unikernel est capable de contrôler les interruptions matérielles via le méchanisme
+L'unikernel est capable de contrôler les interruptions matérielles via le mécanisme
 d'_Event channel_ de l'hyperviseur _Xen_ @mirageos_xen_events@mirageos_ocaml_evtchn.
 
 ==== PikeOS
@@ -2988,7 +3434,7 @@ En tant qu'hyperviseur, _Xen_ ne donne pas un accès direct au matériel et en
 particuliers aux registres contrôlant le comportement des interruptions. Au lieu de cela,
 les interruptions matérielles sont capturées par un système d'exploitation invité
 tournant dans le domaine privilégié _Dom0_ et transmises aux domaines concernés via
-un méchanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
+un mécanisme abstrait appelé _Event channel_. Il est alors possible de masquer certains
 événements via un champ _evtchn_mask_ @xen_event_channel_internals.
 
 = Introduction2 <introduction2>
