@@ -240,7 +240,7 @@ systèmes critiques de nombreuses industries comme l'aéronautique, l'automobile
 le nucléaire. Ainsi, la sûreté des logiciels devient un enjeu crucial et en
 particulier celle du système d'exploitation. Le développement et la maintenance
 d'un système d'exploitation étant complexe et coûteux, il est souhaitable
-d'utiliser une solution informatique sur étagères #footnote[On parle
+d'utiliser une solution informatique sur étagère #footnote[On parle
 parfois de _COTS_ pour _Commercial off-the-shelf_.], c'est-à-dire dans le cas présent
 un système d'exploitation ayant été conçu pour les systèmes critiques.
 
@@ -270,7 +270,7 @@ sous-sections @kezako_os, @why_os et @criticity_real_time ci-dessous.
 
 == Qu'est-ce qu'un système d'exploitation? <kezako_os>
 
-La diversité des besoins et des systèmes informatiques existant a conduit à un
+La diversité des besoins et des systèmes informatiques existants a conduit à un
 foisonnement de systèmes d'exploitation et en faire une zoologie complète serait
 hors sujet. Il est en fait difficile de caractériser rigoureusement ce qu'est
 un système d'exploitation et nous adoptons ici l'approche retenue dans
@@ -280,11 +280,11 @@ _Operating System_, souvent abrégé _OS_.] un ensemble de routines gérant
 les ressources matérielles d'un système informatique et s'exécutant dans un mode
 privilégié du processeur.
 
-Le système en question
+Le système informatique en question
 peut être un serveur, un ordinateur personnel ou un système embarqué. Le rôle
 principal du système d'exploitation est de fournir une couche d'abstraction logicielle entre le
 matériel et les logiciels applicatifs. Il permet ainsi de masquer la complexité
-et la diversité des interfaces matérielles en fournissant des interfaces stables,
+et la diversité des interfaces matériel en fournissant des interfaces stables,
 unifiées et parfois standardisées.
 
 == Pourquoi utiliser un système d'exploitation? <why_os>
@@ -343,7 +343,7 @@ Nous étudions les systèmes d'exploitation dans un contexte critique et temps r
 Donnons une définition brève de ces deux qualificatifs.
 
 Un système est dit #definition[critique] si sa défaillance peut
-entraîner des conséquences indésirables. Ses défaillances varient considérablement
+entraîner des conséquences indésirables graves. Ces défaillances varient considérablement
 en nature et en gravité:
 - #box[Elles peuvent se limiter à la simple perte de données, comme dans le cas
 d'une base de données bancaire.]
@@ -421,8 +421,8 @@ architectures plus exotiques,]
 
 Avec ces critères à l'esprit, nous avons retenu l'architectures
 suivantes: `ARM`, `x86`, `PowerPC`, `MIPS`, `RISC-V` et `SPARC`. Notez que
-ces dernières existent dans des versions 32 bits et 64 bits qui sont listées
-dans @table_architectures ci-dessous.
+chacune de ces architectures existe dans une versions 32 bits et 64 bits, qui sont listées
+dans le @table_architectures ci-dessous.
 
 #figure(
   table(
@@ -476,7 +476,7 @@ microprocesseurs s'est alors tournée vers le parallélisme offert par
 les architectures multi-processeurs pour maintenir la progression de la
 puissance de calcul.
 
-La diffusion de ces technologie dans les systèmes critiques a été freinée par
+La diffusion de ces technologies dans les systèmes critiques a été freinée par
 d'importants défis @saidi2015shift. En effet, les architectures multi-processeur
 introduisent de nombreuses sources de non-déterminisme (interférences
 temporelles, prédiction de branche, ...). In fine, ce non-déterminisme rend
@@ -487,7 +487,7 @@ critiques mixtes @burns2017survey.
 Toutefois leur usage dans les systèmes critiques est désormais généralisé,
 principalement motivé par la nécessité d'accroître la puissance de calcul tout
 en permettant une meilleure intégration et une réduction de poids et de taille
-des systèmes embarqués, notamment dans les secteur de l'avionique et du spatial.
+des systèmes matériels embarqués, notamment dans les secteur de l'avionique et du spatial.
 
 Il existe deux catégories d'architectures multiprocesseur utilisées dans les
 systèmes critiques:
@@ -536,7 +536,7 @@ multiprocesseur.
     [Le plus souvent hétérogènes],
 
     [Gestion logicielle],
-    [Un unique système d'exploitation gère tous les cœurs et partage dynamique
+    [Un unique système d'exploitation gère tous les cœurs et partage dynamiquement
       les tâches entre eux],
     [Instance indépendante exécutée sur chaque cœur],
 
@@ -574,7 +574,7 @@ usuelle, le temps d'exécution d'un programme ne fait généralement pas parti
 de sa correction#footnote[Une exception notable est celle des applications multimédia.].
 Ce n'est plus le cas dans un système temps réel où répondre après
 un délai trop long conduit à un résultat erroné. On souhaite donc que les calculs
-soient fait suffisamment vite en toute circonstance, tandis qu'en informatique
+soient faits suffisamment vite en toute circonstance, tandis qu'en informatique
 usuelle on cherche généralement à ce que les calculs soient fait le plus vite possible
 en moyenne.
 
@@ -602,8 +602,9 @@ corrompt des données. Par exemple le rayonnement de fond peut produire un bascu
 de bits (_bit flips_). Ces erreurs peuvent être souvent corrigées à condition
 de mettre en places des mesures préventives.]
 - #box[Les @hard_error:pl sont dues à un dysfonctionnement matériel au niveau de la
-puce mémoire. Ces erreurs ne peuvent pas être corrigées et nécessitent un remplaçant
-de la puce ou, à défaut, une isolation de celle-ci.]
+puce mémoire, que le firmware de la puce lui-même ne peut pas atténuer.
+Ces erreurs ne peuvent pas être corrigées et nécessitent un remplaçant
+de la puce ou, à défaut, une isolation de celle-ci. Elles sont permanentes.]
 
 Dans cette étude nous nous sommes limités à la mémoire principale et plus
 précisément aux mémoires @dram équipées de
