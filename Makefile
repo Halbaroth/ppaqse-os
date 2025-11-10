@@ -3,7 +3,7 @@
 # Variables
 TYPST := typst
 SOURCE := rapport.typ
-OUTPUT := rapport.pdf
+OUTPUT := output/rapport.pdf
 REFS := references.bib
 GLOSSARY := glossary.yaml
 
