@@ -10,6 +10,11 @@
   in {
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
+      pythonPackages =
+        pkgs.python313.withPackages (p: with p; [
+          pip
+          virtualenvwrapper
+        ]);
     in
     {
       default = pkgs.mkShell {
@@ -21,6 +26,7 @@
           fira-code
           fontconfig
           netcat
+          pythonPackages
         ];
 
         shellHook =
@@ -35,13 +41,18 @@
         in
         ''
           export FONTCONFIG_FILE="${fontsConf}"
+          VENV=.venv
+          if test ! -d "$VENV"; then
+            virtualenv "$VENV"
+          fi
+          source "./$VENV/bin/activate"
         '';
       };
 
-      network = pkgs.callPackage ./vm/network.nix { inherit pkgs; };
-      alpine-setup = pkgs.callPackage ./vm/alpine/setup.nix { inherit pkgs; };
-      alpine = pkgs.callPackage ./vm/alpine/default.nix { inherit pkgs; };
-      mirageos = pkgs.callPackage ./vm/mirageos/default.nix { inherit pkgs; };
+      # network = pkgs.callPackage ./vm/network.nix { inherit pkgs; };
+      # alpine-setup = pkgs.callPackage ./vm/alpine/setup.nix { inherit pkgs; };
+      # alpine = pkgs.callPackage ./vm/alpine/default.nix { inherit pkgs; };
+      # mirageos = pkgs.callPackage ./vm/mirageos/default.nix { inherit pkgs; };
     });
   };
 }

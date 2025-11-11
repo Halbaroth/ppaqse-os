@@ -703,44 +703,29 @@ puces supplémentaire pour gérer des codes correcteurs. On parle de mémoire @e
   il est en revanche commun dans celui destiné aux serveurs.
 ]
 
-== Outils
+== Écosystème
 
-Nous nous sommes également intéressé aux outils disponibles sur chaque _OS_
-pour faciliter le développement et la surveillance des applications. Plus
-précisément, nous avons examiné l'offre pour le _monitoring_, le _profilage_
-ent le débogage.
+Pour chacun des systèmes d'exploitation étudiés, nous avons effectué une revue
+des outils de son écosystème utiles durant le cycle de vie des applications.
+Plus précisément, notre analyse s'est concentrée sur l'offre logicielle suivant
+trois aspects: le _monitoring_, le _profilage_ et le _débogage_.
 
-=== Monitoring
+Le _monitoring_ vise à surveiller l'activité d'un système informatique. Les
+outils de _monitoring_ permettent le plus souvent la journalisation
+d'événements. Comme ces outils sont généralement utilisés en production, il est
+important qu'ils ne grèvent pas la performance ou compromettent la sûreté ou
+la sécurité du système.
 
-Les outils de _monitoring_ servent à surveiller le bon fonctionnement d'un système
-informatique. Ils sont le plus souvent utilisé en production et permettent
-des mesures continues.
+Le _profilage_ est une technique utilisée pour mesurer et analyser les
+performances d'un programme. Elle est le plus souvent employée durant la
+phase de développement à des fins d'optimisation en permettant de localiser
+des points chauds. Toute mesure ayant un impact sur l'objet mesuré, il est
+crucial que cette instrumentation soit faite de la façon la moins intrusive
+possible.
 
-=== Profilage
-
-Les outils de _profilage_ permettent une analyse dynamique d'un programme,
-c'est-à-dire durant sa phase d'exécution, afin de détecter d'éventuels
-goulot d'étranglement.
-
-Le profilage est une technique utilisée pour mesurer et analyser les performances
-d'un programme. Elle est souvent employée à des fins d'optimisation en
-permettant de localiser des points chauds, c'est-à-dire des sections de code
-particulièrement gourmandes en ressources (temps CPU, mémoire, ...). Toute mesure
-ayant un impact sur les caractéristiques de l'objet mesuré, il est crucial que
-cette instrumentation soit faite de la façon la moins intrusive possible.
-Autrement, on risque de mesurer les performances de son outil de profilage
-plutôt que ceux du programme étudié.
-
-À cette fin, certains outils utilise une approche statistique. Au lieu
-d'enregistrer tous les événements possibles lors de l'exécution du programme,
-on n'effectue un échantillonnage de ces mesures en espérant que les échantillons
-collectés seront représentatifs des caractéristiques de performances du programme
-étudié.
-
-=== Débogage
-
-Les outils de débogages servent à la recherche de la cause d'un bogue. Ils
-sont utilisés durant la phase de développement et de test d'un logiciel.
+Le _débogage_ est un ensemble de techniques permettant d'analyser un bogue.
+La technique la plus répandue consiste, via un débogueur, à exécuter le
+programme pas à pas et explorer l'état de la mémoire et des registres.
 
 == Masquage des interruptions
 
@@ -864,7 +849,7 @@ sous-critères:
   - *Langage* : C (98%)
   - *Architectures* : 30+ architectures (x86, ARM, RISC-V, PowerPC, MIPS, SPARC, ...)
   - *Usage principal* : Serveurs, embarqué, supercalculateurs, desktop
-  - *Points forts* : Maturité, large écosystème, flexibilité, support matériel étendu
+  - *Points forts* : Maturité, large écosystème, flexibilité, support matériel étendu, documentation précise
   - *Limitations* : Complexité élevée, surface d'attaque importante, déterminisme limité (sans PREEMPT_RT)
   - *Licences* : GPL v2
 ]
@@ -903,8 +888,8 @@ et _SPARC_.
 
 Quant à l'hyperviseur _KVM_, il supporte la virtualisation assistée par
 le matériel sur certaines architectures. Sur architecture _x86_, il supporte
-les extensions _Intel VT-x_ et _AMD-V_. Sur architecture _ARM_, il supporte
-l'extension de virtualisation de _ARM v7_ à partir
+les extensions de virtualisation _Intel VT-x_ et _AMD-V_. Sur architecture
+_ARM_, il supporte l'extension de virtualisation de _ARM v7_ à partir
 de _Cortex-A15_ et de _ARMv8-A_. Enfin il supporte certaines architectures
 _PowerPC_ comme _BookE_ et _Book3S_.
 
@@ -927,11 +912,9 @@ depuis la version 2.5 des structures de données synchronisées de type _RCU_
 (_Read-Copy-Update_) @linux_what_is_rcu qui permettent la lecture et l'écriture
 simultanée sans mécanisme de verrouillage pour les lecteurs. Ces structures
 sont donc particulièrement pertinentes lorsque la majorité des accès sont
-en lecture. Quant à l'ordonnanceur de tâche _EEVDF_
-(_Earliest Eligible Virtual Deadline First_), il
-est conçu pour répartir aussi équitablement que possible le temps _CPU_
-entre les processus avec une faible latence. C'est l'ordonnanceur par défaut depuis
-la version _6.6_.
+en lecture. Quant à l'ordonnanceur de tâche, il est conçu pour répartir aussi
+équitablement que possible le temps _CPU_ entre les processus avec une faible
+latence.
 
 Pour vérifier que votre noyau en cours d'exécution a été compilé avec ce support,
 tapez la commande suivante:
@@ -965,7 +948,97 @@ propriétaires et non standardisées. Quant au système _RPMsg_
 (_Remote Processor Messaging_), il permet la intercommunication avec un
 processeur distant via un protocole asynchrone à la _virtio_.
 
-== Temps réel <linux_real_time>
+== Partitionnement
+
+=== Partitionnement <linux_partitioning>
+
+Dans cette section, nous décrivons les principaux mécanismes d'isolation de
+partitionnement des ressources disponibles sous _Linux_. Ces mécanismes sont
+aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
+conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
+
+=== Partitionnement spatial <linux_partitioning_space>
+
+=== Partitionnement temporel <linux_partitioning_time>
+
+==== Politiques d'ordonnancement
+
+_Linux_ utilise un système sophistiqué pour décider quelle tâche doit
+s'exécuter sur le _CPU_ lorsque le noyau retourne dans l'@userspace. Ce
+mécanisme repose sur une hiérarchie de politiques d'ordonnancement et de
+priorités.
+
+Chaque tâche se voit attribuer une politique d'ordonnancement et une priorité
+statique allant de 0 à 99. Les _threads_ d'un même processus possèdent la même
+priorité au lancement d'un processus. La politique et la priorité d'une tâche
+peuvent être changée via une @api ou une ligne de commande _POSIX_.
+
+À l'heure actuel _Linux_ implémente six politiques d'ordonnancement, trois
+temps réel _SCHED_FIFO_, _SCHED_RR_, _SCHED_DEADLINE_ et trois normales
+_SCHED_OTHER_, _SCHED_BATCH_ et _SCHED_IDLE_. Les trois politiques
+_SCHED_OTHER_, _SCHED_FIFO_ et _SCHED_RR_ font en fait
+partie de la norme _POSIX_ et _Linux_ expose également une @api C _POSIX_
+pour contrôler les politiques d'ordonnancement. Par défaut, les processus
+utilisent la politique _SCHED_OTHER_. Une description détaillée de ces
+politiques est disponible dans la page de manuel `sched` accessible avec la
+commande:
+```console
+man sched
+```
+
+Le noyau décide qu'elle tâche doit s'exécuter en suivant les trois règles
+suivantes:
+- #box[S'il y a une tâche prête dont la priorité statique est la plus élevée de
+toutes les tâches en attente, elle s'exécutera toujours en premier.]
+- #box[S'il y a plusieurs tâches prêtes de priorité maximale, celle dont la
+politique est la plus prioritaire est exécutée en premier. L'ordre de priorité
+entre les politiques est par ordre décroissant: _SCHED_FIFO_, _SCHED_RR_,
+_SCHED_OTHER_, _SCHED_BATCH_ et _SCHED_IDLE_.]
+- #box[S'il y a plusieurs tâches prêtes de priorité maximale et de même
+politique, le comportement dépend de la politique en question comme détaillé
+ci-dessous.
+- #box[_SCHED_DEADLINE_.]
+- #box[_SCHED_FIFO_ (_First In First Out_) est une politique d'ordonnancement
+temps réels. Lorsque plusieurs tâches ordonnancées par _SCHED_FIFO_ ont la
+même priorité statique, la première tâche s'exécute jusqu'à relâcher
+volontairement le _CPU_ où qu'une tâche de plus haute priorité arrive.]
+- #box[_SCHED_RR_ (_Round Robin_) est une politique d'ordonnancement temps
+réels. Lorsque plusieurs tâches ordonnancées par _SCHED_RR_ ont la même
+priorité statique, elles s'exécutent à tour de rôle pendant un laps de temps
+configuration.]
+- #box[_SCHED_OTHER_ et _SCHED_BATCH_ sont les politiques
+d'ordonnancement normales. Elles ont une priorité statique nulle. Autrement dit
+les tâches temps réel sont toujours plus prioritaires que les tâches normales.
+Les trois politiques normales sont implémentées grâce à l'ordonnanceur de tâches
+_CFS_ (_Completely Fair Scheduler_) introduit dans _Linux 2.6.23_.. Il s'agit
+d'un ordonnanceur à priorité dynamique, c'est-à-dire que la priorité d'une
+tâche dépend de son comportement dans le passé et il est possible d'aider
+l'ordonnanceur à faire un meilleur choix via un mécanisme de pondération.]
+- #box[_SCHED_IDLE_ est la politique des tâches qui ne sont exécutées que
+lorsqu'aucune autre tâche n'est prête.]]
+
+#aside[La commande `sched`][
+Il est possible de déterminer la politique d'un processus via la commande
+_POSIX_ `sched`. Par exemple pour obtenir la politique utilisées pour les
+_threads_ du processus _PID_ 1:
+```console
+sched -p 1
+```
+produit la sortie:
+```output
+pid 1's current scheduling policy: SCHED_OTHER
+pid 1's current scheduling priority: 0
+pid 1's current runtime parameter: 2800000
+```
+Cette commande permet également de changer la politique d'ordonnancement
+d'un processus en cours. Par exemple pour utiliser la politique _SCHED_RR_ avec
+le processus 1000 et la priorité statique 10:
+```console
+sudo sched -r -p 10 1000
+```
+]
+
+=== Déterminisme <linux_determinism>
 
 Au tournant du #smallcaps[XXI]#super[e] siècle, des initiatives ont visées à doter
 _Linux_ de capacités temps réel. Le noyau de l'époque avait été développé dans
@@ -1085,7 +1158,7 @@ est intéressant de comprendre certains de leurs aspects afin de cerner les
 forces et les limites du temps réel dans ce noyau. Plus d'informations sont
 disponibles dans la documentation officielle @preempt_rt_doc.
 
-=== Mutex temps réels
+==== Mutex temps réels
 
 Chaque fois qu'un processus de faible priorité B à la main sur le _CPU_
 alors qu'un processus de plus haute priorité A souhaite s'exécuter, on parle
@@ -1102,38 +1175,36 @@ l'exécution de A.
 a introduit dans le noyau des _mutex_ temps réel (_rt-mutex_). Ceux-ci reposent sur la
 méthode dîte d'héritage de priorité (_Priority Inheritance_). Dans notre
 exemple, cela signifie que si le processus B possède une ressource verrouillée
-par un mutex temps réel et que le processus A essaie d'acquérir ce _mutex_, alors
+par un _mutex_ temps réel et que le processus A essaie d'acquérir ce _mutex_, alors
 la priorité du processus B est augmenté afin qu'il libère cette ressource le plus
 vite possible.
 
 Plus de détails sur ces _mutex_ temps réel sont fournis dans la documentation
 officielle @linux_rt_mutex_design @linux_rt_mutex_subsystem.
 
-=== Gestionnaires d'interruption
+==== Gestionnaires d'interruption
 
 Lors de l'exécution d'un @isr, il est pratique de désactiver les interruptions
-car ce dernier exécute généralement du code critique et que rien n'empêche
-d'autres interruptions de subvenir durant son exécution. Les @isr constituaient
+car l'@isr exécute généralement du code critique et que rien n'empêche
+d'autres interruptions de subvenir durant son exécution. Cette stratégie a été
+abondamment utilisée dans le noyau _Linux_. Les @isr constituaient
 donc une partie importante du code non-préemptible du noyau. Afin de réduire
 la portion de code non-préemptible, l'idée est de diviser en deux étapes le
-gestionnaire @linux_threaded_interrupt_handler. La première étape est exécutée
-avec les interruptions désactivées
-et ne fait que le stricte nécessaire pour que l'interruption puisse être prise
-en compte plus tard. La seconde étape est exécutée dans un _thread_ noyau
-préemptible.
+gestionnaire @linux_threaded_interrupt_handler. La première étape (_Top Half_)
+est exécutée avec les interruptions désactivées et ne fait que le strict
+nécessaire pour que l'interruption puisse être prise en compte plus tard. La
+seconde étape (_Bottom Half_) est exécutée dans un _thread_ noyau préemptible.
+Les _threads_ noyaux étant planifiés par l'ordonnanceur de tâches, il devient
+possible d'attribuer des priorités sur l'exécution de ces _threads_.
 
-=== Remplacement de @spinlock:pl
+==== Remplacement de @spinlock:pl
 
 En l'absence de _PREEMPT_RT_, une tâche qui attend la libération d'un @spinlock
 effectue une attente active. Durant cette attente, la tâche n'est pas
 préemptible. En présence de _PREEMPT_RT_, ces @spinlock:pl sont donc remplacés
 par des _rt-mutex_.
 
-=== RCU
-
-== Partitionnement
-
-== Draft
+==== RCU
 
 == KVM <linux_kvm>
 
@@ -1141,13 +1212,6 @@ Depuis la version `2.6.20` publiée 2007, _Linux_ intègre un hyperviseur
 baptisé _KVM_ (_Kernel-based Virtual Machine_)  @linux_kvm_website. Il s'agit
 d'un hyperviseur de type 1 assisté par le matériel. Il offre également un support
 pour la paravirtualisation.
-
-== Partitionnement <linux_partitioning>
-
-Dans cette section, nous décrivons les principaux mécanismes d'isolation de
-partitionnement des ressources disponibles sous _Linux_. Ces mécanismes sont
-aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
-conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
 === Les _control croups_
 
@@ -1163,10 +1227,10 @@ documentation @linux_cgroups_v1.
 
 Les _cgroups_ forment une structure arborescente et chaque processus appartient
 à un unique _cgroup_. À leur création, les processus héritent du _cgroup_
-de leur parent. Par la suite, ils peuvent migrer vers un autre _cgroup_, s'ils ont les
-privilèges adéquates. Cette migration n'affecte pas leurs enfants déjà existants,
+de leur parent. Ils peuvent par la suite migrer vers un autre _cgroup_, s'ils ont les
+privilèges adéquates. Ces migrations n'affectent pas leurs enfants déjà existants,
 mais seulement ceux créés par la suite. Quant aux _threads systèmes_,
-ils appartiennent généralement au _cgroup_ du processus mais il est possible de
+ils appartiennent généralement au _cgroup_ de leur processus mais on peut
 mettre en place une hiérarchie de _cgroup_ pour eux.
 
 La répartition des ressources se fait via des _contrôleurs_ spécialisés.
@@ -1404,43 +1468,56 @@ Enforcement Technology_) sur _x86_ ou _ARM BTI_ (_Branch Target Identification_)
 sur _ARM_. Ces mécanismes matériels offrent une protection efficace avec un surcoût
 minimal.
 
-== Monitoring <linux_monitoring>
+== Écosystème <linux_ecosystem>
 
 _Linux_ dispose d'un écosystème riche et mature d'outils de monitoring et
 d'observabilité @linux_perf_brendan @linux_monitoring_tools_2024. Ces outils
 permettent de surveiller les performances, l'état du système et d'identifier les
-problèmes en temps-réel.
+problèmes en temps-réel. Parmi les outils de monitoring les plus utilisés:
 
-Parmi les outils de monitoring les plus utilisés:
+- #box[_top/htop_ @htop_website: Moniteurs système interactifs affichant
+  l'utilisation du CPU, de la mémoire et des processus en temps réel.]
 
-- *top/htop*: Moniteurs système interactifs affichant l'utilisation du CPU, de
-  la mémoire et des processus en temps réel.
+- #box[_netdata_ @netdata_website: Solution de monitoring temps-réel légère et
+  performante, collectant automatiquement plus de 5000 métriques sans
+  configuration. Particulièrement adaptée aux environnements embarqués grâce à
+  sa faible empreinte.]
 
-- *netdata*: Solution de monitoring temps-réel légère et performante, collectant
-  automatiquement plus de 5000 métriques sans configuration. Particulièrement
-  adaptée aux environnements embarqués grâce à sa faible empreinte.
+- #box[_eBPF_ (_Extended Berkeley Packet Filter_) @ebpf_website : Technologie moderne
+  permettant l'exécution de code personnalisé dans le noyau sans modification
+  ni ajout de modules. _eBPF_ offre une observabilité en temps réel avec un
+  impact minimal sur les performances, devenant l'outil de référence pour le
+  monitoring avancé en 2024.]
 
-- *eBPF* (_Extended Berkeley Packet Filter_): Technologie moderne permettant
-  l'exécution de code personnalisé dans le noyau sans modification ni ajout de
-  modules. _eBPF_ offre une observabilité en temps réel avec un impact minimal
-  sur les performances, devenant l'outil de référence pour le monitoring avancé
-  en 2024.
+- #box[_SystemTap_ @systemtrap: Permet l'instrumentation dynamique du noyau
+  pour l'analyse approfondie du comportement système.]
 
-- *perf*: Outil d'analyse de performance basé sur les compteurs de performance
-  matériels (_PMU_), permettant un profilage détaillé avec un faible surcoût.
+- #box[_Prometheus/Grafana_ @prometheus_website @grafana_website : Solutions
+  d'observabilité distribuée largement adoptées pour le monitoring de systèmes
+  critiques.]
 
-- *SystemTap*: Permet l'instrumentation dynamique du noyau pour l'analyse
-  approfondie du comportement système.
+- #box[_strace/ptrace_: .]
 
-- *Prometheus/Grafana*: Solutions d'observabilité distribuée largement adoptées
-  pour le monitoring de systèmes critiques.
+- #box[_perf_ @perf_wiki: Outil d'analyse de performance intégré dans le noyau
+  _Linux_ depuis sa version 2.6.31. À l'origine _perf_ permettait de tracer
+  l'activité du _CPU_ via des compteurs @pmu. Depuis, ses fonctionnalités ont
+  été considérablement étendues et il permet maintenant d'instrumenter avec un
+  faible surcoût aussi bien le noyau que les programmes exécutés dans
+  l'@userspace.]
+
+- #box[_oprofile_ @oprofile_website: Outil d'analyse de performance. Il permet
+  le profilage d'une application ou du système tout entier. Il permet
+  également la collecte d'événements via les @pmu.]
+
+- #box[_kgdb/kdb_ @kgdb_documentation: _Linux_ intègre des interfaces pour
+  déboguer le code du noyau.]
 
 Pour les systèmes embarqués, la simplicité et la légèreté des outils sont
 prioritaires. _Monitorix_ est particulièrement adapté à ces contraintes, ayant
 été conçu pour les serveurs mais utilisable sur dispositifs embarqués grâce à
 sa taille réduite.
 
-== Profilage <linux_profiling>
+=== Exemple de profilage
 
 Afin d'illustrer certains outils de profilage, nous allons utiliser le programme
 suivant qui parcourt des cases d'un tableau d'entiers soit dans de façon
@@ -1454,17 +1531,6 @@ séquentielle, soit dans un ordre aléatoire.
 Le mot clé `volatile` sur le tableau `arr` assure que `gcc` ne supprimera pas
 les accès en lecture sur ce dernier bien que son contenu soit prévisible
 et jamais utilisé. Vous pouvez le compiler avec la commande `gcc miss.c -o miss`.
-
-=== Profileur _perf_ <linux_perf>
-Depuis sa version 2.6.31, _Linux_ intègre un outil puissant de profilage
-dénommé _perf_ @perf_wiki. À l'origine _perf_ permettait de tracer l'activité
-du _CPU_ via des compteurs @pmu Depuis, ses fonctionnalités ont été considérablement
-étendues et il permet maintenant d'instrumenter aussi bien le noyau que
-les programmes exécutés dans l'espace utilisateur. Dans cette section, nous
-allons voir trois méthodes d'instrumentation: les _tracepoints_,
-les _kprobes_ et les _uprobes_.
-
-==== PMU <linux_perf_pmu>
 
 Examinons les performances de notre programme @miss_source à l'aide de la
 sous-commande `perf stat`. Cette dernière retourne des statistiques issues
@@ -1516,64 +1582,6 @@ Performance counter stats for './miss random':
   0.001981000 seconds sys
 ```
 Le parcours est nettement plus lent et le nombre de `cache-misses` explose.
-
-==== _Tracepoints_ <linux_perf_tracepoints>
-Les _tracepoints_ sont des points d'intérêts du noyau qui ont manuellement été
-instrumentés par ses développeurs. On peut ainsi récupérer des traces
-d'exécution de ces routines.
-
-==== _Kprobes_ <linux_perf_kprobes>
-Les _kprobes_ sont un mécanisme permettant d'injecter du code
-à une position arbitraire du noyau.
-
-==== _Uprobes_ <linux_perf_uprobes>
-Les _uprobes_ permettent d'instrumenter du code utilisateur.
-
-=== Profileur _oprofile_ <linux_oprofile>
-
-Le logiciel _oprofile_ est un profileur de performance à l'échelle du système
-_Linux_ entier. Il utilise les compteurs _PMU_ du processeur pour collecter
-les événements.
-
-```console
-sudo opcontrol --start --event=CPU_CYCLES
-```
-
-```console
-sudo opcontrol --reset
-```
-
-== Profilage de `systemd` <linux_systemd_analyze>
-
-Le programme `systemd` fournit un outil intéressant de profilage baptisé
-`systemd-analyze`. Il permet d'analyser le temps de démarrage du système et
-des sessions utilisateurs afin d'identifier des goulots d'étranglement. Détaillons
-quelques unes des ses commandes:
-- #box[`systemd-analyze time`: affiche différents temps relatifs au démarrage du
-système.]
-- #box[`systemd-analyze blame`: affiche le temps de démarrage des différents services. Il
-est à noter que certains services pouvant s'exécuter en parallèle, l'analyse de sa sortie
-requière une certaine prudence.]
-- #box[`systemd-analyze dot`: produit un graphe de dépendance des services.]
-- #box[`systemd-analyze plot`: produit une frise chronologique du démarrage des services.]
-
-Par exemple, la commande suivante:
-```console
-systemd-analyze time
-```
-produit une sortie de la forme:
-```output
-Startup finished in 7.274s (firmware) + 3.428s (loader) + 1.007s (kernel) + 11.451s (initrd) + 7.587s (userspace) = 30.749s
-multi-user.target reached after 7.321s in userspace.
-```
-Le dernier temps indique le délais écoulé avant que l'@userspace ne soit disponible,
-ce qui correspond en général à l'affichage d'un prompteur pour ouvrir une session.
-On retrouve aussi d'autres informations intéressantes:
-- #box[_Firmware_: Temps de chargement des firmwares via le BIOS.]
-- #box[_Load_: Temps écoulé dans le @bootloader.]
-- #box[_Kernel_: Temps de chargement et d'initialisation du noyau.]
-- #box[_Initrd_: Temps d'initialisation de la _RAM disk_.]
-- #box[_Userspace_: Temps écoulé pour lancer tous les services de l'@userspace.]
 
 == Watchdog <linux_watchdog>
 
@@ -1662,6 +1670,39 @@ mais dépendant de l'environnement d'exécution.
 (MOVE)
 Le project Yocto @yocto_project est un projet libre offrant la possibilité de
 créer sa distribution _Linux_ dédiée à l'embarqué.
+
+=== Profilage de `systemd` <linux_systemd_analyze>
+
+Le programme `systemd` fournit un outil intéressant de profilage baptisé
+`systemd-analyze`. Il permet d'analyser le temps de démarrage du système et
+des sessions utilisateurs afin d'identifier des goulots d'étranglement. Détaillons
+quelques unes des ses commandes:
+- #box[`systemd-analyze time`: affiche différents temps relatifs au démarrage du
+système.]
+- #box[`systemd-analyze blame`: affiche le temps de démarrage des différents services. Il
+est à noter que certains services pouvant s'exécuter en parallèle, l'analyse de sa sortie
+requière une certaine prudence.]
+- #box[`systemd-analyze dot`: produit un graphe de dépendance des services.]
+- #box[`systemd-analyze plot`: produit une frise chronologique du démarrage des services.]
+
+Par exemple, la commande suivante:
+```console
+systemd-analyze time
+```
+produit une sortie de la forme:
+```output
+Startup finished in 7.274s (firmware) + 3.428s (loader) + 1.007s (kernel) + 11.451s (initrd) + 7.587s (userspace) = 30.749s
+multi-user.target reached after 7.321s in userspace.
+```
+Le dernier temps indique le délais écoulé avant que l'@userspace ne soit disponible,
+ce qui correspond en général à l'affichage d'un prompteur pour ouvrir une session.
+On retrouve aussi d'autres informations intéressantes:
+- #box[_Firmware_: Temps de chargement des firmwares via le BIOS.]
+- #box[_Load_: Temps écoulé dans le @bootloader.]
+- #box[_Kernel_: Temps de chargement et d'initialisation du noyau.]
+- #box[_Initrd_: Temps d'initialisation de la _RAM disk_.]
+- #box[_Userspace_: Temps écoulé pour lancer tous les services de l'@userspace.]
+
 
 = MirageOS <mirageos>
 
@@ -2040,11 +2081,11 @@ des licences _GPL_ lorsque vous distribuez le binaire de votre _unikernel_.
 Le profilage d'un unikernel dépend fortement de l'environnement dans lequel
 il est exécuté. Le cas le plus favorable est celui de l'environnement _UNIX_ et
 en particulier d'une distribution _GNU/LINUX_, puisque il existe pléthore
-d'outils de profilage dans cette situation, voir la sous-section @linux_profiling
-pour des exemples sous _Linux_. Toutefois il est également souhaitable de
-profiler l'_unikernel_ en conditions réelles, ce qui ne correspond presque jamais
-à l'environnement _UNIX_. Nous nous bordons à l'environnement _Xen_ dans ce qui
-suit.
+d'outils de profilage dans cette situation, voir la sous-section
+@linux_ecosystem pour des exemples sous _Linux_. Toutefois il est également
+souhaitable de profiler l'_unikernel_ en conditions réelles, ce qui ne
+correspond presque jamais à l'environnement _UNIX_. Nous nous bordons à
+l'environnement _Xen_ dans ce qui suit.
 
 === Flame graphs
 
@@ -2662,7 +2703,7 @@ monoprocesseur]
 - #box[_PIP_ (_Priority Inheritance Protocol_) pour les architectures
 monoprocesseur. La prorité d'une tâche est élevée au niveau de la plus haute
 priorité d'une tâche qui attend un verrou. C'est une approche similaire aux
-verrous _rt-mutex_ de _Linux_ vu en sous-section @linux_real_time.]
+verrous _rt-mutex_ de _Linux_ vu en sous-section @linux_determinism.]
 - #box[_MrsP_ (_Multiprocessor Resource Sharing Protocol_) pour les architectures
 @smp. Il généralise les verrous _ICPP_ aux multiprocesseur @smp et utilise de
 l'attente active.]
@@ -2705,31 +2746,43 @@ la documentation il est plutôt approprié pour les architectures monoprocesseur
 == Corruption de la mémoire <rtems_memory_corruption>
 
 _RTEMS_ ne semble pas fournir d'@api unifié pour gérer le _scrubbing_. Le
-support est relatif au @bsp. Nous avons trouvé une @api pour gérer le
-_scrubbing_ dans le fichier `bsps/include/grlib/memscrub.h`. Ce dernier
+support est relatif au @bsp. Il existe une @api pour gérer le _scrubbing_ dans
+le fichier `bsps/include/grlib/memscrub.h`. Ce dernier
 fait parti du @bsp pour les microprocesseurs _LEON_. L'usage du _scrubbing_
 étant rendu nécessaire par le rayonnement inhérent aux missions spatiales,
 il y a fort à parier qu'un tel support est développé dans un @bsp chaque
 fois que celui-ci est utilisé dans une telle mission.
 
-== Monitoring et profilage
+== Perte du flux d'exécution
 
+== Écosystème <rtems_ecosystem>
+
+Les développeurs de _RTEMS_ offrent des outils de monitoring et de profilage:
+- #box[_profreport_ @rtems_profreport: Outil de profilage pour le noyau. Il
+  nécessite que ce dernier soit compilé avec l'option `RTEMS_PROFILING` afin
+  d'activer le profilage du noyau lui-même @rtems_bsp_build_system. Il rapport
+  au format _XML_ de ces données.]
+- #box[_rtrace_ @rtems_tracing: Outil pour afficher et sauvegarder les traces
+  produites par le sous-système _RTEMS Tracing Framework_. Ce dernier est
+  conçu pour minimiser l'impact sur le système. Il permet de tracer des
+  événements de l'ordonnanceur de tâches (création/destruction d'une tâche,
+  basculement de contexte, ...), des @ipc, des protocoles de
+  synchronisation et des appels systèmes en général.]
+- #box[_RTEMS shell_ @rtems_shell_guide: Shell qui comprend de nombreuses
+  commandes affichant des informations sur les tâches en cours d'exécution
+  @rtems_specific_commands et suivre l'état mémoire @rtems_memory_commands.]
 - #box[Il est possible de suivre l'usage _CPU_ par tâche via le
-_CPU usage statistics manager_ @rtems_cpu_usage_statistics. Le système a
-été conçu pour minimiser l'impact de la mesure. La granularité des mesures
-peut être de l'ordre de la nanoseconde sur les versions récentes de _RTEMS_ et
-à condition que le @bsp le support.]
-- #box[_RTEMS_ offre un outil de traçage intégré @rtems_introduction_to_tracing.]
-- #box[Il existe quelques commandes distribuées avec le _shell_ de _RTEMS_ pour
-suivre les tâches en cours d'exécution (`task`, `cpuuse`, ...) et des commandes
-pour extraire l'état mémoire comme `mdump`.]
-- #box[_RTEMS_ ne semble pas offrir d'outil pour suivre les _PMU_. Un support existe
-dans certains @bsp.]
+  _CPU usage statistics manager_ @rtems_cpu_usage_statistics. Le système a
+  été conçu pour minimiser l'impact de la mesure. La granularité des mesures
+  peut être de l'ordre de la nanoseconde sur les versions récentes de _RTEMS_ et
+  à condition que le @bsp le support.]
+- #box[_RTEMS_ ne semble pas offrir d'outil pour suivre les _PMU_.
+  Un support existe dans certains @bsp.]
 
 Il a existé également un projet baptisé _RTMA_ (_RTEMS Monitoring Application_)
 développé par des chercheurs autour des années 2000.
 
-== Support de _watchdog_ <rtems_watchdog>
+== _Watchdog_ <rtems_watchdog>
 
 _RTEMS_ ne fournit pas à notre connaissance d'API unifiée pour gérer les
 _watchdogs_ matériels. Le support est implémenté au niveau du
@@ -2981,15 +3034,22 @@ Il y a également un support pour _OpenAMP_.
 
 Quelques projets qui utilisent _seL4_ sur des architectures @amp: @solox_amp_rust.
 
-== Support temps-réel <sel4_realtime>
+== Partitionnement
+
+=== Partitionnement spatial
+
+=== Partitionnement temporel
+
+=== Déterminisme <sel4_determinism>
 
 En plus de disposer d'un ordonnanceur déterministe, _seL4_ a fait l'objet
 d'une analyse de son @wcet approfondi @blackham2011timing @sewell2016complete.
-Autrement dit, pour un certain nombre de configurations, on dispose d'une estimation
-vérifiée du temps d'exécution de toutes les routines du micronoyau. Toutefois
-cette analyse a été faite sur ARMv6 et ARM ne fournit pas les informations
-nécessaires pour réitérer cette analyse sur les nouvelles architectures.
-Il semble qu'il y ait un projet pour une telle analyse sur _RISC-V_.
+Autrement dit, pour un certain nombre de configurations, on dispose d'une
+estimation vérifiée du temps d'exécution de toutes les routines du micronoyau.
+Toutefois cette analyse a été faite sur ARMv6 et ARM ne fournit pas les
+informations nécessaires pour réitérer cette analyse sur les nouvelles
+architectures. Il semble qu'il y ait un projet pour une telle analyse sur
+_RISC-V_.
 
 Le noyau tourne avec les interruptions matérielles désactivées. Ce choix
 simplifie grandement la conception et la vérification formelle.
@@ -3009,18 +3069,39 @@ _seL4_ étant un micronoyau qui se concentre sur l'isolation, il ne semble pas
 proposer d'@api ou de logiciel de journalisation pour les erreurs mémoires.
 Ce support doit être implémenté par pilote en espace utilisateur.
 
-== Support de watchdog <sel4_watchdog>
+== Perte du flux d'exécution
+
+== Écosystème <sel4_ecosystem>
+
+Le micronoyau _seL4_ offre un écosystème limité. Les outils de haut niveau
+classiques pour la surveillance et le profilage des applications ne semblent
+pas être disponibles. Toutefois, il existe un kit de développement
+_seL4 Microkit_ @sel4_microkit_manual
+offrant une couche logicielle au-dessus du micronoyau et visant à simplifier
+le développement sur cette plateforme. En particulier ce kit inclut:
+- #box[Un moniteur qui journalise les erreurs systèmes comme les accès
+mémoire erroné ou les instructions invalides. Il est possible d'implémenter
+son propre moniteur.]
+- #box[Une console de débogage permettant une communication avec le système
+embarqué via une interface série _UART_,]
+- #box[Un mode _benchmark_ qui permet de collecter des informations via les
+registres @pmu.]
+
+== Watchdog <sel4_watchdog>
 
 _seL4_ n'offre pas une @api unifiée pour la gestion de _watchdog_ matériel.
 Toutefois nous avons trouvé un support pour de tels _watchdog_ dans certains
 @bsp.
 
-== Support de langages de programmation en baremetal
+== Langages de programmation en baremetal
 
 La documentation de _seL4_ détaille les manipulations nécessaires pour exécuter
 du code C ou Rust en @baremetal.
 
 Il y a une crate Rust @sel4_crate_rust.
+
+Le _seL4 Microkit_ offre également une @api pour les langages _C_ et _Rust_
+@sel4_microkit_manual.
 
 == Temps de démarrage
 
