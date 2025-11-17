@@ -1835,6 +1835,38 @@ grid(
   caption: [Comparaison entre l'approche _GPOS_ et l'approche _unikernel_.]
 ) <comparison_unikernel_gpos>
 
+=== SpaceOS <mirageos_spaceos>
+
+_SpaceOS_ est un système d'exploitation basé sur _MirageOS_ développé par _Tarides_
+pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satellite.
+Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
+et multi-missions, construite sur la technologie des _unikernels_.
+
+_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial :
+- L'_ESA_ (_European Space Agency_)
+- Le _CNES_
+- _Thales Alenia Space_
+- _OHB_
+- _Eutelsat_
+- Le _Singapore Space Agency_
+
+Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
+_DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
+a déployé un logiciel basé sur _OCaml 5_ sur le satellite. Cette mission a démontré
+la viabilité des _unikernels_ _MirageOS_ pour les applications spatiales en conditions
+réelles.
+
+Les principaux avantages de _SpaceOS_ incluent:
+- Une réduction de taille d'un facteur 20 par rapport à un déploiement basé sur
+  des conteneurs _Linux_
+- Une sécurité accrue grâce à l'utilisation d'un langage à gestion mémoire sûre (_OCaml_)
+- Une architecture modulaire permettant de compiler uniquement les fonctionnalités
+  nécessaires du système d'exploitation
+
+Ces résultats ont valu à _SpaceOS_ une reconnaissance industrielle significative,
+notamment le prestigieux _Airbus Innovation Award_ lors de la _Paris Space Week_ 2024.
+
+
 == Tutoriel <mirageos_tutorial>
 Pour faciliter l'exécution des exemples de ce chapitre, une image `docker` est
 disponible dans le dossier `miragos/` du dépôt. Cette image contient tout le
@@ -1978,16 +2010,6 @@ Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
 _Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage
 le plus fréquent.
 
-== Temps réel <mirageos_real_time>
-
-À notre connaissance, _MirageOS_ n'a jamais été utilisé dans un contexte temps
-réel. Le principal obstacle vient du ramasse-miette d'OCaml qui n'offre pas de
-garanties déterministes. Quant à la bibliothèque _Lwt_, elle n'a pas du tout été
-conçue pour cet usage puisque les tâches doivent rendre la main volontairement
-à l'ordonnanceur _Lwt_. Si vous souhaitez exécuter une tâche temps réel, il faudra
-avoir recours à un hyperviseur temps réel et exécuter cette tâche dans une
-partition distincte.
-
 == Partitionnement <mirageos_partioning>
 
 _MirageOS_ n'offre pas de partitionnement temporel ou spatial. Cette tâche
@@ -1997,8 +2019,18 @@ services _MirageOS_, l'usage est d'exécuter ces services dans des _unikernels_
 distincts et de les faire communiquer via les @ipc de l'hyperviseur.
 
 En particulier, si vous utiliser _Xen_ comme noyau de séparation, vous pouvez
-utiliser la bibliothèque _vchan_ de _MirageOS_ pour communiquer entre deux
-_unikernels_.
+utiliser la bibliothèque _ocaml-vchan_ @mirageos_ocaml_vchan de _MirageOS_ pour
+communiquer entre deux _unikernels_.
+
+=== Déterminisme <mirageos_determinism>
+
+À notre connaissance, _MirageOS_ n'a jamais été utilisé dans un contexte temps
+réel. Le principal obstacle vient du ramasse-miette d'OCaml qui n'offre pas de
+garanties déterministes. Quant à la bibliothèque _Lwt_, elle n'a pas été
+conçue pour cet usage puisque les tâches doivent rendre la main volontairement
+à l'ordonnanceur _Lwt_. Si vous souhaitez exécuter une tâche temps réel, il
+faudra avoir recours à un hyperviseur temps réel et exécuter cette tâche dans
+une partition distincte.
 
 == Corruption de la mémoire <mirageos_memory_corruption>
 
@@ -2013,12 +2045,13 @@ les @ipc de _Xen_ pour récupérer ces informations dans l'_unikernel_.
 
 == Écosystème <mirageos_ecosystem>
 
-Pour le profilage et le débogage, il est utile de compiler l'unikernel pour la
-cible _UNIX_ afin d'utiliser les outils disponibles sous _Linux_ (_GDB_, _Perf_,
-...). Le manuel _OCaml_ contient un guide pour le profilage avec _perf_ de
-programmes _OCaml_ @ocaml_profiling. Il existe aussi quelques outils
-spécifiques à _MirageOS_ ou au langage _OCaml_:
+Le profilage et le débogage d'un _unikernel_ dépend fortement de
+l'environnement dans lequel il est exécuté. Pour _MirageOS_, le cas le plus
+favorable est celui d'une distribution _GNU/LINUX_, puisqu'il y existe pléthore
+d'outils, voir la sous-section @linux_ecosystem. Le manuel _OCaml_ contient un
+guide pour le profilage avec _perf_ de programmes _OCaml_ @ocaml_profiling.
 
+Il existe aussi quelques outils spécifiques à _MirageOS_ ou au langage _OCaml_:
 - #box[_mirage-monitoring_ @mirageos_mirage_monitoring: Outil de monitoring
   pour les _unikernels_ produits par _MirageOS_. Il supporte le _dashboard_
   _Telegraph_ de _Grafana_.]
@@ -2031,6 +2064,14 @@ spécifiques à _MirageOS_ ou au langage _OCaml_:
   outil dans un _unikernel_.]
 - #box[_memtrace_viewer_ @memtrace_viewer_github: Outil d'exploration de
   traces produites par _memtrace_.]
+- #box[_mirage-profile_ @mirageos_mirage_profile: Profileur pour les programmes
+  _OCaml_ utilisant la bibliothèque _Lwt_ et en particulier les _unikernels_ de
+  _MirageOS_. Sa conception et des exemples d'utilisation sont exposés dans un
+  article de blog @mirageos_visualising_lwt. Le projet ne semble plus être
+  maintenu.]
+- #box[_mirage-trace-viewer_ @mirageos_mirage_trace_viewer: Outil de
+  visualisation des traces produites par _mirage-profile_ ou
+  _mirage-trace-dump-xen_.]
 
 === Profilage mémoire avec `memtrace-mirage`
 
@@ -2144,95 +2185,12 @@ _ISC_ est nécessaire car l'_unikernel_ produit par _MirageOS_ est lié statique
 avec les bibliothèques. Grâce à cette licence, vous n'avez pas les contraintes
 des licences _GPL_ lorsque vous distribuez le binaire de votre _unikernel_.
 
-== Draft
-
-== Profilage & traçage <mirageos_profiling>
-
-Le profilage d'un unikernel dépend fortement de l'environnement dans lequel
-il est exécuté. Le cas le plus favorable est celui de l'environnement _UNIX_ et
-en particulier d'une distribution _GNU/LINUX_, puisque il existe pléthore
-d'outils de profilage dans cette situation, voir la sous-section
-@linux_ecosystem pour des exemples sous _Linux_. Toutefois il est également
-souhaitable de profiler l'_unikernel_ en conditions réelles, ce qui ne
-correspond presque jamais à l'environnement _UNIX_. Nous nous bordons à
-l'environnement _Xen_ dans ce qui suit.
-
-=== Flame graphs
-
 === Traçage
 
 Il existe des `hooks` dans le code de _MirageOS_ qui permet un traçage de bout
 en bout. On peut utiliser un backend spécifique comme `mirageos-trace-viewer`.
 C'est un atout majeur en comparaison de _strace_ qui ne permet que de tracer
 les appels systèmes.
-
-== Draft
-
-Les bibliothèques d'OS souffrent d'un problème de portabilité. Cette situation
-est amendée par l'usage d'un hyperviseur plutôt qu'un exécution bare-metal.
-
-Il est utilisé aussi bien sur des machines embarquées que dans le _cloud computing_.
-Une particularité importante de _MirageOS_ est d'être écrit dans le langage
-_OCaml_. Ce langage est de haut niveau et sûr. La majorité des systèmes
-d'exploitations sont écrit en langage C. C'est un langage de programmation bas
-niveau offrant peu de garantie de sûreté, notamment vis-à-vis de la mémoire.
-
-En tant qu'_unikernel_, _MirageOS_ cherche à produire des exécutables de petite
-taille et avec une empreinte mémoire minimale. Il offre également des temps de
-démarrage réduit.
-
-Une des motivations d'exécuter un unikernel dans un hyperviseur plutôt qu'un
-système d'exploitation classique est de supprimer une couche logicielle volumineuse
-qui contient beaucoup de fonctionnalité inutile comme le support pour du matériel
-ancien, le support d'anciennes API, l'ordonnanceur pour les processus/threads en
-plus de celui de l'hyperviseur.
-
-_MirageOS_ ne cherche pas à proposer une interface _POSIX_ dans un souci
-de minimalité et de clarté des _API_.
-
-La majorité du code est écrit en OCaml. Toutefois il subsiste plusieurs parties
-qui sont toujours en langage C. Il y a le runtime OCaml lui-même (ce qui inclut
-le ramasse miette d'OCaml), un certain nombres de pilotes et quelques bibliothèques
-(notamment GMP) dont la réécriture en OCaml est possible mais très laborieuse.
-
-_MirageOS_ utilise un freestanding runtime pour OCaml @ocamlsolo5github.
-
-Objectif réduire la complexité des systèmes actuels.
-
-Quelques avantages:
-- surface d'attaque réduite
-- vérification et certification modulaire
-
-== SpaceOS <mirageos_spaceos>
-
-_SpaceOS_ est un système d'exploitation basé sur _MirageOS_ développé par _Tarides_
-pour les applications spatiales et satellitaires @spaceos_tarides @spaceos_satellite.
-Il s'agit d'une solution sécurisée et efficace pour les satellites multi-utilisateurs
-et multi-missions, construite sur la technologie des _unikernels_.
-
-_SpaceOS_ a été conçu en partenariat avec plusieurs organisations du secteur spatial :
-- L'_ESA_ (_European Space Agency_)
-- Le _CNES_
-- _Thales Alenia Space_
-- _OHB_
-- _Eutelsat_
-- Le _Singapore Space Agency_
-
-Le 15 mars 2025, _OCaml_ a été lancé dans l'espace à bord de la mission _Transporter-13_.
-_DPhi Space_ a embarqué son ordinateur _Clustergate_ sur ce vol, et l'équipe _SpaceOS_
-a déployé un logiciel basé sur _OCaml 5_ sur le satellite. Cette mission a démontré
-la viabilité des _unikernels_ _MirageOS_ pour les applications spatiales en conditions
-réelles.
-
-Les principaux avantages de _SpaceOS_ incluent:
-- Une réduction de taille d'un facteur 20 par rapport à un déploiement basé sur
-  des conteneurs _Linux_
-- Une sécurité accrue grâce à l'utilisation d'un langage à gestion mémoire sûre (_OCaml_)
-- Une architecture modulaire permettant de compiler uniquement les fonctionnalités
-  nécessaires du système d'exploitation
-
-Ces résultats ont valu à _SpaceOS_ une reconnaissance industrielle significative,
-notamment le prestigieux _Airbus Innovation Award_ lors de la _Paris Space Week_ 2024.
 
 = PikeOS <pikeos>
 
