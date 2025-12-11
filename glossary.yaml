@@ -34,7 +34,8 @@ rte:
   short: RTE
   long: RunTime Environment
   description: >
-    todo
+    Environnement d'exécution d'un programme fournissant les services et
+    les interfaces requises pour son exécution.
 
 ide:
   short: IDE
@@ -55,12 +56,14 @@ ipc:
   short: IPC
   long: Inter-Process Communication
   description: >
-    todo
+    Mécanismes d'échanges et de synchronisations entre des processus
+    (pipes, mémoire partagée, sockets, ...).
 
 spinlock:
   short: spinlock
   description: >
-    todo
+    Verrou d'exclusion mutuelle où le thread en attente boucle activement
+    jusqu'à ce que le verrou soit libéré.
 
 isr:
   short: ISR
@@ -79,35 +82,36 @@ bkl:
   short: BKL
   long: Big Kernel Lock
   description: >
-    todo
+    Verrou global suspendant toutes les opérations d'un OS pour prévenir
+    les courses critiques sur les machines multi-processeurs à mémoire
+    partagée.
 
 wcet:
   short: WCET
   long: Worst Case Execution Time
   description: >
-    todo
-
-rtos:
-  short: RTOS
-  long: Real-Time Operating System
-  description: >
-    todo
+    Temps d'exécution maximal d'une tâche dans le pire des cas. Métrique
+    essentielle pour garantir le respect des échéances en temps réel.
 
 monolithic:
   short: monolithique
   description: >
-    todo
+    Architecture de noyau où tous les services (pilotes, systèmes de fichiers,
+    réseau) s'exécutent dans le même espace d'adressage.
 
 gnu:
   short: GNU
   long: GNU is Not Unix
   description: >
-    todo
+    Projet de système d'exploitation libre initié par Richard Stallman en 1983.
+    Fournit de nombreux outils utilisés et une chaîne de compilation complète.
+    Il est souvent combiné avec le noyau _Linux_ afin de fournir un système
+    complet.
 
 gc:
   short: ramasse-miette
   description: >
-    TODO
+    Mécanisme automatique de gestion mémoire qui libère les objets inutilisés.
 
 gpos:
   short: GPOS
@@ -177,24 +181,29 @@ vm:
   short: VM
   long: Virtual Machine
   description: >
-    todo
+    Émulation logicielle d'un ordinateur permettant d'exécuter un système
+    d'exploitation de manière isolée sur une machine hôte.
 
 paravirtualization:
   short: paravirtualisation
   description: >
-    todo
+    Technique de virtualisation où le système invité est modifié pour
+    communiquer directement avec l'hyperviseur via des hypercalls.
 
 hvm:
   short: HVM
   long: Hardware Virtual Machine
   description: >
-    todo
+    Virtualisation assistée par le matériel permettant
+    d'exécuter des systèmes invités sans modification et avec de bonnes
+    performances.
 
 cots:
   short: COTS
   long: Commercial off-the-shelf
   description: >
-    todo
+    Produit logiciel disponible sur étagère, par opposition aux
+    développements spécifiques sur mesure.
 
 cc:
   short: CC
@@ -276,12 +285,17 @@ initsystem:
 userspace:
   short: espace utilisateur
   description: >
-    todo
+    Ensemble des programmes s'exécutant avec des restrictions sur les
+    instructions autorisées. On y retrouve les programmes de l'utilisateur
+    et des services du systèmes qui ne requièrent pas d'instructions
+    privilégiés.
 
 kernelspace:
   short: espace noyau
   description: >
-    todo
+    Ensemble des programmes et routines s'exécutant sans restriction sur les
+    instructions. C'est l'espace dans lequel s'exécute le noyau du système
+    d'exploitation.
 
 safety:
   short: sûreté
@@ -296,29 +310,26 @@ security:
   description: |
     Mesure prise pour prévenir les attaques d'une entité malveillante.
 
-qualification:
-  short: qualification
-  article: la
-  description: >
-    todo
-
 certification:
   short: certification
   article: la
   description: >
-    todo
+    Attestation délivrée par un organisme tiers confirmant qu'un produit
+    ou processus est conforme à une norme ou un référentiel donné.
 
 bsp:
   short: BSP
   long: Board Support Package
   description: >
-    todo
+    Ensemble de pilotes et de configurations spécifiques à une carte
+    matérielle permettant à un système d'exploitation de s'y exécuter.
 
 esa:
   short: ESA
   long: European Space Agency
   description: >
-    todo
+    Agence spatiale européenne coordonnant les programmes spatiaux de ses
+    états membres.
 
 ecss:
   short: ECSS

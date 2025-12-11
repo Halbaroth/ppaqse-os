@@ -14,6 +14,7 @@
         pkgs.python313.withPackages (p: with p; [
           pip
           virtualenvwrapper
+          requests
         ]);
     in
     {
