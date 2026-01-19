@@ -598,14 +598,14 @@ tâches simultanément sur une même machine. Les ressources matérielles étant
 limitées, ces systèmes doivent partager ces ressources de façon sûre et
 sécurisée entre les tâches en cours d'exécution.
 
-Pour chaque système étudié, nous examinons le partitionnement de deux
-ressources: la mémoire principale d'une part et le temps _CPU_ d'autre part.
+Pour chaque système étudié, nous examinons le partitionnement de la mémoire
+principale d'une part et du temps _CPU_ d'autre part.
 Pour la mémoire principale, nous parlerons de _partitionnement spatial_ et pour
 le temps _CPU_ de _partitionnement temporel_.
 
 Notez que le terme _tâche_ doit être compris dans un sens très large et que
 le vocabulaire varie d'un système à l'autre. Par exemple, un @gpos comme _Linux_
-propose généralement une notion de _thread_ famillié des développeurs système,
+propose généralement une notion de _thread_ familière des développeurs système,
 tandis qu'un hyperviseur comme _Xen_ parlera de _domaine_. Quant au terme
 _partition_, il est fréquemment utilisé par la documentation des hyperviseurs.
 
@@ -2422,7 +2422,7 @@ _Paris Space Week_ 2024.
 
 _PikeOS_ est un hyperviseur temps réel dédié à l'embarqué.
 
-Depuis la fin des années 90, l'entreprise _SYSGO_ développait son propre
+À la fin des années 90, l'entreprise _SYSGO_ développait son propre
 micronoyau baptisé _P4_ et inspiré du noyau _L4_ de Jochen Liedtke
 @kaiser2007evolution. À cette époque, l'usage de micronoyaux dans l'embarqué
 est envisagé du fait de l'augmentation des performances et du besoin croissant
@@ -2434,10 +2434,11 @@ des limites dans la conception du noyau _P4_, principalement héritées de l'@ap
 de _L4_. Ces limites concernaient notamment l'isolation temporelle et spatiale.
 
 Les ingénieurs de _SYSGO_ ont alors développé un nouveau micronoyau _PikeOS_
-avec pour objectif une meilleure isolation afin qu'il soit utilisable dans
-les systèmes de criticité mixte. L'idée était de développer un hyperviseur
+avec pour objectif de garantir l'isolation des tâches afin de l'utiliser dans
+des systèmes de criticité mixte. L'idée était de développer un hyperviseur
 pour assurer l'isolation de partition. La plateforme a également été pensée pour
-faciliter la certification. La première version est commercialisée en 2005.
+faciliter la certification des produits finaux. La première version est
+commercialisée en 2005.
 
 En 2006, _SYSGO_ ajoute le support de l'architecture _ARM_.
 
@@ -2452,7 +2453,7 @@ niveau _EAL 5+_ pour les architectures _x86-64_, _ARMv8_ et _PowerPC_ @pikeos_cc
 == Architectures supportées <pikeos_architectures>
 
 _PikeOS_ supporte les architectures suivantes: _x86-64_, _ARMv7_, _ARMv8_,
-_PowerPC_, _RISC-V_ et _SPARC_. Le support pour l'architecture _ARM_ existe
+_PowerPC_, _RISC-V_ et _SPARC_ @pikeos_architectures. Le support pour l'architecture _ARM_ existe
 depuis 2006. En particulier, _PikeOS_ supporte les architectures _SPARC_
 _LEON3_ et _LEON4_ utilisés dans le spatial.
 
@@ -2753,6 +2754,14 @@ ferroviaire (_CLC/TS 50701_) et défense.
 _PikeOS_ est un logiciel propriétaire aux sources fermées. L'entreprise _SYSGO_
 ne semble pas communiquer sur ses licences. Les modalités et les tarifs des
 licences sont certainement à négociés au cas par cas.
+
+Les nombreuses certifications obtenues par _PikeOS_ (_DO-178C_, _IEC 61508_,
+_EN 50128_, _ISO 26262_, _Common Criteria EAL 5+_) impliquent l'existence d'une
+documentation technique détaillée. En effet, ces normes exigent une traçabilité
+complète des exigences, une documentation du cycle de vie du logiciel, ainsi que
+des manuels de sûreté et de sécurité. _SYSGO_ fournit d'ailleurs des kits de
+certification incluant une aide documentaire complète pour le développement et
+les tests.
 
 _PikeOS_ a été commercialisé pour la première fois en 2005, ce qui en fait un
 système avec environ 20 ans d'existence.
@@ -3091,6 +3100,13 @@ _ProvenVisor_ est un produit propriétaire développé par l'entreprise françai
 _ProvenRun_. Le code source n'est pas disponible publiquement et nécessite une
 licence commerciale dont les conditions doivent être négociées directement avec
 l'éditeur.
+
+La certification _Common Criteria EAL5_ visée par _ProvenVisor_ (et _EAL7_
+obtenue par _ProvenCore_) implique l'existence d'une documentation technique
+rigoureuse. Les niveaux _EAL5_ et supérieurs des _Critères Communs_ exigent une
+conception semi-formelle documentée, une modélisation détaillée des menaces et
+une présentation structurée des preuves de sécurité. Cette documentation est
+indispensable pour démontrer la conformité aux exigences de sécurité.
 
 L'écosystème de _ProvenVisor_ est ciblé et spécialisé, concentré principalement
 sur le marché de l'@ido et des systèmes embarqués critiques nécessitant une sécurité
@@ -4571,6 +4587,14 @@ sont donc probablement à négocier avec _fentISS_ au cas par cas.
 Nous n'avons pas pu évaluer la taille de la base de code, faute d'informations
 librement accessibles. _XtratuM_ étant un noyau de séparation certifiable, sa
 base de code doit être réduite afin de rendre la certification possible.
+
+La qualification _ECSS_ catégorie B et la conformité à la norme _ARINC-653_
+impliquent l'existence d'une documentation technique structurée. La norme _ECSS_
+pour les systèmes spatiaux exige une documentation complète du cycle de vie
+logiciel, incluant les spécifications, la conception, les tests et la
+validation. De même, la conformité _ARINC-653_ nécessite une documentation
+détaillée des interfaces de partitionnement et des mécanismes de communication
+inter-partitions.
 
 Le projet _XtratuM_ a été initié en 2004, ce qui en fait un système d'environ
 21 ans. Ayant été réécrit au alentour de , sa base de code aurait en fait .

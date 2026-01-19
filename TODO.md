@@ -3,13 +3,6 @@
 - Compléter la section sur KVM.
 - Masquage des interruptions pour Linux.
 
-## Rédaction
-- Terminer la section sur Perf dans le chapitre Linux.
-
-# MirageOS
-## Recherche
-- Masquage des interruptions pour MirageOS.
-
 # PikeOS
 ## Recherche
 - Support watchdog pour PikeOS?
