@@ -387,7 +387,7 @@ comparés suivant les critères suivants:
 - Type de système d'exploitation
 - Architectures supportées
 - Support multi-processeur
-- Partitionnement
+- Isolation
 - Corruption mémoire
 - Perte du flux d'exécution
 - Écosystème
@@ -591,105 +591,123 @@ multiprocesseur.
   caption: [Différences entre les architectures _SMP_ et _AMP_.],
 ) <smp_vs_amp>
 
-=== Partitionnement <criteria_partitioning>
+=== Isolation <criteria_isolation>
 
 Les systèmes d'exploitation modernes permettent l'exécution de plusieurs
 tâches simultanément sur une même machine. Les ressources matérielles étant
 limitées, ces systèmes doivent partager ces ressources de façon sûre et
 sécurisée entre les tâches en cours d'exécution.
 
-Pour chaque système étudié, nous examinons le partitionnement de la mémoire
-principale d'une part et du temps _CPU_ d'autre part.
-Pour la mémoire principale, nous parlerons de _partitionnement spatial_ et pour
-le temps _CPU_ de _partitionnement temporel_.
+Pour chaque système étudié, nous examinons d'une part l'isolation de la mémoire
+principale et d'autre part du temps _CPU_. Pour la mémoire principale, nous
+parlerons d'_isolation spatiale_ et pour le temps _CPU_ d'_isolation
+temporelle_.
 
-Notez que le terme _tâche_ doit être compris dans un sens très large et que
-le vocabulaire varie d'un système à l'autre. Par exemple, un @gpos comme _Linux_
-propose généralement une notion de _thread_ familière des développeurs système,
-tandis qu'un hyperviseur comme _Xen_ parlera de _domaine_. Quant au terme
-_partition_, il est fréquemment utilisé par la documentation des hyperviseurs.
+Notez que le terme _tâche_ doit être compris ici dans un sens large car
+le vocabulaire varie d'un système à l'autre. Par exemple, les @gpos comme
+_Linux_ proposent généralement des abstractions tels que les _processus_ ou les
+_threads_, tandis qu'un hyperviseur comme _Xen_ parlera de _domaine_.
 
-==== Partitionnement spatial <spatial_partitioning>
+Nous ferons également la distinction entre deux types de mécanisme d'isolation:
+- Un mécanisme d'isolation _statique_ assure la non interférence des tâches via
+  des _partitions_ créées à la configuration du système. Ce type de mécanisme
+  est déterministe et offre les garanties requises par bon nombre de
+  certifications pour les systèmes critiques. En contrepartie, la quantité
+  de ressource disponible pour une tâche ne s'adapte pas à ses besoins durant
+  l'exécution.
+- Un mécanisme d'isolation _dynamique_ assure qu'une interférence entre deux
+  tâches sera remontée au noyau lors de l'exécution. Contrairement aux
+  mécanismes statiques, la quantité de ressource allouée par tâche peut
+  varier dans le temps (allocation dynamique de mémoire, politique
+  d'ordonnancement, ...). En contrepartie, un tel mécanisme est plus difficile
+  à certifier.
 
-Le partitionnement spatial désigne le partage de la mémoire principale entre
-plusieurs tâches en cours d'exécution. On souhaite conserver
-l'état mémoire de plusieurs tâches dans une même mémoire principale tout en
-garantissant une forme d'isolation entre elles. Par exemple, on ne veut pas
-qu'une tâche d'une utilisatrice Alice puisse lire des informations
-confidentielles actuellement manipulées par un tâche d'un utilisateur Bob. De
-même, on ne veut pas qu'une instruction erronée exécutée par une tâche d'Alice
-puisse corrompre accidentellement l'état mémoire d'une tâche de Bob.
+Il est tout à fait possible de combiner des mécanismes d'isolation statique
+avec des mécanismes d'isolation dynamique. Par exemple, un système invité dans
+une partition d'un hyperviseur peut gérer ses ressources dynamiquement alors
+que l'hyperviseur adopte une approche statique pour isoler ses partitions.
 
-Autrefois, le partitionnement spatial était assuré entièrement par une couche
-logicielle. Ce n'est généralement plus le cas sur les systèmes informatiques
-actuels qui sont équipés de puces dédiées à cette tâche. Cependant, nous allons
-voir qu'il y a un compromis à faire entre l'isolation spatiale et le
-déterminisme du système. Il peut donc être souhaitable de limiter l'usage de
-ces puces de gestion mémoire.
+==== Isolation spatiale <spatial_isolation>
 
-De nos jours, les ordinateurs personnels et les serveurs disposent d'un
-microcontrôleur @mmu. Ce dernier permet l'utilisation d'adresses virtuelles
-dans les instructions machines. Lors de l'exécution de telles instructions, ces
-adresses sont traduites à la volée en adresses physiques. Le @mmu vérifie
-également les accès suivant une politique programmable. Ainsi, chaque tâche a
-l'illusion de disposer de sa propre mémoire principale et les accès frauduleux
-sont remontés aux systèmes d'exploitation via des interruptions matérielles.
+Un mécanisme d'isolation spatiale vise à prévenir les deux scénarios suivants:
+- Un bogue dans un programme peut conduire à une corruption des données en
+  mémoire. On souhaite que cette corruption soit circonscrite à l'état mémoire
+  du programme bogué.
+- Un attaquant malveillant peut chercher à lire ou modifier les données
+  d'une tâche à partir d'une autre tâche dont il a pris le contrôle.
 
-Dans le monde de l'embarqué, en plus des systèmes à @mmu, coexistent des systèmes
-à @mpu qui ne font que la protection mémoire et des systèmes sans support
-matériel pour le partitionnement spatial. On regroupe parfois ces systèmes
-sous l'appellation _MMU-less_. Le choix d'un système _MMU-less_ présente
-plusieurs avantages. Tout d'abord l'usage d'adresses virtuelles introduit un
-coût en performance lors de la traduction vers les adresses physiques. Ce coût
-est généralement réduit par l'usage d'un cache matériel de type _TLB_
-(_Translation Lookaside Buffer_) mais son usage rend le système moins
-déterministe, surtout dans une architecture @smp @paun2013determinism.
+Autrefois l'isolation spatiale était entièrement assurée par une couche
+logicielle dans le noyau. De nos jours, cette isolation est le plus souvent
+assurer par une combinaison de matériel et de logiciel.
+Dans cette étude, nous examinons deux mécanismes d'isolation spatiale:
+- Certains systèmes informatiques sont équipés de puces matérielles facilitant
+  l'isolation spatiale. Dans cette catégorie, les microcontrôleurs les plus
+  répandus sont les @mmu et @mpu. Le @mmu permet l'utilisation d'un espace
+  d'adressage virtuel au-dessus de la mémoire physique. Lors de l'exécution
+  d'une instruction par le _CPU_, les adresses virtuelles sont traduites à la
+  volée en adresses physiques. Le @mmu vérifie également les accès suivant une
+  politique programmable. Ainsi chaque tâche a l'illusion de disposer de sa
+  propre mémoire principale et les accès interdits sont remontés au système
+  d'exploitation via des interruptions matérielles. Le @mpu se cantonne à
+  la vérification des accès mémoires sans l'utilisation d'adresses virtuelles.
+- Certains hyperviseurs permettent la configuration de partitions statiques
+  de la mémoire. Lors de la conception du système, on alloue une plage
+  mémoire fixe pour chaque partition. Il est alors possible de configurer
+  un @mmu ou un @mpu pour interdire tout accès en dehors de cette plage pour
+  les tâches s'exécutant dans cette partition.
 
-Pour chaque système, nous examinerons donc le support pour les architectures
-@mmu et _MMU-less_.
+Dans le monde de l'embarqué critique, il est fréquent de rencontrer des systèmes
+sans @mmu (_MMU-less systems_). Ce choix est principalement motivé par le fait
+qu'un @mmu introduit une source importante d'indéterminisme
+dans les systèmes multi-cœur du fait de caches matériels comme le _TLB_
+(_Translation Lookaside Buffer_) @paun2013determinism.
 
-==== Partitionnement temporel <time_partitioning>
+Pour chaque système, nous examinerons le support pour les architectures
+@mmu et _MMU-less_ et la possibilité de configurer des partitions
+mémoire.
 
-Le partitionnement temporel est le partage du temps _CPU_ entre les tâches
-en cours d'exécution. Contrairement à son homologue spatial, ce partage est
-le plus souvent géré par une couche logicielle appelée _ordonnanceur de
-tâches_ (_scheduler_). Le rôle principal de l'ordonnanceur est de décider
-qu'elle tâche doit maintenant s'exécuter et sur quel processeur.
+==== Isolation temporelle <time_isolation>
 
-Un ordonnanceur de tâches poursuit des objectifs variés et parfois
-incompatibles. Il existe de nombreux critères pour qualifier et quantifier
-les qualités et défauts d'un ordonnanceur. Nous ne retenons que les suivants:
-- #box[_Throughput_: quantité de travail accomplie par unité de
-  temps,]
-- #box[_Latency_: délai qui s'écoule entre le réveil d'une tâche
-  et son exécution sur un cœur,]
-- #box[_Fairness_: équité quant au temps de calcul en tenant compte
-  des priorités des tâches,]
-- #box[_Déterminisme_: capacité à prédire l'ordre d'exécution des tâches.]
+Un mécanisme d'isolation temporelle vise à prévenir qu'une tâche ne prenne
+trop de temps _CPU_ au point de dégrader la qualité de service des autres
+tâches.
 
-Il est difficile de concilier toutes ces qualités dans un même ordonnanceur.
-Par exemple, utiliser un algorithme de décision astucieux aura tendance à
-augmenter la latence mais peut augmenter le débit. De même, tirer parti du
-parallélisme d'une architecture @smp diminue la latence mais augmente
-l'indéterminisme du système.
+Dans cette étude, nous examinons les mécanismes d'isolation temporelle suivants:
+- Les systèmes d'exploitation disposent de politiques d'ordonnancement. Ces
+  politiques sont appliquées par un ordonnanceur de tâche (_scheduler_) qui
+  détermine la prochaine tâche à exécuter. Cet ordonnancement peut être
+  dynamique, c'est-à-dire qu'il s'adapte au besoin des tâches au cours
+  du temps ou statique.
+- Certains hyperviseurs permettent la configuration de partitions statiques
+  du temps _CPU_. Lors de la conception du système, on définit des tranches
+  de temps pour chaque partition. À l'exécution un ordonnanceur cyclique
+  garantit que chaque partition dispose de sa tranche de temps dans un ordre
+  prédéterminé. La préemption est assurée par un _timer_ matériel.
 
-Généralement un ordonnanceur de tâches d'un @gpos cherchera à maximiser le
-_throughput_ tout en restant équitable. Quant à un ordonnanceur de tâches d'un
-@rtos, il cherchera à être aussi déterministe que possible et à minimiser la
-latence, même si cela réduit parfois le _throughput_.
+Il existe une multitude de politique d'ordonnancement et de critères pour
+qualifier et quantifier leurs qualités. Nous retenons les critères suivants:
+- _Throughput_: quantité de travail accomplie par unité de
+  temps,
+- _Latency_: délai qui s'écoule entre le réveil d'une tâche
+  et son exécution sur un cœur,
+- _Fairness_: équité quant au temps de calcul en tenant compte
+  des priorités des tâches,
+- _Déterminisme_: capacité à prédire l'ordre d'exécution des tâches et les
+  tranches de temps allouées.
 
-Il existe donc une multitude d'ordonnanceurs faisant des compromis dans la
-poursuite des qualités ci-dessus. Les systèmes d'exploitation offrent souvent
-plusieurs ordonnanceurs afin de pouvoir s'adapter aux différents usages.
-Pour chacun des systèmes étudiés, nous avons donc décrit les ordonnanceurs
-disponibles. On examinera en particulier la présence de politiques
-d'ordonnancement temps réel parmi la liste suivante:
-- _Fixed-priority_
-- _Rate Monotonic_
-- _Earliest Deadline First_
-- _Round Robin_
+Les ordonnanceurs de tâches poursuivent des objectifs variés et parfois
+incompatibles. En général, l'ordonnanceur d'un @gpos cherchera à maximiser
+le _throughput_ tout en restant équitable. Un ordonnanceur d'un @rtos quant
+à lui cherchera à être aussi déterministe que possible et à minimiser
+la latence, même si cela réduit parfois le _throughput_. Étant donné le sujet
+de l'étude, nous nous concentrons sur le déterminisme de ces systèmes
+d'isolation. Ainsi, pour chaque système, on examinera la présence de politiques
+d'ordonnancement temps réel parmi la liste suivante: _Fixed-priority_,
+_Rate Monotonic_, _Earliest Deadline First_, _Round Robin_.
 
-==== Déterminisme <determinism_criteria>
+Pour les hyperviseurs destinés aux systèmes critiques, on examinera aussi la
+possibilité de configurer des partitions temporelles statiques.
+
 Comme nous l'avons expliqué dans la sous-section @criticity_real_time, les
 logiciels, et en particulier le système d'exploitation, d'un système critique
 doivent fournir des garanties sur le temps d'exécution de leurs routines. En
@@ -973,7 +991,7 @@ de licence a permis au noyau d'utiliser les outils du projet @gnu afin de
 fournir un système d'exploitation complet. La première version majeure `1.0`
 est publiée en 1994 avec un support pour l'interface graphique via le projet
 _XFree86_. Les distributions _GNU/Linux_ _Red Hat_ et _SUSE_ publient
-leur première version majeure en 1994 également. À partir de 1995 avec la
+leur première version majeure la même année. À partir de 1995 avec la
 version `1.1.85`, le noyau passe d'une architecture @monolithic à une approche
 modulaire, permettant le chargement à chaud de modules. La version `2.0` publiée
 en 1996 propose un support pour les architecture @smp. En 2007, la version
@@ -1068,14 +1086,14 @@ propriétaires et non standardisées. Quant au système _RPMsg_
 (_Remote Processor Messaging_), il permet la intercommunication avec un
 processeur distant via un protocole asynchrone à la _virtio_.
 
-== Partitionnement <linux_partitioning>
+== Isolation <linux_isolation>
 
 Dans cette section, nous décrivons les principaux mécanismes d'isolation de
 partitionnement des ressources disponibles sous _Linux_. Ces mécanismes sont
 aujourd'hui utilisés aussi bien pour la virtualisation via _KVM_ que pour les
 conteneurs des logiciels tels que _systemd_, _Docker_ ou _Kubernetes_.
 
-=== Partitionnement spatial <linux_partitioning_space>
+=== Isolation spatiale <linux_isolation_space>
 
 À l'origine _Linux_ était conçu uniquement pour s'exécuter en présence d'un
 @mmu. Le projet _μCLinux_ @linux_uclinux était une branche modifiée du noyau
@@ -1083,7 +1101,7 @@ _Linux_ visant à supporter des architectures sans @mmu. Ce support a finalement
 été ajouté à la branche officielle du noyau. L'option de compilation
 `CONFIG_NOMMU` permet d'activer le support sans @mmu de _Linux_.
 
-=== Partitionnement temporel <linux_partitioning_time>
+=== Isolation temporelle <linux_isolation_time>
 
 ==== Politiques d'ordonnancement
 
@@ -2160,7 +2178,7 @@ Dans les sections suivantes, nous exécuterons les exemples dans l'hyperviseur
 _Xen_. Ce choix est motivé par le fait qu'il s'agit aujourd'hui du cas d'usage
 fréquent.
 
-== Partitionnement <mirageos_partitioning>
+== Partitionnement <mirageos_isolation>
 
 _MirageOS_ n'offre pas de partitionnement temporel ou spatial. Cette tâche
 incombe à un noyau de séparation dans lequel l'_unikernel_ est exécuté,
@@ -2453,9 +2471,9 @@ niveau _EAL 5+_ pour les architectures _x86-64_, _ARMv8_ et _PowerPC_ @pikeos_cc
 == Architectures supportées <pikeos_architectures>
 
 _PikeOS_ supporte les architectures suivantes: _x86-64_, _ARMv7_, _ARMv8_,
-_PowerPC_, _RISC-V_ et _SPARC_ @pikeos_architectures. Le support pour l'architecture _ARM_ existe
-depuis 2006. En particulier, _PikeOS_ supporte les architectures _SPARC_
-_LEON3_ et _LEON4_ utilisés dans le spatial.
+_PowerPC_, _RISC-V_ et _SPARC_ @pikeos_architectures_page. Le support pour
+l'architecture _ARM_ existe depuis 2006. En particulier, _PikeOS_ supporte les
+architectures _SPARC_ _LEON3_ et _LEON4_ utilisés dans le spatial.
 
 Quant à son hyperviseur, il propose un support pour la virtualisation matérielle
 sur les architectures _ARM v7_ @pikeos_hwvirt_armv7 et _x86-64_
@@ -2497,7 +2515,7 @@ _PikeOS_ offre une solide isolation spatiale et temporelle de ses partitions.
 Sa conception est inspirée de la norme avionique _ARINC 653_ pour les systèmes
 temps réel. Toutefois _PikeOS_ ne se conforme pas à celle-ci.
 
-=== Partitionnement spatial <pikeos_space_partitioning>
+=== Partitionnement spatial <pikeos_space_isolation>
 
 Le noyau de séparation de _PikeOS_ garantit une isolation stricte de la
 mémoire entre les partitions @pikeos_security_target_v5. Cette isolation a
@@ -2513,7 +2531,7 @@ fonctionne sur des architectures _ARM_ de type @mpsoc. À notre connaissance,
 il n'y a pas de support pour des architectures dépourvues de tout contrôle
 mémoire.
 
-=== Partitionnement temporel <pikeos_temporal_partitioning>
+=== Partitionnement temporel <pikeos_temporal_isolation>
 
 _PikeOS_ utilise un ordonnanceur hiérarchique breveté à double niveau inspiré de
 la norme _ARINC 653_ @pikeos_safe_real_time_scheduling. Cette architecture combine
@@ -2863,9 +2881,9 @@ Le support du _PSCI_ (_Power State Coordination Interface_) version 1 indique é
 que _ProvenVisor_ peut gérer l'allumage et l'extinction des cœurs individuels, une
 fonctionnalité importante pour les systèmes multi-processeurs @provenrun_homepage.
 
-== Partitionnement <provenvisor_partitioning>
+== Partitionnement <provenvisor_isolation>
 
-=== Partitionnement spatial <provenvisor_spatial_partitioning>
+=== Partitionnement spatial <provenvisor_spatial_isolation>
 
 _ProvenVisor_ assure un partitionnement spatial strict entre ces machines
 virtuelles en se reposant sur les mécanismes matériels des architectures _ARM_.
@@ -2879,7 +2897,7 @@ Les communications inter-invités ne sont autorisées qu'après autorisation
 explicite @provenrun_homepage, garantissant qu'aucune fuite d'information ne
 peut se produire entre les VMs sans configuration intentionnelle.
 
-=== Partitionnement temporel <provenvisor_temporal_partitioning>
+=== Partitionnement temporel <provenvisor_temporal_isolation>
 
 Les informations publiquement disponibles sur le partitionnement temporel de
 _ProvenVisor_ sont très limitées. Étant un hyperviseur, il est certain qu'il
@@ -3253,12 +3271,12 @@ nous le verrons dans la sous-section @rtems_certifications.
 Il est possible d'utiliser _RTEMS_ sur des @mpsoc. Par exemple, il existe un
 @bsp pour le @mpsoc _Xilinx Zynq UltraScale+_ @rtems_xilinx_bsp.
 
-== Partitionnement <rtems_partitioning>
+== Partitionnement <rtems_isolation>
 
 _RTEMS_ fournit un partitionnement temporel temps réel avec de nombreux
 ordonnanceurs et des protocoles de synchronisation fins. En revna
 
-=== Partitionnement spatial <rtems_spatial_partitioning>
+=== Partitionnement spatial <rtems_spatial_isolation>
 
 Contrairement à un @gpos ou un hyperviseur, _RTEMS_ n'offre pas de séparation
 traditionnelle entre @userspace et @kernelspace. Cette absence de séparation
@@ -3277,7 +3295,7 @@ Lorsqu'une isolation spatiale est requise, l'usage est d'exécuter _RTEMS_ dans
 une partition d'un noyau de séparation, typiquement dans l'hyperviseur de
 _XtratuM_.
 
-=== Partitionnement temporel <rtems_time_partitioning>
+=== Partitionnement temporel <rtems_time_isolation>
 
 _RTEMS_ est distribué avec quatre ordonnanceurs différents:
 - #box[_Deterministic Priority Scheduler_ est un ordonnanceur préemptif basé
@@ -3674,7 +3692,7 @@ de données du noyau ou encore des ressources abstraites, tandis que d'autres
 représentent des zones mémoires contiguës inutilisées
 @sel4_tutorial_capabilities.
 
-== Partitionnement spatial <sel4_spatial_partitioning>
+== Partitionnement spatial <sel4_spatial_isolation>
 
 Le micronoyau _seL4_ se distingue par une approche radicalement différente pour
 le partitionnement spatial. Habituellement, la gestion de la mémoire est
@@ -3703,7 +3721,7 @@ facilite également la vérification formelle.
 fonctionner car son modèle mémoire repose entièrement sur la possibilité de
 virtualiser la mémoire physique.
 
-== Partitionnement temporel <sel4_time_partitioning>
+== Partitionnement temporel <sel4_time_isolation>
 
 _seL4_ propose deux modes de partitionnement temporel: un mode standard et des
 extensions _MCS_ (_Mixed-Criticality System_).
@@ -3894,7 +3912,7 @@ Aujourd'hui le développement de _Xen_ se concentre sur le support d'autres
 architectures que _x86_, et notamment _ARM_ (voir la sous-section
 @xen_architectures) et l'utilisation combinée de la @paravirtualization et
 de la virtualisation assistée par le matériel (voir la sous-section
-@xen_partitioning).
+@xen_isolation).
 
 == Tutoriel <xen_tutoriel>
 
@@ -3943,7 +3961,7 @@ la VM, tapez `CTRL-]`.
 #warning[][
   Dans cette section nous utiliserons les abréviations _PV_, _HVM_ et _PVH_
   qui désignent des types de partitions sous _Xen_. Ces notions sont détaillées
-  dans la section @xen_partitioning.
+  dans la section @xen_isolation.
 ]
 
 À l'origine _Xen_ ne supportait que l'architecture _x86_ pour des partitions de
@@ -3983,7 +4001,7 @@ Nous n'avons pas d'informations précises sur l'usage de _Xen_ sur des plateform
 @amp. Toutefois la documentation de _RTEMS_ mentionne l'usage de _Xen_ sur
 un @mpsoc _Xilinix Zynq UltraScale+_ @vanvossenxen.
 
-== Partitionnement <xen_partitioning>
+== Partitionnement <xen_isolation>
 
 _Xen_ propose trois types de partitions différentes:
 - #box[Les partitions de type #definition[PV] permettent la @paravirtualization totale du
@@ -4055,7 +4073,7 @@ La plupart des _stub domains_ sont basés sur le système d'exploitation minimal
 _Mini-OS_ @xen_minios, bien que des travaux aient été menés sur des _stub domains_
 basés sur _Linux_.
 
-=== Partitionnement spatial <xen_partitioning_space>
+=== Partitionnement spatial <xen_isolation_space>
 
 _Xen_ assure l'isolation mémoire entre les domaines en utilisant différentes
 techniques selon le type de virtualisation. Pour les domaines paravirtualisés,
@@ -4070,7 +4088,7 @@ statique et une isolation stricte @xen_dom0less_doc. L'hyperviseur suit une
 architecture minimale et poursuit une conformité _MISRA C_ pour la certification
 @xen_project_4_17_safety.
 
-=== Partitionnement temporel <xen_partitioning_time>
+=== Partitionnement temporel <xen_isolation_time>
 
 _Xen_ offre une abstraction des processeurs physiques appelée _vCPU_ (_Virtual
 CPU_). La correspondance entre processeur physique et _vCPU_ est souple puisqu'il
@@ -4107,7 +4125,7 @@ baptisé _RTDS_. Nous donnons plus d'informations sur ce dernier dans la sous-se
 le projet met l'accent sur les garanties que les ressources louées par des
 clients seront effectivement disponibles lorsque leurs @vm:pl les requerront.
 Les ordonnanceurs que nous avons vus dans
-la sous-section @xen_partitioning_time cherchent donc à être aussi juste que
+la sous-section @xen_isolation_time cherchent donc à être aussi juste que
 possibles. Cette garantie est en contradiction avec les besoins du temps
 réel. En effet une tâche critique peut avoir soudainement besoin de beaucoup
 de ressources, si ce n'est la totalité des ressources.
@@ -4384,7 +4402,7 @@ adopter pour assurer la synchronisation des sections critiques du noyau
 @xtratum_leon4. Chaque partition peut allouer plusieurs cœurs via une couche
 d'abstraction sous forme de _CPU_ virtuels @xtratum_leon4.
 
-== Partitionnement <xtratum_partitioning>
+== Partitionnement <xtratum_isolation>
 
 Le partitionnement de _XtratuM_ est conforme à la norme _ARINC-653_. Il est donc
 conçu pour assurer une excellente isolation temporelle et spatiale de ses
@@ -4734,7 +4752,7 @@ Quelques remarques pour l'interprétation de ces informations:
   En dernier terme, seul l'existence de ce @bsp fait foi pour le support d'une
   carte donnée.
 
-== Partitionnement temporel <table_time_partitioning>
+== Partitionnement temporel <table_time_isolation>
 
 == Programmation @baremetal <table_baremetal_programming>
 
