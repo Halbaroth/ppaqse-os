@@ -2712,15 +2712,27 @@ support n'existe probablement pas.
 
 == Temps de démarrage <pikeos_boot_time>
 
-== Qualifications et certifications
+Nous n'avons pas trouvé d'informations concernant le temps de démarrage de
+l'hyperviseur _PikeOS_ ou de ses partitions. L'usage de _PikeOS_ dans
+l'embarqué laisse présager des temps de démarrage réduits.
 
-Le noyau _PikeOS_ a été conçu pour faciliter la qualification et la certification
-des systèmes l'utilisant. Il propose de nombreux kits de certification pour
-différents secteurs industriels critiques.
+== Maintenabilité <pikeos_maintainability>
 
-=== Certifications de sûreté
+_PikeOS_ est un logiciel propriétaire aux sources fermées. L'entreprise _SYSGO_
+ne semble pas communiquer sur ses licences. Les modalités et les tarifs des
+licences sont certainement à négocier au cas par cas.
 
-_PikeOS_ propose des kits de certification pour différents domaines :
+_PikeOS_ a été commercialisé pour la première fois en 2005, ce qui en fait un
+système avec environ 20 ans d'existence.
+
+Le système d'exploitation bénéficie d'un écosystème solide dans les domaines
+critiques, notamment l'aéronautique (avec _Airbus_ qui l'a choisi comme
+plateforme de référence pour l'_A350_), l'automobile, le ferroviaire et le
+médical.
+
+Le noyau _PikeOS_ a été conçu pour faciliter la certification des systèmes qui
+l'intègrent. Il propose de nombreux kits de certification pour différents
+secteurs industriels critiques:
 - Pour l'aéronautique et le spatial avec _RTCA DO-178C_ jusqu'au niveau
   _DAL A_ (_Design Assurance Level A_), le niveau le plus élevé,
 - Pour le ferroviaire avec _EN 50128_ et _EN 50657_ jusqu'au niveau _SIL 4_
@@ -2730,53 +2742,15 @@ _PikeOS_ propose des kits de certification pour différents domaines :
 - Pour l'industrie médicale avec _IEC 61508_ jusqu'au niveau _SIL 3_
   (_Safety Integrity Level 3_).
 
-_PikeOS_ version 5.1 est certifié selon la norme _DO-178C_ au niveau _DAL-A_
-ainsi que selon les normes _IEC 61508_, _EN 50128_, _EN 50657_ et _ISO 26262_.
+La version 5.1.3 a obtenu la certification Critères Communs (_ISO 15408_)
+au niveau _EAL 5+_ pour les architectures _ARMv8_, _x86-64_ et _PowerPC_
+@pikeos_cc_eal5_cert.
 
-_SYSGO_ a été la première entreprise au monde à atteindre le niveau de sûreté
-_SIL 4_ (le plus élevé) selon la norme _IEC 61508_ pour un système d'exploitation
-temps réel et hyperviseur multi-cœur.
-
-Chaque kit de certification contient un hyperviseur _PikeOS_ conforme aux
-standards, une aide documentaire complète pour le développement et les tests,
-ainsi qu'un manuel de sûreté avec des directives d'utilisation dans des
-conceptions de systèmes critiques.
-
-=== Certification de sécurité
-
-Le noyau de séparation _PikeOS_ version 5.1.3 a obtenu la certification _Common
-Criteria_ (_ISO 15408_) au niveau _EAL 5+_ pour les architectures _ARMv8_,
-_x86-64_ et _PowerPC_ @pikeos_cc_eal5_cert.
-
-Le niveau _EAL 5+_ garantit que _PikeOS_ a été conçu de manière semi-formelle et
-vérifié contre des vulnérabilités complexes. Basé sur l'architecture _MILS_
-(_Multiple Independent Levels of Security_), _PikeOS_ est présenté comme le seul
-système d'exploitation offrant les standards de certification les plus élevés en
-matière de sûreté et de cybersécurité pour le même produit et la même base de
-code.
-
-_SYSGO_ fournit un kit de certification complet conforme au niveau _EAL 5+_ pour
-faciliter la certification de sécurité des dispositifs embarqués basés sur
-_PikeOS_. Les clients peuvent utiliser ces artefacts pour leurs processus de
-certification en aéronautique (_DO-356A/ED-203A_), automobile (_ISO/SAE 21434_),
-ferroviaire (_CLC/TS 50701_) et défense.
-
-== Maintenabilité <pikeos_maintainability>
-
-_PikeOS_ est un logiciel propriétaire aux sources fermées. L'entreprise _SYSGO_
-ne semble pas communiquer sur ses licences. Les modalités et les tarifs des
-licences sont certainement à négociés au cas par cas.
-
-Les nombreuses certifications obtenues par _PikeOS_ (_DO-178C_, _IEC 61508_,
-_EN 50128_, _ISO 26262_, _Common Criteria EAL 5+_) impliquent l'existence d'une
-documentation technique détaillée. En effet, ces normes exigent une traçabilité
-complète des exigences, une documentation du cycle de vie du logiciel, ainsi que
-des manuels de sûreté et de sécurité. _SYSGO_ fournit d'ailleurs des kits de
-certification incluant une aide documentaire complète pour le développement et
-les tests.
-
-_PikeOS_ a été commercialisé pour la première fois en 2005, ce qui en fait un
-système avec environ 20 ans d'existence.
+Ces kits impliquent l'existence d'une documentation technique détaillée. En
+effet, ces normes exigent une traçabilité complète des exigences, une
+documentation du cycle de vie du logiciel, ainsi que des manuels de sûreté et
+de sécurité. _SYSGO_ fournit d'ailleurs des kits de certification incluant une
+aide documentaire complète pour le développement et les tests.
 
 Nous n'avons pas pu évaluer la taille de la base de code, faute d'informations
 librement accessibles. Toutefois, au vu des nombreuses certifications et de sa
@@ -2784,14 +2758,9 @@ conception inspirée du micronoyau _L4_, nous spéculons que le noyau de
 _PikeOS_ est probablement de petite taille, c'est-à-dire de l'ordre quelques
 dizaines de milliers de lignes de code.
 
-Le système d'exploitation bénéficie d'un écosystème solide dans les domaines
-critiques, notamment l'aéronautique (avec _Airbus_ qui l'a choisi comme
-plateforme de référence pour l'_A350_), l'automobile, le ferroviaire et le
-médical.
-
 Le support commercial de _PikeOS_ est assuré par _SYSGO_, filiale du groupe
-_Thales_ depuis 2012. Cette acquisition par un acteur majeur de la défense et de
-l'aérospatial est un gage de pérennité du produit.
+_Thales_ depuis 2012. Cette acquisition par un acteur majeur de la défense et
+de l'aérospatial est un gage de pérennité du produit.
 
 = ProvenVisor <provenvisor>
 
