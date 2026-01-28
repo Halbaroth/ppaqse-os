@@ -3227,7 +3227,7 @@ la phase de compilation du noyau via l'option `--enable-smp`.
 ]
 
 Le support @smp a fait l'objet de vérifications et de pré-qualifications comme
-nous le verrons dans la sous-section @rtems_certifications.
+nous le verrons dans la sous-section @rtems_maintening.
 
 === Architectures @amp <rtems_amp>
 
@@ -3238,7 +3238,7 @@ Il est possible d'utiliser _RTEMS_ sur des @mpsoc. Par exemple, il existe un
 
 _RTEMS_ fournit un partitionnement temporel temps réel avec de nombreux
 ordonnanceurs et des protocoles de synchronisation fins. En revanche, il
-n'offre pas d'isolation spatiale forte par défaut.
+n'offre pas d'isolation spatiale par défaut.
 
 === Partitionnement spatial <rtems_spatial_isolation>
 
@@ -3332,10 +3332,10 @@ flux d'exécution.
 
 Nous n'avons pas trouvé de mécanisme de protection face à ce type d'attaques
 dans _RTEMS_. Cette absence s'explique par le fait que le noyau n'offre pas
-d'isolation spatiale forte. Les applications s'exécutant dans _RTEMS_ doivent
+d'isolation spatiale. Les applications s'exécutant dans _RTEMS_ doivent
 donc être de confiance et leur développement nécessite une attention accrue
 pour éviter les erreurs de programmation. À défaut, il faut recourir à un
-hyperviseur pour assurer l'isolation spatiale.
+hyperviseur disposant de partitions pour assurer une isolation spatiale forte.
 
 == Écosystème <rtems_ecosystem>
 
@@ -3436,55 +3436,6 @@ Il suffit alors de copier cette image sur le _Raspberry_ puis de lancer
 `minicom` pour écouter le port série et observer les messages émis par
 le noyau.
 
-== Qualifications & certifications <rtems_certifications>
-
-Du fait de son usage dans le spatial, il est nécessaire de pouvoir qualifier
-_RTEMS_ afin de l'intégrer dans des missions.
-
-=== Kit de qualifications par l'ESA
-
-L'@esa offre un kit de @qualification pour des applications de _RTEMS_
-dans le domaine spatial @rtems_qdp. Il est disponible pour les cartes
-_Cobham Gaisler GR712RC_ (architecture _LEON3_ double-cœur) et _GR740_
-(architecture _LEON4_ quadri-cœur). Ce kit est disponible sous licence
-_Creative Common Attribution-ShareAlike 4.0_.
-
-L'ESA (_European Space Agency_) offre un kit de @qualification pour des
-applications de _RTEMS_ dans le spatial @rtems_qdp dans sa version @smp.
-
-- QDP kit de préqualification.
-- Le kit est sous licence Creative Common Attribution-ShareAlike 4.0.
-- Plateforme supportée Cobham Gaisler GR712RC (double-cœur LEON3) et GR740 (quadri-cœur LEON4).
-- Utilise GCC (v10.2.1) et la bibliothèque mathématique pour les systèmes critiques (libmcs).
-- L'application est liée statiquement à RTEMS. Il faut donc une qualification conjointe de l'application et de RTEMS.
-- Conformité @ecss
-
-Il y a une qualification de RTEMS dans un cadre mono-cœur par Edisoft.
-
-Un effort important a été livré pour appliquer des méthodes formelles sur RTEMS.
-C'est une activité sponsorisé par @ecss afin de s'assurer de la fiabilité de RTEMS
-dans un cadre @smp. Ils ont utilisé Promela/SPIN @butterfield2023applying,
-un model-checker. Edisoft a encore contribué sur cette version.
-
-- Promela est le langage de formalisation tandis que SPIN est le model checker.
-
-
-=== Model checking avec _Promela/SPIN_
-
-La correction fonctionnelle de certaines parties de l'@api de _RTEMS_ ont
-été vérifié par _model checking_ @butterfield2023applying grâce à un
-financement de l'@esa. Cette vérification concerne en particulier les
-primitives de synchronisation utilisées sur les architectures @smp.
-
-L'approche retenue fut la génération automatique de tests en utilisant le langage de
-spécification _Promela_ (_PROtocol MEta LAnguage_) et le vérificateur
-de modèles _SPIN_ pour vérifier la correction et générer les tests à partir
-de la spécification en _Promela_. Les auteurs envisagent d'étendre cette
-vérification aux ordonnanceurs de _RTEMS_.
-
-Plus d'informations sont disponibles dans la documentation officielle
-@rtems_formal_verification_overview.
-
 == Programmation @baremetal <rtems_baremetal>
 
 _RTEMS_ n'étant pas un hyperviseur, nous n'avons pas examiné ce critère.
@@ -3510,11 +3461,34 @@ notamment la constellation de satellites _Galileo_, le _James Webb Space
 Telescope_, et les rovers martiens. Cette adoption par des agences spatiales
 témoigne de la maturité et de la fiabilité du système.
 
+Du fait de son usage dans le spatial, _RTEMS_ doit être qualifié
+pour être utilisé dans des missions. Nous avons pu identifier deux kits:
+- L'@esa offre un kit de de préqualification pour des applications de _RTEMS_
+  dans le domaine spatial @rtems_qdp. Il est disponible pour les cartes
+  _Cobham Gaisler GR712RC_ (architecture _LEON3_ double-cœur) et _GR740_
+  (architecture _LEON4_ quadri-cœur). Ce kit est disponible sous licence
+  _Creative Common Attribution-ShareAlike 4.0_.
+- L'entreprise allemande _embedded brains_ propose
+  un _Qualification Data Package_ (QDP) pour faciliter la qualification de
+  _RTEMS_ dans des projets critiques @rtems_qdp_embedded_brains. Ce
+  kit contient une spécification fonctionnelle détaillée et accompagnée de
+  tests de validation exécutés sur le matériel du client.
+  Les normes @ecss utilisées dans ce kit couvrent des exigences également
+  présentes dans d'autres normes telles que _DO-178C_, _IEC 61508_ et
+  _ISO 26262_, facilitant ainsi l'adaptation vers ces domaines.
+
+Des méthodes formelles ont également été appliquées pour vérifier certaines
+parties du projet _RTEMS_ @rtems_formal_verification_overview. Par exemple,
+la correction fonctionnelle de primitives de synchronisation ont été
+vérifiée @butterfield2023applying grâce à un financement de
+l'@esa. L'approche retenue consistait à la génération automatique
+de tests via le langage de spécification _Promela_ et le _model checker_
+_SPIN_.
+
 Le support commercial de _RTEMS_ est assuré principalement par l'entreprise
 _OAR_ qui maintient et développe le projet depuis 1995. Un support est
 disponible pour les entreprises européennes et américaines. La communauté
-active du projet offre également un support gratuit, bien que sans garantie
-formelle.
+offre également un support gratuit, bien que sans garantie formelle.
 
 = seL4 <sel4>
 
@@ -4280,15 +4254,15 @@ cette approche.
 == Maintenabilité <xen_maintainability>
 
 _Xen_ est un logiciel libre distribué majoritairement sous licence `GPLv2`.
-Certaines portions sont distribuées sous des licences plus permissives afin
-de ne pas contraindre le choix de licence pour l'utilisateur. Ces exceptions
-sont spécifiées dans les en-têtes des fichiers concernés. Plus d'informations
+Certaines parties sont distribuées sous des licences plus permissives afin
+de ne pas contraindre l'utilisateur. Ces exceptions sont spécifiées dans
+les en-têtes des fichiers concernés. Plus d'informations
 sont disponibles dans le fichier `COPYING` du dépôt git de _Xen_ @xen_licensing.
 
 Il est écrit à 93% en langage _C_ pour un total de 581 193 _SLOC_ dont
 45 220 _SLOC_ pour les pilotes. Ces chiffres inclus toutes les architectures
-et modes de virtualisation (_PV_, _HVM_ et _PVH_). _Xen_ est donc réputé avoir
-une @tcb importante du fait de ce volume de code. Cependant, il faut noter que
+et modes de virtualisation (_PV_, _HVM_ et _PVH_). La @tcb de _Xen_ est donc
+considérée comme volumineuse. Cependant, il faut noter que
 la taille du code varie beaucoup suivant l'architecture et le mode de
 virtualisation considéré. Ainsi, l'implémentation du mode _PVH_ pour _ARM_
 est d'une taille nettement plus réduite.
