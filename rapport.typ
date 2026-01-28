@@ -387,7 +387,7 @@ comparés suivant les critères suivants:
 - Type de système d'exploitation
 - Architectures supportées
 - Support multi-processeur
-- Isolation
+- Isolation temporelle et spatiale
 - Corruption mémoire
 - Perte du flux d'exécution
 - Écosystème
@@ -668,24 +668,12 @@ mémoire.
 
 ==== Isolation temporelle <time_isolation>
 
-Un mécanisme d'isolation temporelle vise à prévenir qu'une tâche ne prenne
-trop de temps _CPU_ au point de dégrader la qualité de service des autres
-tâches.
+Un mécanisme d'isolation temporelle vise à prévenir qu'une tâche ne dégrade
+la qualité de services des autres tâches en s'octroyant une part trop importante
+du temps _CPU_.
 
-Dans cette étude, nous examinons les mécanismes d'isolation temporelle suivants:
-- Les systèmes d'exploitation disposent de politiques d'ordonnancement. Ces
-  politiques sont appliquées par un ordonnanceur de tâche (_scheduler_) qui
-  détermine la prochaine tâche à exécuter. Cet ordonnancement peut être
-  dynamique, c'est-à-dire qu'il s'adapte au besoin des tâches au cours
-  du temps ou statique.
-- Certains hyperviseurs permettent la configuration de partitions statiques
-  du temps _CPU_. Lors de la conception du système, on définit des tranches
-  de temps pour chaque partition. À l'exécution un ordonnanceur cyclique
-  garantit que chaque partition dispose de sa tranche de temps dans un ordre
-  prédéterminé. La préemption est assurée par un _timer_ matériel.
-
-Il existe une multitude de politique d'ordonnancement et de critères pour
-qualifier et quantifier leurs qualités. Nous retenons les critères suivants:
+Il existe une multitude de qualités pour décrire les mécanismes d'isolation
+temporelle. Nous retenons les qualités suivantes:
 - _Throughput_: quantité de travail accomplie par unité de
   temps,
 - _Latency_: délai qui s'écoule entre le réveil d'une tâche
@@ -695,31 +683,32 @@ qualifier et quantifier leurs qualités. Nous retenons les critères suivants:
 - _Déterminisme_: capacité à prédire l'ordre d'exécution des tâches et les
   tranches de temps allouées.
 
-Les ordonnanceurs de tâches poursuivent des objectifs variés et parfois
-incompatibles. En général, l'ordonnanceur d'un @gpos cherchera à maximiser
-le _throughput_ tout en restant équitable. Un ordonnanceur d'un @rtos quant
-à lui cherchera à être aussi déterministe que possible et à minimiser
-la latence, même si cela réduit parfois le _throughput_. Étant donné le sujet
-de l'étude, nous nous concentrons sur le déterminisme de ces systèmes
-d'isolation. Ainsi, pour chaque système, on examinera la présence de politiques
-d'ordonnancement temps réel parmi la liste suivante: _Fixed-priority_,
-_Rate Monotonic_, _Earliest Deadline First_, _Round Robin_.
+Dans cette étude, nous examinons les mécanismes d'isolation temporelle suivants:
+- Les systèmes d'exploitation disposent généralement de politiques
+  d'ordonnancement. Ces politiques sont appliquées par un ordonnanceur de
+  tâches (_scheduler_) qui détermine la prochaine tâche à exécuter suivant cette
+  politique. L'ordonnancement peut être dynamique, c'est-à-dire qu'il s'adapte
+  au besoin des tâches au cours du temps ou statique. Les politiques
+  d'ordonnancement poursuivent des objectifs variés et parfois incompatibles.
+  En général, la politique d'ordonnancement d'un @gpos cherchera à maximiser le
+  _throughput_ tout en restant équitable. Tandis que dans un @rtos, elle
+  cherchera à être aussi déterministe que possible et à minimiser la latence,
+  même si cela réduit parfois le _throughput_.
+- Certains hyperviseurs permettent la configuration de partitions statiques
+  du temps _CPU_. Lors de la conception du système, on définit des tranches
+  de temps pour chaque partition. À l'exécution un ordonnanceur cyclique
+  garantit que chaque partition dispose de sa tranche de temps dans un ordre
+  prédéterminé. La préemption est assurée par une horloge matérielle.
+
+Étant donné le sujet de cette étude, nous nous concentrons sur le déterminisme
+de ces systèmes d'isolation temporelle. Ainsi, pour chaque système, on
+examinera la présence de politiques d'ordonnancement temps réel et les mesures
+implémentées pour en garantir le déterminisme.
 
 Pour les hyperviseurs destinés aux systèmes critiques, on examinera aussi la
 possibilité de configurer des partitions temporelles statiques.
 
-Comme nous l'avons expliqué dans la sous-section @criticity_real_time, les
-logiciels, et en particulier le système d'exploitation, d'un système critique
-doivent fournir des garanties sur le temps d'exécution de leurs routines. En
-informatique usuelle, le temps d'exécution d'un programme ne fait généralement
-pas parti de sa correction#footnote[Une exception notable est celle des
-applications multimédia.].
-Ce n'est plus le cas dans un système temps réel où répondre après
-un délai trop long conduit à un résultat erroné. On souhaite donc que les calculs
-soient fait suffisamment vite en toute circonstance, tandis qu'en informatique
-usuelle on cherche généralement à ce que les calculs soient fait le plus vite
-possible en moyenne.
-
+#aside[déterminisme][
 Afin d'offrir ces garanties temps réel, le système d'exploitation doit être
 aussi déterministe que possible. Ce déterminisme permet en pratique d'estimer
 le temps d'exécution de ses routines dans le pire cas#footnote[Ce concept est
@@ -733,6 +722,7 @@ attendre la fin de l'exécution d'une longue routine du noyau ou la fin de la
 tranche de temps d'une tâche de plus faible priorité. La latence du système
 d'exploitation est donc une mesure importante pour assurer le respect des
 échéances.
+]
 
 == Corruption mémoire <memory_corruption_criteria>
 
@@ -805,34 +795,35 @@ trois aspects: le _monitoring_, le _profilage_ et le _débogage_.
 
 Le _monitoring_ vise à surveiller l'activité d'un système informatique. Les
 outils de _monitoring_ permettent le plus souvent la journalisation
-d'événements. Comme ces outils sont généralement utilisés en production, il est
+d'événements. Ces outils étant utilisés en production, il est
 important qu'ils ne grèvent pas la performance ou compromettent la sûreté ou
 la sécurité du système.
 
-Le _profilage_ est une technique utilisée pour mesurer et analyser les
-performances d'un programme. Elle est le plus souvent employée durant la
-phase de développement à des fins d'optimisation en permettant de localiser
-des points chauds. Toute mesure ayant un impact sur l'objet mesuré, il est
-crucial que cette instrumentation soit faite de la façon la moins intrusive
-possible.
+Le _profilage_ est un ensemble de techniques utilisées pour mesurer et
+analyser les performances d'un programme. Il est le plus souvent employée
+durant la phase de développement à des fins d'optimisation en permettant de
+localiser des points chauds. Toute mesure ayant un impact sur l'objet mesuré,
+il est crucial que cette instrumentation soit faite de la façon la moins
+intrusive possible.
 
-Le _débogage_ est un ensemble de techniques permettant d'analyser un bogue.
-La technique la plus répandue consiste, via un débogueur, à exécuter le
-programme pas à pas et explorer l'état de la mémoire et des registres.
+Le _débogage_ est un ensemble de techniques permettant d'analyser un bogue
+pour en comprendre l'origine. La technique la plus répandue consiste, via un
+débogueur, à exécuter le programme pas à pas et explorer l'état de la mémoire,
+des registres et la piles d'exécution.
 
 == Gestion des interruptions <interrupt_managing_criteria>
 
 Une _interruption_ est un événement matériel qui altère le flot d'exécution
-normal d'un programme. Au niveau matériel, elle se manifeste classiquement par
+normal d'un programme. Au niveau matériel, elle se manifeste par
 un signal électrique émit par un périphérique ou le processeur lui-même et à
 destination du processeur. Lorsque le processeur reçoit l'interruption,
 l'exécution courante est suspendue et le contexte est sauvegardé puis une
 routine du noyau appelée @isr est lancée pour gérer l'interruption.
 
 La programmation en présence d'interruptions est rendue difficile par leur
-nature asynchrone. En effet, rien n'interdit qu'une interruption se
-déclenche pendant l'exécution de l'@isr d'une autre interruption. C'est
-même le scénario le plus courant. La présence d'interruption asynchrone induit
+nature asynchrone. En effet, rien n'interdit qu'une interruption soit levée
+pendant l'exécution de l'@isr d'une autre interruption. C'est même le scénario
+le plus courant. La présence d'interruptions asynchrones induit
 deux grandes difficultés:
 - #box[La correction du noyau repose sur la préservation d'invariants pour
 ses structures de données. Ainsi, certaines sections de code sont critiques car
@@ -948,13 +939,16 @@ transition vers une solution alternative, souvent coûteuses et complexes.
 
 Nous avons comparé la maintenabilité des différents systèmes avec les critères
 suivants:
-- _Licence_: une licence libre ou _Open Source_ présente l'avantage d'avoir
-  un accès facile au code source. Même si le @cots n'est plus maintenu, il est
+- _Licence_: une licence libre ou _Open Source_ présente l'avantage
+  d'un accès facile au code source. Même si le @cots n'est plus maintenu, il est
   toujours possible de le faire évoluer et d'appliquer des correctifs,
 - _Taille de l'écosystème_: un grand écosystème facilite le développement et
   assure que d'autres utilisateurs contribuent à son maintien,
 - _Taille du code source_: la taille du code source n'est pas toujours gage de
   complexité mais cela reste un indice important,
+- _Certification_: les certifications de systèmes critiques exigent une
+  certaine qualité logicielle. La possibilité de certifier un produit utilisant
+  le @cots est donc un gage de qualité de ce dernier.
 - _Ancienneté_: un @cots ancien est souvent plus mature mais il embarque aussi
    davantage de dette technique,
 - _Support commercial_: la présence d'un support commercial assure de recevoir
@@ -3274,7 +3268,8 @@ Il est possible d'utiliser _RTEMS_ sur des @mpsoc. Par exemple, il existe un
 == Partitionnement <rtems_isolation>
 
 _RTEMS_ fournit un partitionnement temporel temps réel avec de nombreux
-ordonnanceurs et des protocoles de synchronisation fins. En revna
+ordonnanceurs et des protocoles de synchronisation fins. En revanche, il
+n'offre pas d'isolation spatiale forte par défaut.
 
 === Partitionnement spatial <rtems_spatial_isolation>
 
@@ -4073,7 +4068,7 @@ La plupart des _stub domains_ sont basés sur le système d'exploitation minimal
 _Mini-OS_ @xen_minios, bien que des travaux aient été menés sur des _stub domains_
 basés sur _Linux_.
 
-=== Partitionnement spatial <xen_isolation_space>
+=== Isolation spatiale <xen_isolation_space>
 
 _Xen_ assure l'isolation mémoire entre les domaines en utilisant différentes
 techniques selon le type de virtualisation. Pour les domaines paravirtualisés,
@@ -4088,7 +4083,7 @@ statique et une isolation stricte @xen_dom0less_doc. L'hyperviseur suit une
 architecture minimale et poursuit une conformité _MISRA C_ pour la certification
 @xen_project_4_17_safety.
 
-=== Partitionnement temporel <xen_isolation_time>
+=== Isolation temporelle <xen_isolation_time>
 
 _Xen_ offre une abstraction des processeurs physiques appelée _vCPU_ (_Virtual
 CPU_). La correspondance entre processeur physique et _vCPU_ est souple puisqu'il
