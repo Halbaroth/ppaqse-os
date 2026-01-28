@@ -2735,8 +2735,8 @@ l'intègrent. Il propose de nombreux kits de certification pour différents
 secteurs industriels critiques @pikeos_certkits:
 - Pour l'aéronautique et le spatial avec _DO-178C_ jusqu'au niveau
   _DAL A_ (_Design Assurance Level A_),
-- Pour le ferroviaire avec _EN 50128_, _EN 50657_ jusqu'au niveau _SIL 4_
-  (_Safety Integrity Level 4_) et _EN 50716_,
+- Pour le ferroviaire avec _EN 50716_ jusqu'au niveau _SIL 4_
+  (_Safety Integrity Level 4_),
 - Pour l'automobile avec _ISO 26262_ jusqu'au niveau _ASIL D_ (_Automotive
   Safety Integrity Level D_),
 - Pour l'industrie avec _IEC 61508_ jusqu'au niveau _SIL 3_
@@ -3487,7 +3487,7 @@ Plus d'informations sont disponibles dans la documentation officielle
 
 == Programmation @baremetal <rtems_baremetal>
 
-_RTEMS_ n'étant un hyperviseur, nous n'avons pas examiné ce critère.
+_RTEMS_ n'étant pas un hyperviseur, nous n'avons pas examiné ce critère.
 
 == Temps de démarrage <rtems_booting_time>
 
@@ -3500,22 +3500,21 @@ Le projet _RTEMS_ est développé et maintenu depuis plus de 30 ans. Il est
 écrit en langage C à plus de 96% pour 1 990 023 _SLOC_.
 
 _RTEMS_ est un logiciel libre distribué sous une multitude de licences libres
-et open-sources avec pour licence principale _BSD 2-Clause_. Le point commun de
-ces licences est qu'elles autorisent l'utilisateur a lié son programme avec le
-code source de _RTEMS_ sans devoir redistribuer son propre code source
-@rtems_licenses_website.
+et open-sources avec pour licence principale _BSD 2-Clause_. Ces licences
+autorisent l'utilisateur a lié son programme avec _RTEMS_ sans devoir
+redistribuer son propre code source @rtems_licenses_website.
 
 _RTEMS_ bénéficie d'un écosystème particulièrement important dans le domaine
 spatial, où il est utilisé par la _NASA_ et l'@esa dans de nombreuses missions,
-notamment la constellation de satellites _Galileo_, le _James Webb Space Telescope_,
-et les rovers martiens. Cette adoption par des agences spatiales de premier plan
+notamment la constellation de satellites _Galileo_, le _James Webb Space
+Telescope_, et les rovers martiens. Cette adoption par des agences spatiales
 témoigne de la maturité et de la fiabilité du système.
 
-Le support commercial de _RTEMS_ est assuré principalement par l'entreprise _OAR_
-(_On-Line Applications Research Corporation_), qui maintient et développe le
-projet depuis 1995. Un support est disponible pour les entreprises européennes
-et américaines. La communauté active du projet offre également un support gratuit,
-bien que sans garantie formelle.
+Le support commercial de _RTEMS_ est assuré principalement par l'entreprise
+_OAR_ qui maintient et développe le projet depuis 1995. Un support est
+disponible pour les entreprises européennes et américaines. La communauté
+active du projet offre également un support gratuit, bien que sans garantie
+formelle.
 
 = seL4 <sel4>
 
