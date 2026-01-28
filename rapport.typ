@@ -2732,17 +2732,17 @@ médical.
 
 Le noyau _PikeOS_ a été conçu pour faciliter la certification des systèmes qui
 l'intègrent. Il propose de nombreux kits de certification pour différents
-secteurs industriels critiques:
-- Pour l'aéronautique et le spatial avec _RTCA DO-178C_ jusqu'au niveau
-  _DAL A_ (_Design Assurance Level A_), le niveau le plus élevé,
-- Pour le ferroviaire avec _EN 50128_ et _EN 50657_ jusqu'au niveau _SIL 4_
-  (_Safety Integrity Level 4_),
+secteurs industriels critiques @pikeos_certkits:
+- Pour l'aéronautique et le spatial avec _DO-178C_ jusqu'au niveau
+  _DAL A_ (_Design Assurance Level A_),
+- Pour le ferroviaire avec _EN 50128_, _EN 50657_ jusqu'au niveau _SIL 4_
+  (_Safety Integrity Level 4_) et _EN 50716_,
 - Pour l'automobile avec _ISO 26262_ jusqu'au niveau _ASIL D_ (_Automotive
   Safety Integrity Level D_),
-- Pour l'industrie médicale avec _IEC 61508_ jusqu'au niveau _SIL 3_
+- Pour l'industrie avec _IEC 61508_ jusqu'au niveau _SIL 3_
   (_Safety Integrity Level 3_).
 
-La version 5.1.3 a obtenu la certification Critères Communs (_ISO 15408_)
+_PikeOS_ 5.1.3 a obtenu la certification Critères Communs (_ISO 15408_)
 au niveau _EAL 5+_ pour les architectures _ARMv8_, _x86-64_ et _PowerPC_
 @pikeos_cc_eal5_cert.
 
