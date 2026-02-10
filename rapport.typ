@@ -4700,9 +4700,6 @@ Quelques remarques pour l'interprétation de ces données:
 - Les certifications (EAL, DO-178C, ECSS, etc.) exigent une documentation
   technique rigoureuse, accessible aux clients.
 
-<<<<<<< HEAD
-=======
-
 == Perte du flux d'exécution <table_flow_hijacking>
 
 Le tableau ci-dessous récapitule les contremesures contre la perte du flux
